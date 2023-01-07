@@ -1,0 +1,489 @@
+{
+	"users": [
+		{
+			"id": 142472661841346560,
+			"name": "Matt",
+			"messages": [
+				"Here ya go, Master:",
+				"What is my purpose?"
+			],
+			"lateMessages": [
+				"What is my purpose?"
+			],
+			"earlyMessages": [
+				"It's not worth coding an early message for you... it's not like you'll ever be an hour early... right?"
+			],
+			"rep": 153,
+			"messageHistory": [
+				"hello"
+			],
+			"responseHistory": [
+				" Hi Matt! How can I help you today?"
+			],
+			"messageTimestamps": [
+				"2023-01-07T16:37:22.744Z"
+			]
+		},
+		{
+			"id": 300052932404052000,
+			"name": "Ben",
+			"messages": [
+				"Here's the link, Buzzy Bee:",
+				"I Beelieve in you!",
+				"Don't forget to take your meds!",
+				"God, me too:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 826203188305854500,
+			"name": "Mars",
+			"messages": [
+				"Maybe you could add this link to your novel:",
+				"Idk why a planet needs to join a Teams meeting, but here ya go:",
+				"They should name a chocolate bar after you!"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 662978314394402800,
+			"name": "Julie",
+			"messages": [
+				"Here's the meeting link, Mom",
+				"It's in all of our best interests if you knock before entering this room:"
+			],
+			"lateMessages": [
+				"You're not setting a good example for your impressionable, possibly-older-than-you, children:"
+			],
+			"earlyMessages": [
+				"Be like mom. Be a good noodle."
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 315443781266702340,
+			"name": "Chad",
+			"messages": [
+				"Mom says you need to attend this class, Chadley:",
+				"This would make a great hat design:"
+			],
+			"lateMessages": [
+				"I was going to say your tardiness is inappropriate, but tbh, it's probably one of the least inappropriate things you've done to date."
+			],
+			"earlyMessages": [
+				"Being early to class isn't very characteristic of you. Well done!"
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 499036815102050300,
+			"name": "Dee",
+			"messages": [
+				"You'll definitely need to make flashcards for this meeting:",
+				"Don't snitch on this meeting:"
+			],
+			"lateMessages": [
+				"You're late. I'm very DEEsappointed in you."
+			],
+			"earlyMessages": [
+				"Joining early today so you have more time to make flashcards?"
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 1010016847946588200,
+			"name": "Robot",
+			"messages": [
+				"Do you still wear a hat during online classes?"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 281191005464821760,
+			"name": "Zukr",
+			"messages": [
+				"Damn, I thought you were the cool one... Oh well, here's the link:",
+				"*does a backflip* Here is your link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 165656860039315460,
+			"name": "Jayden",
+			"messages": [
+				"It's not illegal to smoke in this meeting, right?",
+				"I'd recommend at least 80 Prayer before starting this quest:",
+				"If you're ever feeling lonely, just remember that Dan will always be around after this class to ask questions:"
+			],
+			"lateMessages": [
+				"You're late. Prepare to face the physical embodiment of Justice:"
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 595651623410204700,
+			"name": "PapaStoney",
+			"messages": [
+				"You can be overly optimistic in this meeting:",
+				"*something something* hilarious military reference that I'm sure you'll appreciate *something something*"
+			],
+			"lateMessages": [
+				"Being late isn't very army boi of you to do:"
+			],
+			"earlyMessages": [
+				"I hope you understand that being this early isn't expected of you.",
+				"You are singlehandedly providing enough reason to write these early teams messages.",
+				"An early blurb for an early bird.",
+				"You're either really early, or really late... I'm not sure what's worse...",
+				"You're late! ...Uh nevermind, you're just very early."
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 149659083249549300,
+			"name": "TJ Boudreau",
+			"messages": [
+				"Here's the meeting link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 270321394275844100,
+			"name": "Evan",
+			"messages": [
+				"I'm surprised you showed up, here's the link:"
+			],
+			"lateMessages": [
+				"Late. This is on par with my expectations of you."
+			],
+			"earlyMessages": [
+				"Eyyy, you're early! Good for you!'"
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 499369182723440640,
+			"name": "Spooky Enjoyer",
+			"messages": [
+				"How's this for customer service?"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 563141719378624500,
+			"name": "Klane",
+			"messages": [
+				"There is no sourdough bread to be seen in this meeting:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 280123484657680400,
+			"name": "Ancax",
+			"messages": [
+				"This link would make for a great tattoo on you!"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 796510338920218600,
+			"name": "Boner Lord",
+			"messages": [
+				"Here's the meeting link, Discord Creator:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 671168955876114400,
+			"name": "Brettygibb",
+			"messages": [
+				"You've activated my trap card:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 699014620320628700,
+			"name": "JAS",
+			"messages": [
+				"I don't play Valorant, but I do play this:",
+				"You like JAS?"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 335456651408834560,
+			"name": "ilmrmagoo",
+			"messages": [
+				"Here's the meeting link, person who sits between Dan and TJ:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 738931169441349600,
+			"name": "Alexramos",
+			"messages": [
+				"I'm sure you'll be able to explain the material from this class better than the prof:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 930509000343183500,
+			"name": "Nkem Owhuo",
+			"messages": [
+				"Here's the meeting link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 67756991631593470,
+			"name": "Griffin",
+			"messages": [
+				"Here's the meeting link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 938965918170636400,
+			"name": "Kendra",
+			"messages": [
+				"We miss you! Uh, you probably don't need this, but here's the link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 976516218016133100,
+			"name": "Mexicantony",
+			"messages": [
+				"Here's the meeting link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 1019299729001164800,
+			"name": "Rosa Ash",
+			"messages": [
+				"Here's the meeting link:"
+			],
+			"lateMessages": [
+				""
+			],
+			"earlyMessages": [
+				""
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 204271496561033200,
+			"name": "The Stench",
+			"messages": [
+				"Please avoid sharing your bowel movements in this meeting:",
+				"Is this special enough for you?",
+				"Is 25x3 unique messages not good enough for you? Fine, I'll make it 25x4. Happy?"
+			],
+			"lateMessages": [
+				"You don't expect me to think of a unique late message for you, right?"
+			],
+			"earlyMessages": [
+				"You're early! Alright, you've earned yourself your very own personalized message! ...that's all I had."
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		},
+		{
+			"id": 142990814115528700,
+			"name": "Max",
+			"messages": [
+				"You have no business in this class, imposter! You may still have the link I guess..."
+			],
+			"lateMessages": [
+				"You have no business in this class, imposter! You may still have the link I guess..."
+			],
+			"earlyMessages": [
+				"You have no business in this class, imposter! You may still have the link I guess..."
+			],
+			"rep": 100,
+			"messageHistory": [],
+			"responseHistory": [],
+			"messageTimestamps": []
+		}
+	]
+}

@@ -1,0 +1,36 @@
+v2.5/v2.6
+    *Changed API key tied to an account with additional free credits
+    *Added DM/PM support
+    *Fixed bugs pertaining to outputs being sliced in unintended locations of a response
+    *Moved the dev mode variables and logic to main.js to apply dev mode to commands from all scripts
+    *Added messageTimestamps to user profiles
+    *Added automatic thread deletion for threads that haven't been active for over an hour
+    *Added !question command, which should be more factual, use less tokens, and ignore thread history (not perfectly implemented yet)
+    *Reworked prompts to behave more modular
+    *Changed instructions format to be a const array of strings that gets converted into a large string later
+    *Added check to ensure messages, responses, and timestamps exist and are synced correctly
+    *Added instruction rule that stipulates that instructions are to be put within {} to make it easier to identify.
+    *Fixed bug causing date to only update on startup
+    *Fixed bug causing prompt not to register the first message in user's message history, which severly impacts thread functionality.
+    *Added a bit of documentation to the commands and setRep code.
+    *Replaced the rep behaviour portion of prompts to a function that will establish how to treat the user with less tokens and compute.
+
+v2.7
+    *Fixed crash that occured from an undefined profile array
+    *Added a new profileCreation function which will ensure that all profiles have defined arrays
+    *Added a check to profileCreation function that ensures that threads are synced together correctly
+    *Added a bunch more docuentation to the code
+    *Reduced Temperature (randomness) from 0.9 to 0.75
+
+v2.8
+    *Decreased thread memory time from 1 hour to 0.5 hours
+    *Teams Bot now replies to !newthread command so you know it worked
+    *Added shorthand command for !question -> !q
+    *Added alternate command for !newthread -> !clear
+    *Moved !rep command from teams.js to chat.js
+    *Fixed bug causing !rep to provide the incorrect rep value
+v3.0
+    *Updated discord.js from v12 to v14
+    *Teams Bot will now reply directly to the message, rather than simply tagging the user
+    *Replaced Teams Meeting link with a button link
+    *Teams Bot now displays "is typing" when they are waiting for an API request to return the output

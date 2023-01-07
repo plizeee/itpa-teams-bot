@@ -1,0 +1,16 @@
+{
+  "name": "ltpa-teams-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Pliz",
+  "license": "ISC",
+  "dependencies": {
+    "chatgpt": "^0.4.2",
+    "discord.js": "^14.7.1",
+    "openai": "^3.1.0"
+  }
+}
