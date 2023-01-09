@@ -2,20 +2,20 @@
     "courses":
     [
         {
-            "name": "Introduction to Programming",
+            "name": "Introduction to SQL",
             "days": [ "Monday", "Wednesday" ],
             "startTimes": [ 930, 930 ],
             "endTimes": [ 1120, 1120 ],
             "isOnline": [ true, false ],
-            "link": "https://bit.ly/3SM6Kjk"
+            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MzZjODljMTItYWE5NS00MzkyLTljOWEtNDdhMWRmNTNjMmUx%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d"
         },
         {
-            "name": "User Interface Design",
-            "days": [ "Monday" ],
-            "startTimes": [ 1330 ],
-            "endTimes": [ 1520 ],
-            "isOnline": [ true ],
-            "link": "https://bit.ly/3zmmPVY"
+            "name": "Object Oriented Analysis and Design",
+            "days": [ "Monday", "Wednesday" ],
+            "startTimes": [ 1330, 1330 ],
+            "endTimes": [ 1520, 1520 ],
+            "isOnline": [ true, false ],
+            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_NWJhMjkwNjUtYTI3My00MmQ1LWJjZDgtNTI0Mzk3ZjI2YjFi%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%22a84b1917-a87a-4eb1-a3d1-c16978a5c731%22%7d"
         },
         {
             "name": "Project Management",
@@ -26,52 +26,36 @@
             "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ODMwODBhMzktODQxYS00MjBjLWIzZTItYWU0MzM4MzlmMzhi%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%222ec0014d-5ad7-4b8e-a6ac-c0f4f8f8ba0d%22%7d"
         },
         {
-            "name": "Responsive Web Design",
-            "days": [ "Tuesday", "Friday" ],
-            "startTimes": [ 1330, 1330 ],
-            "endTimes": [ 1520, 1520 ],
-            "isOnline": [ false, true ],
-            "link": "https://bit.ly/3frYmrJ"
-        },
-        {
-            "name": "Computer Math and Statistics",
-            "days": [ "Tuesday" ],
-            "startTimes": [ 1130 ],
-            "endTimes": [ 1220 ],
-            "isOnline": [ false ],
-            "link": "https://bit.ly/3gOlK34"
-        },
-        {
-            "name": "Database Design",
-            "days": [ "Tuesday" ],
-            "startTimes": [ 930 ],
-            "endTimes": [ 1120 ],
-            "isOnline": [ false ],
-            "link": ""
-        },
-        {
-        "name": "Applied Writing Skills",
-        "days": [ "Thursday" ],
-        "startTimes": [ 1330 ],
-        "endTimes": [ 1520 ],
-        "isOnline": [ true ],
-        "link": "https://bit.ly/3T2xxrU"
-        },
-        {
-          "name": "Community Service Orientation",
-          "days": [ "Thursday" ],
-          "startTimes": [ 1130 ],
-          "endTimes": [ 1220 ],
-          "isOnline": [false],
-          "link": ""
-        },
-        {
             "name": "Quality Assurance Testing",
             "days": [ "Friday" ],
             "startTimes": [ 930 ],
             "endTimes": [ 1120 ],
             "isOnline": [ true ],
             "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ODdlM2M5YTgtMzI2Ni00MDIwLThiNjktYjMxMTQ5NmI2YmRh%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d"
+        },
+        {
+            "name": "Object Oriented Programming",
+            "days": [ "Tuesday", "Thursday" ],
+            "startTimes": [ 930, 1330 ],
+            "endTimes": [ 1120, 1520 ],
+            "isOnline": [ false, false ],
+            "link": ""
+        },
+        {
+            "name": "Hardware Components and Set Up",
+            "days": [ "Tuesday" ],
+            "startTimes": [ 1330 ],
+            "endTimes": [ 1520 ],
+            "isOnline": [ false ],
+            "link": ""
+        },
+        {
+            "name": "JavaScript Programming",
+            "days": [ "Thursday" ],
+            "startTimes": [ 930 ],
+            "endTimes": [ 1120 ],
+            "isOnline": [ false ],
+            "link": ""
         }
     ]
 }
