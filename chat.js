@@ -187,7 +187,7 @@ function chatCommand(msg){
         "You are very good at providing code and examples when asked to do so.",
         "You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]",
         "Do not introduce yourself unless asked to",
-        "Format all code between backticks (```)",
+        "Put three bacticks around any code (```)",
     ];
 
     const instructions = mergeInstructions(chatInstructions);
