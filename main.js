@@ -80,9 +80,9 @@ client.on("messageCreate", async msg => {
         if (teamsCommands.checkTeamsCommand(msg)) {
             return;
         }
-        else if (rollsCommands.checkRollsCommand(msg)) {
+        /*else if (rollsCommands.checkRollsCommand(msg)) {
             return;
-        }
+        }*/
         else if (mathCommands.checkMathCommand(msg)) {
             //resetBot(msg);
             return;
