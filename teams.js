@@ -38,46 +38,63 @@ module.exports = {
     checkTeamsCommand: function (msg) {
         let command = msg.content.toUpperCase(), found = false;
 
-        switch (command) {
-            case "!TEAMS": case "!T": 
-                found = true;
-                teamsCommand(msg);
-                break;
-            case "!HELP":
-                found = true;
-                helpCommand(msg);
-                break;
-            case "YOU PASS THE LINK":
-                found = true;
-                youPassTheLinkCommand(msg);
-                break;
-            case "GOOD BOT":
-                found = true;
-                goodBotCommand(msg);
-                break;
-            case "BAD BOT":
-                found = true;
-                badBotCommand(msg);
-                break;
-            case "PING":
-                found = true;
-                pingCommand(msg);
-                break;
-            case "PONG":
-                found = true;
-                pongCommand(msg);
-                break;
-            case "MARCO":
-                found = true;
-                marcoCommand(msg);
-                break;
+        if(command.startsWith("!TEAMS") || command.startsWith("!T")){
+            found = true;
+            teamsCommand(msg);
         }
-
+        else if(command == "!HELP"){
+            found = true;
+            helpCommand(msg);
+        }
+        else if(command == "YOU PASS THE LINK"){
+            found = true;
+            youPassTheLinkCommand(msg);
+        }
+        else if(command == "GOOD BOT"){
+            found = true;
+            goodBotCommand(msg);
+        }
+        else if(command == "BAD BOT"){
+            found = true;
+            badBotCommand(msg);
+        }
+        else if(command == "PING"){
+            found = true;
+            pingCommand(msg);
+        }
+        else if(command == "PONG"){
+            found = true;
+            pongCommand(msg);
+        }
+        else if(command == "MARCO"){
+            found = true;
+            marcoCommand(msg);
+        }
         return found;
     }
 };
 
-function teamsCommand(msg) {
+function teamsCommand(msg){
+    var message = msg.content.toUpperCase();
+    if(message.includes(" ")){
+        var slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+        var replyMessage = "__**CLASS LIST**__";
+
+        if(slicedMsg == "LIST"){
+            courses["courses"].forEach(course => {
+                replyMessage += "\n" + course.name;
+            });
+        }
+        msg.reply(replyMessage);
+    }
+    else{
+        console.log("teamsLinkCommand");
+        teamsLinkCommand(msg);
+    }
+}
+
+function teamsLinkCommand(msg) {
+
     nextOnlineClassTime = 2400;
     courseIndex = 0;
     d = new Date();
@@ -274,7 +291,6 @@ function getCustomSenderQuote(id) {
                         .setLabel(courses["courses"][courseIndex].name)
                         .setStyle('Link'),
                 );
-
                 message.reply({ content: profileMessage, components: [row] });
             }
             else {

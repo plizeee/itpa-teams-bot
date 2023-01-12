@@ -45,7 +45,7 @@ module.exports = {
             found = true;
             setRepCommand(msg);
         }
-        else if (command.startsWith("!CHAT ") || (msg.channel.type == 1 && !msg.author.bot)) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
+        else if (command.startsWith("!CHAT ") || (msg.channel.type == 1 && !msg.author.bot && !command.startsWith("!"))) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
             found = true;
             chatCommand(msg);
         }
