@@ -61,6 +61,17 @@ function repCommand(msg) {
     });
 }
 
+//This will replace whatever is inside profiles.json with the value of the profiles variable
+function syncProfilesToFile(){
+    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("JSON saved to ./profiles.json");
+        }
+    });
+}
+
 function setRepCommand(msg){
     console.log("setrep command started.");
     if(msg.author.id == 142472661841346560){ //only allow me to use this command
@@ -74,13 +85,7 @@ function setRepCommand(msg){
             profiles["users"].forEach(profile => {
                 if(target == profile.name.toUpperCase()){ //removing case-sensitivity from the username
                     profile.rep = parseInt(repValue);
-                    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            console.log("JSON saved to ./profiles.json");
-                        }
-                    });
+                    syncProfilesToFile();
                     console.log("set user "  +  target + "'s rep to " + repValue);
                 }
             });
@@ -95,13 +100,7 @@ function setAllRepCommand(msg) {
             if (!isNaN(slicedMsg)) { //wanna make sure the remaining portion is a number to set rep to
                 profile.rep = parseInt(slicedMsg); //parsing to int because it was behaving as a string
     
-                fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log("JSON saved to ./profiles.json");
-                    }
-                });
+                syncProfilesToFile();
                 console.log("set all users rep to " + slicedMsg + " !");
             }
         });
@@ -115,13 +114,8 @@ async function newThreadCommand(msg) {
             profile.responseHistory = [];
             profile.messageTimestamps = [];
             //console.log(profiles);
-            fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log("JSON saved to ./profiles.json");
-                }
-            });
+            
+            syncProfilesToFile();
             console.log("Cleared user's thread history!");
             msg.reply({ content: "You have cleared your thread's history!", allowedMentions: { repliedUser: false } });
         }
@@ -219,13 +213,6 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
 
     var slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
 
-    //check if the message doesn't starts with "!"
-    //this is specifically for DMs, because you don't need to type "!chat " before every message
-    //but we still need to check in case the user wants to use other commands
-    if (!message.startsWith("!")) { 
-        slicedMsg = message;
-    }
-
     if (postThreadInstructions != "") {
         postThreadInstructions = "{" + postThreadInstructions + "}";
     }
@@ -284,16 +271,16 @@ function getThread(msg) {
     return "";
 }
 
+//We want to reformat the chat history information stored in the user's profile
+//into a more chat-like format
 function createThreadFromHistory(profile) {
     var strOutput = "";
 
     const latestMessageDate = new Date(profile.messageTimestamps[0]);
 
     //sometimes latestMessageDate returns as NaN, so I'm setting a default value of 0 in that event
-    //using milliseconds since (idk the precise date) because it felt like a simple way to calculate the difference in time, without converting days and such
+    //using milliseconds since January 1, 1970, because it felt like a simple way to calculate the difference in time, without converting days and such
     const timeSinceLastMessage = isNaN(latestMessageDate.getTime()) ? 0 : date.getTime() - latestMessageDate.getTime();
-
-    console.log("time: " + date.getTime() + " | latestMessageDate: " + latestMessageDate.getTime() + " | timeSinceLastMessage: " + timeSinceLastMessage);
 
     if (timeSinceLastMessage < 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
         for (var i = profile.messageHistory.length - 1; i >= 0; i--) {
@@ -305,18 +292,12 @@ function createThreadFromHistory(profile) {
             }
         }
     }
-    else {
+    else { //we want to clear the user's message history if they haven't said anything within a specified time
         profile.messageHistory = [];
         profile.responseHistory = [];
         profile.messageTimestamps = [];
 
-        fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log("JSON saved to ./profiles.json");
-            }
-        });
+        syncProfilesToFile();
         console.log("Cleared expired thread");
     }
 
@@ -350,13 +331,7 @@ function addRep(id, numRep) {
             profile.rep += numRep; //adding designated rep to the appropriate profile
             
             //save changes to file
-            fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log("JSON saved to ./profiles.json");
-                }
-            });
+            syncProfilesToFile();
             console.log("Rep is now: " + profile.rep);
         }
     });
@@ -389,13 +364,7 @@ function profileCreation(){
     }
 
     //Saving changes to file
-    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("JSON saved to ./profiles.json");
-        }
-    });
+    syncProfilesToFile();
 }
 
 function addPromptHistory(id, msgContent, replyContent) {
@@ -415,14 +384,7 @@ function addPromptHistory(id, msgContent, replyContent) {
             }
             
             //saving our changes to file
-            fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log("JSON saved to ./profiles.json");
-                }
-            });
-            console.log("Added new item to profile chat history");
+            syncProfilesToFile();
         }
     });
 }
