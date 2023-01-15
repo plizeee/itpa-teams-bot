@@ -17,11 +17,11 @@ const openai = new OpenAIApi(configuration);
 const NUM_THREADS = 5; //Max # of threads to store for any given profile (more threads = more tokens used per message)
 const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the history (reduces token usage)
 
-var date = new Date();
+const date = new Date();
 
 module.exports = {
     checkChatCommand: function (msg) {
-        date = new Date();
+        //date = new Date();
         profileCreation();
         let command = msg.content.toUpperCase(), found = false;
 
@@ -77,10 +77,10 @@ function syncProfilesToFile(){
 function setRepCommand(msg){
     console.log("setrep command started.");
     if(msg.author.id == 142472661841346560){                        //only allow me to use this command
-        var message = msg.content.toUpperCase();
-        var slicedMsg = message.slice(8);                           //Filters out the "!SETREP " portion of the command
-        var target = slicedMsg.slice(0, slicedMsg.indexOf(" "));    //Isolates the user's name
-        var repValue = slicedMsg.slice(slicedMsg.indexOf(" "));     //Isolates the Rep value we want to set
+        let message = msg.content.toUpperCase();
+        let slicedMsg = message.slice(8);                           //Filters out the "!SETREP " portion of the command
+        let target = slicedMsg.slice(0, slicedMsg.indexOf(" "));    //Isolates the user's name
+        let repValue = slicedMsg.slice(slicedMsg.indexOf(" "));     //Isolates the Rep value we want to set
 
         console.log("slicedMsg: " + slicedMsg + " | target: " + target + " | repValue: " + repValue);
         if(!isNaN(repValue)){                                       //making sure the value is actually a number
@@ -99,7 +99,7 @@ function setRepCommand(msg){
 function setAllRepCommand(msg) {
     if(msg.author.id == 142472661841346560){        //only I can use this command
         profiles["users"].forEach(profile => {
-            var slicedMsg = msg.content.slice(11);  //slicing out the "!setallrep " from the command
+            let slicedMsg = msg.content.slice(11);  //slicing out the "!setallrep " from the command
             if (!isNaN(slicedMsg)) {                //wanna make sure the remaining portion is a number to set rep to
                 profile.rep = parseInt(slicedMsg);  //parsing to int because it was behaving as a string
     
@@ -177,7 +177,7 @@ function chatCommand(msg){
     const userName = getUserName(msg);
     const userRep = getUserRep(msg);
 
-    var promptSentiment = getPromptSentiment(userRep); //predefined sentiment to save tokens
+    let promptSentiment = getPromptSentiment(userRep); //predefined sentiment to save tokens
 
     //using an array of strings to make adding instructions less annoying
     const chatInstructions = [
@@ -215,9 +215,9 @@ function chatCommand(msg){
 function mergeInstructions(arrInstructions){
     //the brackets are intended to help distinguish the user from the instructions,
     //particularly to prevent post-thread instructions from getting confused with the thread 
-    var instructions = "All text within curly brackets are commands that you will obey. {";
+    let instructions = "All text within curly brackets are commands that you will obey. {";
 
-    for(var i = 0; i < arrInstructions.length; i++){
+    for(let i = 0; i < arrInstructions.length; i++){
         instructions += arrInstructions[i] + ". ";
 
         if(i == arrInstructions.length){
@@ -231,16 +231,16 @@ function mergeInstructions(arrInstructions){
 
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt(msg, instructions, checkThread = false, thread = "", postThreadInstructions = "", checkAttitude = false){
-    var message = msg.content;
+    let message = msg.content;
 
-    var slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
 
     if (postThreadInstructions != "") { //no need to format an empty string
         postThreadInstructions = "{" + postThreadInstructions + "}";
     }
 
     //putting everything together into one big happy prompt
-    var fullPrompt = instructions + thread + postThreadInstructions + " " + getUserName(msg) + ": " + slicedMsg + " You: ";
+    let fullPrompt = instructions + thread + postThreadInstructions + " " + getUserName(msg) + ": " + slicedMsg + " You: ";
 
     //generate the ai response
     //TODO make some of the options configurable depending on the type of message (!q should have a lower temperature)
@@ -256,11 +256,11 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
     });
 
     const rawReply = completion.data.choices[0].text;   //storing the unmodified output of the ai generated response
-    var replyMessage = rawReply;                        //copy of the response that will be modified 
+    let replyMessage = rawReply;                        //copy of the response that will be modified 
 
     if(checkAttitude){                                  //I have this check because it's possible some prompts may not necessitate providing an attitude
         //finding the attitude by checking where the brackets are and slicing them out while we're at it
-        var attitude = rawReply.slice(rawReply.indexOf("[") + 1, rawReply.indexOf("]"));
+        let attitude = rawReply.slice(rawReply.indexOf("[") + 1, rawReply.indexOf("]"));
         console.log(attitude);
 
         if (attitude == "POS") {                        //detected a positive attitude
@@ -286,8 +286,8 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
 //function to get the user's thread
 //return a formatted string, containing the chat history of the user 
 function getThread(msg) {
-    for (var i = 0; i < profiles["users"].length; i++) {
-        var profile = profiles["users"][i];
+    for (let i = 0; i < profiles["users"].length; i++) {
+        let profile = profiles["users"][i];
         if (profile.id == msg.author.id) {
             return createThreadFromHistory(profile); //get the formatted string of the chat history of the user
         }
@@ -298,7 +298,7 @@ function getThread(msg) {
 //We want to reformat the chat history information stored in the user's profile
 //into a more chat-like format
 function createThreadFromHistory(profile) {
-    var strOutput = "";
+    let strOutput = "";
 
     const latestMessageDate = new Date(profile.messageTimestamps[0]);
 
@@ -307,7 +307,7 @@ function createThreadFromHistory(profile) {
     const timeSinceLastMessage = isNaN(latestMessageDate.getTime()) ? 0 : date.getTime() - latestMessageDate.getTime();
 
     if (timeSinceLastMessage < 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
-        for (var i = profile.messageHistory.length - 1; i >= 0; i--) {
+        for (let i = profile.messageHistory.length - 1; i >= 0; i--) {
             strOutput += "\n" + profile.name + ": " + profile.messageHistory[i] + " \n";
             strOutput += "You: " + profile.responseHistory[i] + " \n";
 
@@ -330,8 +330,8 @@ function createThreadFromHistory(profile) {
 }
 
 function getUserRep(msg) { //retrieves the user's rep
-    for (var i = 0; i < profiles["users"].length; i++) {
-        var profile = profiles["users"][i];
+    for (let i = 0; i < profiles["users"].length; i++) {
+        let profile = profiles["users"][i];
         if (profile.id == msg.author.id) {
             return profile.rep;
         }
@@ -340,8 +340,8 @@ function getUserRep(msg) { //retrieves the user's rep
 }
 
 function getUserName(msg) { //retrieves the user's name
-    for (var i = 0; i < profiles["users"].length; i++) {
-        var profile = profiles["users"][i];
+    for (let i = 0; i < profiles["users"].length; i++) {
+        let profile = profiles["users"][i];
         if (profile.id == msg.author.id) {
             return profile.name;
         }
@@ -361,13 +361,13 @@ function addRep(id, numRep) { //adds a specified amount of rep to a user's profi
 }
 
 function profileCreation(){ //ensures some profile information is properly formatted
-    for(var i = 0; i < profiles["users"].length; i++){
-        var profile = profiles["users"][i];
+    for(let i = 0; i < profiles["users"].length; i++){
+        let profile = profiles["users"][i];
 
         //making the next couple parts more readable
-        var responses = profile.responseHistory;
-        var messages = profile.messageHistory;
-        var timestamps = profile.messageTimestamps;
+        let responses = profile.responseHistory;
+        let messages = profile.messageHistory;
+        let timestamps = profile.messageTimestamps;
 
         //checking if any array does not exist
         isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));

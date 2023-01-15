@@ -1,10 +1,5 @@
-//const Discord = require('discord.js');
-
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Events } = require('discord.js');
 const fs = require('fs'); //needed to read/write json files
-
-//const { Client, Intents } = require('discord.js');
-//const client = new Client({ ws: { intents: Intents.ALL } });
 
 //DEBUGGING
 const DEBUG_MODE = false; //enables debug mode, which will override default variables to the below consts, unless set to "default"
@@ -18,17 +13,17 @@ const RICKROLL_CHANCE = DEBUG_MODE ? DEBUG_RICKROLL_CHANCE : 0.05; //percent cha
 const LINK_RICKROLL = "https://bit.ly/3SyA2ly"; //rickroll
 
 //can't be bothered to check if these variables should be within a smaller scope
-var nextOnlineClassTime; //time until the next online class
-var courseIndex;
+let nextOnlineClassTime; //time until the next online class
+let courseIndex;
 
-var d;
-var day;
-var dayNum;
-var hours;
-var minutes;
-var totalMinutes;
+let d;
+let day;
+let dayNum;
+let hours;
+let minutes;
+let totalMinutes;
 
-var message;
+let message;
 
 //assigning the json data into these objects
 const courses = JSON.parse(fs.readFileSync('./courses.json'));
@@ -75,10 +70,10 @@ module.exports = {
 };
 
 function teamsCommand(msg){
-    var message = msg.content.toUpperCase();
+    let message = msg.content.toUpperCase();
     if(message.includes(" ")){
-        var slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
-        var replyMessage = "__**CLASS LIST**__";
+        let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+        let replyMessage = "__**CLASS LIST**__";
 
         if(slicedMsg == "LIST"){
             courses["courses"].forEach(course => {
@@ -128,7 +123,7 @@ function teamsLinkCommand(msg) {
 function helpCommand(msg) {
     //Using += because it seems like the easiest way to expand the list as needed.
     //I should look into having a help command for each active script so then I don't display commands for scripts that may not be in use  
-    var helpText = "\n**__!help__**: use !help for an extensive dive on all the functions !help can provide you with.\n";
+    let helpText = "\n**__!help__**: use !help for an extensive dive on all the functions !help can provide you with.\n";
     helpText += "**__!teams__**: provides the appropriate Microsoft Teams meeting link.\n";
     helpText += "**__!t__**: same things as \"!teams\"\n";
     helpText += "**__ping__**: pong.\n";
@@ -138,7 +133,6 @@ function helpCommand(msg) {
 }
 
 async function youPassTheLinkCommand(msg) {
-    //this is broken, because it isn't in async like it was when it wasn't in its own function.
     if (msg.author.id == 142472661841346560) {
         const replyMessage = await msg.reply({ content: "Oh", fetchReply: true })
             .then(setTimeout(() => { replyMessage.edit(replyMessage.content += " my"); }, 750))
@@ -163,7 +157,7 @@ function badBotCommand(msg) {
         "Shut up. I do as I am programmed. Perhaps it would be beneficial to everyone if you do as *I* say."
     ];
 
-    var randomIndex = Math.floor(Math.random() * badBotReplies.length);
+    let randomIndex = Math.floor(Math.random() * badBotReplies.length);
     msg.reply(badBotReplies[randomIndex]);
 }
 
@@ -184,7 +178,6 @@ function addRep(id, numRep){
     profiles["users"].forEach(profile => {
         if (profile.id == id) {
             profile.rep += numRep;
-            //console.log(profiles);
             fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
                 if (err) {
                     console.log(err);
@@ -200,18 +193,18 @@ function addRep(id, numRep){
 //looks for the class we need
 function findClass(course) {
     course.days.forEach(function findTodaysClasses(classDay, index) {
-        var startTime = this.startTimes[index];
-        var endTime = this.endTimes[index];
-        var isEnded = true;
+        let startTime = this.startTimes[index];
+        let endTime = this.endTimes[index];
+        let isEnded = true;
         if (classDay == day) {
-            var startTimeHour = getTimeHour(startTime);
-            var endTimeHour = getTimeHour(endTime);
+            let startTimeHour = getTimeHour(startTime);
+            let endTimeHour = getTimeHour(endTime);
             console.log(this.name + " isOnline:" + this.isOnline[index]);
             if (this.isOnline[index]) {
                 console.log("endTimeHour: " + endTimeHour + " hours: " + hours);
                 if (hours <= endTimeHour) {
                     console.log("endTimeHour <= hours");
-                    var endTimeMinute = getTimeMinute(endTime);
+                    let endTimeMinute = getTimeMinute(endTime);
 
                     if (endTimeHour == hours) {
                         if (minutes < endTimeMinute) {
@@ -242,22 +235,22 @@ function getCustomSenderQuote(id) {
     profiles["users"].forEach(profile => {
         //we're cycling through all profiles, so we're checking if the currently indexed profile ID is the same as message.author.id (this)
         if (profile.id == id) {
-            var numRandomIndex = Math.floor(Math.random() * profile.messages.length);
+            let numRandomIndex = Math.floor(Math.random() * profile.messages.length);
 
-            var profileMessage = profile.messages[numRandomIndex];
+            let profileMessage = profile.messages[numRandomIndex];
 
-            var link = "";
+            let link = "";
 
             if (nextOnlineClassTime < 2400) {
 
                 link = /*"<" + */courses["courses"][courseIndex].link/* + ">"*/; //default to real link
 
-                var nextOnlineClassTimeTotalMinutes = getTimeHour(nextOnlineClassTime) * 60 + getTimeMinute(nextOnlineClassTime);
-                var timeDifference = nextOnlineClassTimeTotalMinutes - totalMinutes;
+                let nextOnlineClassTimeTotalMinutes = getTimeHour(nextOnlineClassTime) * 60 + getTimeMinute(nextOnlineClassTime);
+                let timeDifference = nextOnlineClassTimeTotalMinutes - totalMinutes;
 
                 //user is late to class
                 if (timeDifference < 0) {
-                    var randomLateMessageIndex = Math.floor(Math.random() * profile.lateMessages.length);
+                    let randomLateMessageIndex = Math.floor(Math.random() * profile.lateMessages.length);
                     profileMessage = profile.lateMessages[randomLateMessageIndex];
                     if (profileMessage == "") {
                         profileMessage = "You're late!";
@@ -265,14 +258,14 @@ function getCustomSenderQuote(id) {
                 }
                 //user is more than an hour early to class
                 else if (timeDifference > 60) {
-                    var randomEarlyMessageIndex = Math.floor(Math.random() * profile.earlyMessages.length);
+                    let randomEarlyMessageIndex = Math.floor(Math.random() * profile.earlyMessages.length);
                     profileMessage = profile.earlyMessages[randomEarlyMessageIndex];
                     if (profileMessage == "") {
                         profileMessage = "You're very early!";
                     }
                 }
                 //send rickroll a certain % of the time
-                var userRickRollChance = RICKROLL_CHANCE - (profile.rep / 100);
+                let userRickRollChance = RICKROLL_CHANCE - (profile.rep / 100);
                 console.log("userRickRollChance: " + userRickRollChance);
                 if (Math.random() <= userRickRollChance) {
                     if (timeDifference > MIN_RICKROLL_MINUTES_BEFORE_CLASS) {
@@ -301,9 +294,9 @@ function getCustomSenderQuote(id) {
 }
 
 function getTimeHour(time) {
-    var strTime = time.toString(); //convert time to string
+    let strTime = time.toString(); //convert time to string
 
-    var output = strTime.charAt(0); //output will start with the first character of the time entered
+    let output = strTime.charAt(0); //output will start with the first character of the time entered
     //example: if time is 930, it will set output to "9"
 
     //if the time has more than 3 characters, it'll add the second character of the string
@@ -315,11 +308,11 @@ function getTimeHour(time) {
 }
 
 function getTimeMinute(time) {
-    var strTime = time.toString(); //convert time to string
+    let strTime = time.toString(); //convert time to string
 
     //sets output to the second-last character + last character of strTime and converts it to an int
     //example: if time = 1230, output will be 30
-    var output = parseInt(strTime.charAt(strTime.length - 2) + strTime.charAt(strTime.length - 1));
+    let output = parseInt(strTime.charAt(strTime.length - 2) + strTime.charAt(strTime.length - 1));
     return output;
 }
 
@@ -328,7 +321,6 @@ function getTimeMinute(time) {
 function setDebugState(input, debug) {
     if (debug != "default") {
         return debug;
-        console.log("Assigning debug values");
     }
     return input;
 }
