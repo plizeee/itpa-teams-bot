@@ -19,6 +19,7 @@ const client = new Client({
     ],
     presence: {
         activities: [{
+            //TODO look up a dictionary and randomly generate 1-2 words consisting of the all the letters of 'Teams Bot'
             name: "You can't spell 'Teams Bot' without 'Stab Me'",
             type: 0
         }],
@@ -76,18 +77,20 @@ client.on('ready', () => {
 client.on("messageCreate", async msg => {
     let command = msg.content;
     //console.log("msg.channel.name: " + msg.channel.name);
-    if (checkDevMode(msg)) {
-        if (teamsCommands.checkTeamsCommand(msg)) {
+    let mode = checkDevMode(msg);
+    if (mode) {
+        
+        if (teamsCommands.checkTeamsCommand(msg, mode)) {
             return;
         }
         /*else if (rollsCommands.checkRollsCommand(msg)) {
             return;
         }*/
-        else if (mathCommands.checkMathCommand(msg)) {
+        else if (mathCommands.checkMathCommand(msg, mode)) {
             //resetBot(msg);
             return;
         }
-        else if (chatCommands.checkChatCommand(msg)) {
+        else if (chatCommands.checkChatCommand(msg, mode)) {
             return;
         }
     }
