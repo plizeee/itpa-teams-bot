@@ -198,17 +198,10 @@ function chatCommand(msg){
 
         //TODO tweak this because it still provides code for questions that don't ask for it
         "You are very good at providing code and examples when asked to do so.",
-<<<<<<< HEAD
-        "You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]",
-        "Do not introduce yourself unless asked to",
-        "Put three bacticks around any code (```)",
-    ];
-=======
         
         //this instruction is flawed because its perception of a response is influenced by the user's 
         //current rep, causing a bias feedback loop, particularly with messages that should be considered neutral
         "You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]", 
->>>>>>> dev
 
         "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
         "Put three bacticks around any code (```)",                 //formatting code responses makes code much easier to read
