@@ -52,6 +52,14 @@ module.exports = {
         return found;
     }
 };
+// a function to return an array of any keywords found in the prompt
+function checkKeywords(prompt){
+    let keywords = ["you","me","i",""]
+    let output = []
+    
+    for (i of keywords){if (prompt.toLowerCase().includes(i.toLowerCase())){output += i}}
+    return output
+}
 
 function repCommand(msg) {
     profiles["users"].forEach(profile => {
