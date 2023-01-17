@@ -19,9 +19,12 @@ const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the h
 
 const date = new Date();
 
+let DEV_MODE;
+
 module.exports = {
-    checkChatCommand: function (msg) {
+    checkChatCommand: function (msg, mode) {
         //date = new Date();
+        DEV_MODE = mode;
         profileCreation();
         let command = msg.content.toUpperCase(), found = false;
 
@@ -64,13 +67,15 @@ function repCommand(msg) {
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
-    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("JSON saved to ./profiles.json"); //successful response
-        }
-    });
+    if(!DEV_MODE){ //If I'm in dev mode, I don't want to write anything to profiles.json
+        fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("JSON saved to ./profiles.json"); //successful response
+            }
+        });
+    }
 }
 
 //command intended just for me that lets me set the rep of any user
