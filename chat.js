@@ -17,13 +17,17 @@ const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the h
 
 const date = new Date();
 
-let DEV_MODE;
+let IS_MASTER;
 
 module.exports = {
     checkChatCommand: function (msg, mode) {
         //date = new Date();
-        DEV_MODE = mode;
-        profileCreation();
+        IS_MASTER = mode;
+
+        if(!profileCreation(msg)){
+            syncProfileMessages();
+        }
+
         let command = msg.content.toUpperCase(), found = false;
 
         if (command.startsWith("!QUESTION ") || command.startsWith("!Q ")) { //Ignores Rep and thread history, provides more factual answers.
@@ -73,7 +77,7 @@ function repCommand(msg) {
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
-    if(!DEV_MODE){ //If I'm in dev mode, I don't want to write anything to profiles.json
+    if(IS_MASTER){ //If I'm in dev mode, I don't want to write anything to profiles.json
         fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
             if (err) {
                 console.log(err);
@@ -81,6 +85,9 @@ function syncProfilesToFile(){
                 console.log("JSON saved to ./profiles.json"); //successful response
             }
         });
+    }
+    else{
+        console.log("Dev Mode is currently active. Message not stored in file.");
     }
 }
 
@@ -371,7 +378,33 @@ function addRep(id, numRep) { //adds a specified amount of rep to a user's profi
     });
 }
 
-function profileCreation(){ //ensures some profile information is properly formatted
+function profileCreation(msg){ //generates a profile for users that don't have one
+    for(let i = 0; i < profiles["users"].length; i++){
+        let profile = profiles["users"][i];
+
+        if(profile.id == msg.author.id || msg.author.bot){
+            return false;
+        }
+    }
+
+    profiles["users"].push( //setting up all the profile stuff
+        {
+            "id": msg.author.id,
+            "name": msg.author.username,
+            "messages": [],
+            "lateMessages": [],
+            "earlyMessages": [],
+            "rep": 0,
+            "messageHistory": [],
+            "responseHistory": [],
+            "messageTimestamps": []
+        }
+    );
+    syncProfilesToFile(); //Saving changes to file
+    return true;
+}
+
+function syncProfileMessages(){ //ensures some profile information is properly formatted
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
 
@@ -381,7 +414,7 @@ function profileCreation(){ //ensures some profile information is properly forma
         let timestamps = profile.messageTimestamps;
 
         //checking if any array does not exist
-        isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));
+        let isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));
         
         //checking if thread lengths are in sync with one another
         if(!isThreadArrayMissing){

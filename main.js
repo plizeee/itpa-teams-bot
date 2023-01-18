@@ -34,6 +34,16 @@ const client = new Client({
     }
 });
 
+const fileName = './profiles.json';
+
+if (!fs.existsSync(fileName)) {
+    console.log(`The file ${fileName} does not exist, creating a new one`);
+    const defaultValue = {
+        "users": []
+    };
+    fs.writeFileSync(fileName, JSON.stringify(defaultValue));
+}
+
 // Handler:
 client.prefix_commands = new Collection();
 client.slash_commands = new Collection();
@@ -47,24 +57,17 @@ const rollsCommands = require('./rolls.js');
 const mathCommands = require('./math.js');
 const chatCommands = require('./chat.js');
 
-function checkDevMode(msg) {
+//ensures that authorized users can use dev mode
+//and prevents users from sending messages on both dev and master
+function isUserAuthorized(msg) {
     if (DEV_MODE) {
         if (msg.author.id == 142472661841346560) {
-            if (!IS_MASTER) {
-                //chatCommand(msg);
-                return true;
-            }
+            if (!IS_MASTER) { return true; }
         }
-        else if (IS_MASTER) {
-            //chatCommand(msg);
-            return true;
-        }
+        else if (IS_MASTER) { return true; }
     }
     else {
-        if (IS_MASTER) {
-            //chatCommand(msg);
-            return true;
-        }
+        if (IS_MASTER) { return true; }
     }
     return false;
 }
@@ -77,22 +80,18 @@ client.on('ready', () => {
 
 //executes every time someone sends a message
 client.on("messageCreate", async msg => {
-    let command = msg.content;
-    //console.log("msg.channel.name: " + msg.channel.name);
-    let mode = checkDevMode(msg);
-    if (mode) {
+    if (isUserAuthorized(msg)) {
         
-        if (teamsCommands.checkTeamsCommand(msg, mode)) {
+        if (teamsCommands.checkTeamsCommand(msg, IS_MASTER)) {
             return;
         }
         /*else if (rollsCommands.checkRollsCommand(msg)) {
             return;
         }*/
-        else if (mathCommands.checkMathCommand(msg, mode)) {
-            //resetBot(msg);
+        else if (mathCommands.checkMathCommand(msg, IS_MASTER)) {
             return;
         }
-        else if (chatCommands.checkChatCommand(msg, mode)) {
+        else if (chatCommands.checkChatCommand(msg, IS_MASTER)) {
             return;
         }
     }
