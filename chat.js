@@ -4,15 +4,13 @@ const { Configuration, OpenAIApi } = require("openai");
 const fs = require('fs'); //needed to read/write json files
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
 
+require('dotenv').config();
+
 const configuration = new Configuration({
-    apiKey: "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",
+    apiKey: process.env.OPENAI_API,
 });
-//my api key: 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
-//christa's api key: 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
-//Zach's API key: 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
+
 const openai = new OpenAIApi(configuration);
-// Set your OpenAI API key
-//openai.apiKey = "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";
 
 const NUM_THREADS = 5; //Max # of threads to store for any given profile (more threads = more tokens used per message)
 const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the history (reduces token usage)
