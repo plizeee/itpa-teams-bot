@@ -1,6 +1,13 @@
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 const fs = require('fs'); //needed to read/write json files
 
+require('dotenv').config();
+
+const token = process.env.TOKEN; //secret token
+
+const DEV_MODE = false;
+const IS_MASTER = true;
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -27,8 +34,6 @@ const client = new Client({
     }
 });
 
-const token = 'MTAyMzkyNTk1MDA3NDg0NzMwMw.Gyx9YP.COqIC-qvfBHnbKhVTSMIqCktSKfp3W5rOtpLwE';
-
 // Handler:
 client.prefix_commands = new Collection();
 client.slash_commands = new Collection();
@@ -41,9 +46,6 @@ const teamsCommands = require('./teams.js');
 const rollsCommands = require('./rolls.js');
 const mathCommands = require('./math.js');
 const chatCommands = require('./chat.js');
-
-const DEV_MODE = false;
-const IS_MASTER = true;
 
 function checkDevMode(msg) {
     if (DEV_MODE) {
