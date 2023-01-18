@@ -5,8 +5,8 @@ require('dotenv').config();
 
 const token = process.env.TOKEN; //secret token
 
-const DEV_MODE = true;
-const IS_MASTER = false;
+const DEV_MODE = false;
+const IS_MASTER = true;
 
 const client = new Client({
     intents: [
