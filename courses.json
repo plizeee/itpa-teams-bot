@@ -3,6 +3,7 @@
     [
         {
             "name": "Introduction to SQL",
+            "code": "SQL",
             "days": [ "Monday", "Wednesday" ],
             "startTimes": [ 930, 930 ],
             "endTimes": [ 1120, 1120 ],
@@ -11,6 +12,7 @@
         },
         {
             "name": "Object Oriented Analysis and Design",
+            "code": "OOAD",
             "days": [ "Monday", "Wednesday" ],
             "startTimes": [ 1330, 1330 ],
             "endTimes": [ 1520, 1520 ],
@@ -19,6 +21,7 @@
         },
         {
             "name": "Project Management",
+            "code": "PM",
             "days": [ "Friday" ],
             "startTimes": [ 1330 ],
             "endTimes": [ 1520 ],
@@ -27,6 +30,7 @@
         },
         {
             "name": "Quality Assurance Testing",
+            "code": "QA",
             "days": [ "Friday" ],
             "startTimes": [ 930 ],
             "endTimes": [ 1120 ],
@@ -35,6 +39,7 @@
         },
         {
             "name": "Object Oriented Programming",
+            "code": "OOP",
             "days": [ "Tuesday", "Thursday" ],
             "startTimes": [ 930, 1330 ],
             "endTimes": [ 1120, 1520 ],
@@ -43,6 +48,7 @@
         },
         {
             "name": "Hardware Components and Set Up",
+            "code": "HW",
             "days": [ "Tuesday" ],
             "startTimes": [ 1330 ],
             "endTimes": [ 1520 ],
@@ -51,6 +57,7 @@
         },
         {
             "name": "JavaScript Programming",
+            "code": "JS",
             "days": [ "Thursday" ],
             "startTimes": [ 930 ],
             "endTimes": [ 1120 ],

@@ -78,25 +78,27 @@ function teamsCommand(msg){
         if(slicedMsg == "LIST"){
             replyMessage = "__**CLASS LIST**__";
             courses["courses"].forEach(course => {
-                replyMessage += "\n" + course.name;
+                replyMessage += "\n" + course.name + " [" + course.code + "]";
             });
         }
         else if(slicedMsg.startsWith("LINK ")){
-            let className = slicedMsg.slice(slicedMsg.indexOf(" ") + 1);
-            let link = getLink(className);
+            const course = getCourse(slicedMsg.slice(slicedMsg.indexOf(" ") + 1));
 
             try{
+                const courseName = course.name;
+                const courseLink = course.link != "" ? course.link : "No link found";
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setURL(link)
-                        .setLabel(className) //TODO make this label not all uppercase
+                        .setURL(courseLink)
+                        .setLabel(courseName)
                         .setStyle('Link'),
                 );
                 msg.reply({ content: "Here's the link:", components: [row] });
                 return;
             }
             catch (err){
-                replyMessage = link;
+                replyMessage = "No link found.";
             }
             
             //replyMessage = className + ": " + getLink(className);
@@ -112,17 +114,15 @@ function teamsCommand(msg){
     }
 }
 
-function getLink(name){
+function getCourse(name){
     for(let i = 0; i < courses["courses"].length; i++){
         let course = courses["courses"][i];
-        let className = course.name;
-        if(name.toUpperCase() == className.toUpperCase()){
-            if(course.link != ""){
-                return course.link;
-            }
+        let className = course.name.toUpperCase();
+        let classCode = course.code.toUpperCase();
+        if(name == className || name == classCode){
+            return course;
         }
     }
-    return "No link found.";
 }
 
 function teamsLinkCommand(msg) {
