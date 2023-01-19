@@ -73,12 +73,36 @@ function teamsCommand(msg){
     let message = msg.content.toUpperCase();
     if(message.includes(" ")){
         let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
-        let replyMessage = "__**CLASS LIST**__";
+        let replyMessage= "";
 
         if(slicedMsg == "LIST"){
+            replyMessage = "__**CLASS LIST**__";
             courses["courses"].forEach(course => {
                 replyMessage += "\n" + course.name;
             });
+        }
+        else if(slicedMsg.startsWith("LINK ")){
+            let className = slicedMsg.slice(slicedMsg.indexOf(" ") + 1);
+            let link = getLink(className);
+
+            try{
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setURL(link)
+                        .setLabel(className) //TODO make this label not all uppercase
+                        .setStyle('Link'),
+                );
+                msg.reply({ content: "Here's the link:", components: [row] });
+                return;
+            }
+            catch (err){
+                replyMessage = link;
+            }
+            
+            //replyMessage = className + ": " + getLink(className);
+        }
+        else{
+            replyMessage = "Command not found. Maybe get it right next time.";
         }
         msg.reply(replyMessage);
     }
@@ -86,6 +110,19 @@ function teamsCommand(msg){
         console.log("teamsLinkCommand");
         teamsLinkCommand(msg);
     }
+}
+
+function getLink(name){
+    for(let i = 0; i < courses["courses"].length; i++){
+        let course = courses["courses"][i];
+        let className = course.name;
+        if(name.toUpperCase() == className.toUpperCase()){
+            if(course.link != ""){
+                return course.link;
+            }
+        }
+    }
+    return "No link found.";
 }
 
 function teamsLinkCommand(msg) {
