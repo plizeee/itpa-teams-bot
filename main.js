@@ -53,8 +53,6 @@ client.modals = new Collection();
 client.events = new Collection();
 
 const teamsCommands = require('./teams.js');
-const rollsCommands = require('./rolls.js');
-const mathCommands = require('./math.js');
 const chatCommands = require('./chat.js');
 
 //ensures that authorized users can use dev mode
@@ -83,12 +81,6 @@ client.on("messageCreate", async msg => {
     if (isUserAuthorized(msg)) {
         
         if (teamsCommands.checkTeamsCommand(msg, IS_MASTER)) {
-            return;
-        }
-        /*else if (rollsCommands.checkRollsCommand(msg)) {
-            return;
-        }*/
-        else if (mathCommands.checkMathCommand(msg, IS_MASTER)) {
             return;
         }
         else if (chatCommands.checkChatCommand(msg, IS_MASTER)) {
