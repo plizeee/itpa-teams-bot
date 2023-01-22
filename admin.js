@@ -2,31 +2,39 @@ const fs = require('fs'); //needed to read/write json files
 const config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
 
 module.exports = {
-    checkAdminCommand: function (msg) {
+    checkAdminCommand: function (msg, isMaster) {
         let command = msg.content.toUpperCase(), found = false;
 
         if(command.startsWith("!DEV")){
             found = true;
-            devCommand(msg);
+            devCommand(msg, isMaster);
         }
         else if(command.startsWith("!MASTER")) {
             found = true;
-            masterCommand(msg);
+            masterCommand(msg, isMaster);
         }
         return found;
     }
 };
 
-function devCommand(){
+function devCommand(msg, isMaster){
     config.devMode = true;
-    console.log("Dev Mode Enabled.");
-    syncConfig();
+
+    if(!isMaster){
+        msg.reply("Dev Mode Enabled.");
+        console.log("Dev Mode Enabled.");
+        syncConfig();
+    }
 }
 
-function masterCommand(){
+function masterCommand(msg, isMaster){
     config.devMode = false;
-    console.log("Dev Mode Disabled.");
-    syncConfig();
+
+    if(isMaster){
+        msg.reply("Dev Mode Disabled.");
+        console.log("Dev Mode Disabled.");
+        syncConfig();
+    }
 }
 
 function syncConfig(){

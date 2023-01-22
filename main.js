@@ -109,14 +109,15 @@ client.on("messageCreate", async msg => {
     config = JSON.parse(fs.readFileSync(configPath)) //read the config file
     devMode = config.devMode; //this will be evaluated every time a message is sent
     admins = config.admins; //this will be evaluated every time a message is sent
+    const isAuthorized = isUserAuthorized(msg);
 
     if(isAdmin(msg.author.id)){
-        if(adminCommands.checkAdminCommand(msg)){
+        if(adminCommands.checkAdminCommand(msg, isMaster)){
             return;
         }
     }
 
-    if (isUserAuthorized(msg)) {
+    if (isAuthorized) {
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
             return;
         }
