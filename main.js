@@ -45,7 +45,8 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     console.log(`The file ${configPath} does not exist, creating a new one`);
     const defaultValue = {
         "devMode": false,
-        "isMaster": true
+        "isMaster": true,
+        "devModeUsers": []
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
@@ -53,6 +54,7 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
+let devModeUsers = config.devModeUsers; //this will be evaluated every time a message is sent
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -69,13 +71,22 @@ const chatCommands = require('./chat.js');      //importing the chat.js file
 //and prevents users from sending messages on both dev and master
 function isUserAuthorized(msg) {
     if (devMode) {
-        if (msg.author.id == 142472661841346560) {
+        if (isDevModeUser(msg.author.id)) {
             if (!isMaster) { return true; }
         }
         else if (isMaster) { return true; }
     }
     else {
         if (isMaster) { return true; }
+    }
+    return false;
+}
+
+function isDevModeUser(id){
+    for(let i = 0; i < devModeUsers.length; i++){
+        if(id == devModeUsers[i]){
+            return true;
+        }
     }
     return false;
 }
@@ -90,6 +101,8 @@ client.on('ready', () => {
 client.on("messageCreate", async msg => {
     config = JSON.parse(fs.readFileSync(configPath)) //read the config file
     devMode = config.devMode; //this will be evaluated every time a message is sent
+    devModeUsers = config.devModeUsers; //this will be evaluated every time a message is sent
+
     if (isUserAuthorized(msg)) {
         
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
