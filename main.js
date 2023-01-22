@@ -46,7 +46,7 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     const defaultValue = {
         "devMode": false,
         "isMaster": true,
-        "devModeUsers": []
+        "admins": []
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
@@ -54,7 +54,7 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
-let devModeUsers = config.devModeUsers; //this will be evaluated every time a message is sent
+let admins = config.admins; //this will be evaluated every time a message is sent
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -72,7 +72,7 @@ const adminCommands = require('./admin.js');    //importing the admin.js file
 //and prevents users from sending messages on both dev and master
 function isUserAuthorized(msg) {
     if (devMode) {
-        if (isDevModeUser(msg.author.id)) { 
+        if (isAdmin(msg.author.id)) { 
             if(!isMaster){
                 return true; 
             }
@@ -89,9 +89,9 @@ function isUserAuthorized(msg) {
     return false;
 }
 
-function isDevModeUser(id){
-    for(let i = 0; i < devModeUsers.length; i++){
-        if(id == devModeUsers[i]){
+function isAdmin(id){
+    for(let i = 0; i < admins.length; i++){
+        if(id == admins[i]){
             return true;
         }
     }
@@ -108,9 +108,9 @@ client.on('ready', () => {
 client.on("messageCreate", async msg => {
     config = JSON.parse(fs.readFileSync(configPath)) //read the config file
     devMode = config.devMode; //this will be evaluated every time a message is sent
-    devModeUsers = config.devModeUsers; //this will be evaluated every time a message is sent
+    admins = config.admins; //this will be evaluated every time a message is sent
 
-    if(isDevModeUser(msg.author.id)){
+    if(isAdmin(msg.author.id)){
         if(adminCommands.checkAdminCommand(msg)){
             return;
         }
