@@ -17,11 +17,11 @@ const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the h
 
 const date = new Date();
 
-let IS_MASTER;
+let isMaster;
 
 module.exports = {
-    checkChatCommand: function (msg, isMaster) {
-        IS_MASTER = isMaster;
+    checkChatCommand: function (msg, isMasterBranch) {
+        isMaster = isMasterBranch;
 
         if(!profileCreation(msg)){
             syncProfileMessages();
@@ -76,7 +76,7 @@ function repCommand(msg) {
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
-    if(IS_MASTER){ //I only want to write to file in master branch
+    if(isMaster){ //I only want to write to file in master branch
         fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
             if (err) {
                 console.log(err);
