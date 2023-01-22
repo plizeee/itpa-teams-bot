@@ -66,18 +66,25 @@ client.events = new Collection();
 
 const teamsCommands = require('./teams.js');    //importing the teams.js file
 const chatCommands = require('./chat.js');      //importing the chat.js file
+const adminCommands = require('./admin.js');    //importing the admin.js file
 
 //ensures that authorized users can use dev mode
 //and prevents users from sending messages on both dev and master
 function isUserAuthorized(msg) {
     if (devMode) {
-        if (isDevModeUser(msg.author.id)) {
-            if (!isMaster) { return true; }
+        if (isDevModeUser(msg.author.id)) { 
+            if(!isMaster){
+                return true; 
+            }
         }
-        else if (isMaster) { return true; }
+        else{
+            if(isMaster){
+                return true;
+            }
+        }
     }
-    else {
-        if (isMaster) { return true; }
+    else if(isMaster) { 
+        return true; 
     }
     return false;
 }
@@ -103,8 +110,13 @@ client.on("messageCreate", async msg => {
     devMode = config.devMode; //this will be evaluated every time a message is sent
     devModeUsers = config.devModeUsers; //this will be evaluated every time a message is sent
 
+    if(isDevModeUser(msg.author.id)){
+        if(adminCommands.checkAdminCommand(msg)){
+            return;
+        }
+    }
+
     if (isUserAuthorized(msg)) {
-        
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
             return;
         }
