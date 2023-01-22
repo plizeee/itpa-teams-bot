@@ -248,6 +248,7 @@ function mergeInstructions(arrInstructions){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
+//TODO make calling this function less confusing
 async function sendPrompt(msg, instructions, checkThread = false, thread = "", postThreadInstructions = "", checkAttitude = false){
     let message = msg.content;
 
@@ -263,14 +264,14 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
     //generate the ai response
     //TODO make some of the options configurable depending on the type of message (!q should have a lower temperature)
     const completion = await openai.createCompletion({
-        model: "text-davinci-003",
-        prompt: fullPrompt,
-        temperature: 0.75,
-        max_tokens: 300,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0.6,
-        stop: [getUserName(msg) + ": "],
+        model: "text-davinci-003",                      //language model (text-davinci-003 is the best one, but most expensive)
+        prompt: fullPrompt,                             //text fed into the ai to generate a response
+        temperature: 0.75,                              //randomness of the response
+        max_tokens: 300,                                //this might cause responses to be cut off, but it's better than running out of tokens
+        top_p: 1,                                       //only uses responses within the top probability percentage (0 to 1)
+        frequency_penalty: 0,                           //positive reduces likelyhood to repeat words (-2 to 2)
+        presence_penalty: 0.6,                          //positive increases likelyhood to change topics (-2 to 2)
+        stop: [getUserName(msg) + ": "],                //the ai will stop generating text when it detects this string
     });
 
     const rawReply = completion.data.choices[0].text;   //storing the unmodified output of the ai generated response
@@ -364,7 +365,7 @@ function getUserName(msg) { //retrieves the user's name
             return profile.name;
         }
     }
-    return "Anon";
+    return "Anon"; //if the user doesn't have a profile, return "Anon"
 }
 
 function addRep(id, numRep) { //adds a specified amount of rep to a user's profiles
@@ -390,10 +391,14 @@ function profileCreation(msg){ //generates a profile for users that don't have o
     profiles["users"].push( //setting up all the profile stuff
         {
             "id": msg.author.id,
-            "name": msg.author.username,
+            "name": msg.author.username, //using their username at the time of creation, but this can be changed manually
+            
+            //teams bot specific stuff
+            //TODO move this to teams.js because I might want to have an ai-only version of this bot
             "messages": [],
             "lateMessages": [],
             "earlyMessages": [],
+
             "rep": 0,
             "messageHistory": [],
             "responseHistory": [],

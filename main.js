@@ -5,7 +5,8 @@ require('dotenv').config();
 
 const token = process.env.TOKEN; //secret token
 
-const DEV_MODE = false;
+//TODO find a better way to control dev mode
+const DEV_MODE = false; //this let's both master and dev that 
 const IS_MASTER = true;
 
 const client = new Client({
@@ -36,7 +37,8 @@ const client = new Client({
 
 const fileName = './profiles.json';
 
-if (!fs.existsSync(fileName)) {
+//if the file doesn't exist, create it
+if (!fs.existsSync(fileName)) { 
     console.log(`The file ${fileName} does not exist, creating a new one`);
     const defaultValue = {
         "users": []
@@ -52,8 +54,8 @@ client.message_commands = new Collection();
 client.modals = new Collection();
 client.events = new Collection();
 
-const teamsCommands = require('./teams.js');
-const chatCommands = require('./chat.js');
+const teamsCommands = require('./teams.js');    //importing the teams.js file
+const chatCommands = require('./chat.js');      //importing the chat.js file
 
 //ensures that authorized users can use dev mode
 //and prevents users from sending messages on both dev and master
