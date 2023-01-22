@@ -5,10 +5,6 @@ require('dotenv').config();
 
 const token = process.env.TOKEN; //secret token
 
-//TODO find a better way to control dev mode
-const DEV_MODE = false; //this let's both master and dev that 
-const IS_MASTER = true;
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -35,16 +31,28 @@ const client = new Client({
     }
 });
 
-const fileName = './profiles.json';
-
-//if the file doesn't exist, create it
-if (!fs.existsSync(fileName)) { 
-    console.log(`The file ${fileName} does not exist, creating a new one`);
+const profilePath = './profiles.json';
+if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
+    console.log(`The file ${profilePath} does not exist, creating a new one`);
     const defaultValue = {
         "users": []
     };
-    fs.writeFileSync(fileName, JSON.stringify(defaultValue));
+    fs.writeFileSync(profilePath, JSON.stringify(defaultValue));
 }
+
+const configPath = './config.json';
+if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
+    console.log(`The file ${configPath} does not exist, creating a new one`);
+    const defaultValue = {
+        "devMode": false,
+        "isMaster": true
+    };
+    fs.writeFileSync(configPath, JSON.stringify(defaultValue));
+}
+
+let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
+const IS_MASTER = config.isMaster; //only check this on launch
+let DEV_MODE = config.devMode; //this will be evaluated every time a message is sent
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -80,6 +88,8 @@ client.on('ready', () => {
 
 //executes every time someone sends a message
 client.on("messageCreate", async msg => {
+    config = JSON.parse(fs.readFileSync(configPath)) //read the config file
+    DEV_MODE = config.devMode; //this will be evaluated every time a message is sent
     if (isUserAuthorized(msg)) {
         
         if (teamsCommands.checkTeamsCommand(msg, IS_MASTER)) {

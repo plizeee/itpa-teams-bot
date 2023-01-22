@@ -20,9 +20,8 @@ const date = new Date();
 let IS_MASTER;
 
 module.exports = {
-    checkChatCommand: function (msg, mode) {
-        //date = new Date();
-        IS_MASTER = mode;
+    checkChatCommand: function (msg, isMaster) {
+        IS_MASTER = isMaster;
 
         if(!profileCreation(msg)){
             syncProfileMessages();
@@ -77,7 +76,7 @@ function repCommand(msg) {
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
-    if(IS_MASTER){ //If I'm in dev mode, I don't want to write anything to profiles.json
+    if(IS_MASTER){ //I only want to write to file in master branch
         fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
             if (err) {
                 console.log(err);
