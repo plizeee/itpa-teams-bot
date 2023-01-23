@@ -2,3 +2,5 @@ profiles.json
 .env
 changelog.txt
 config.json
+startMaster.sh
+startDev.sh
