@@ -13,9 +13,26 @@ module.exports = {
             found = true;
             masterCommand(msg, isMaster);
         }
+        else if(command.startsWith("!BRANCH")){
+            found = true;
+            branchCommand(msg, isMaster);
+        }
         return found;
     }
 };
+
+function branchCommand(msg, isMaster){
+    if(config.devMode){
+        if(!isMaster){
+            msg.reply("The current branch is Dev");
+        }
+    }
+    else{
+        if(isMaster){
+            msg.reply("The current branch is Master");
+        }
+    }
+}
 
 function devCommand(msg, isMaster){
     config.devMode = true;
