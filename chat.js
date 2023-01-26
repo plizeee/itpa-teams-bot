@@ -336,7 +336,7 @@ function clearThread(profile){
 function profileCreation(msg){ //generates a profile for users that don't have one
     const profile = getProfile(msg);
 
-    if(msg.author.bot){
+    if(msg.author.bot || profile != null){
         return false;
     }
 
