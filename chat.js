@@ -157,6 +157,7 @@ function getPromptSentiment(rep) {
 function chatCommand(msg){
     const profile = getProfile(msg);
 
+    profile.rep = readValueFromProfile(msg, "rep");
     let promptSentiment = getPromptSentiment(profile.rep); //predefined sentiment to save tokens
 
     //using an array of strings to make adding instructions less annoying
