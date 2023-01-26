@@ -41,14 +41,6 @@ module.exports = {
             found = true;
             repCommand(msg);
         }
-        else if (command.startsWith("!SETALLREP ")) { //Set Rep of all users to a value
-            found = true;
-            setAllRepCommand(msg);
-        }
-        else if (command.startsWith("!SETREP ")) { //Set a specific user's Rep based on their 
-            found = true;
-            setRepCommand(msg);
-        }
         else if (command.startsWith("!CHAT ") || (msg.channel.type == 1 && !msg.author.bot && !command.startsWith("!"))) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
             found = true;
             chatCommand(msg);
@@ -68,7 +60,8 @@ function checkKeywords(prompt){
 
 //function to return the rep of the user
 function repCommand(msg) {
-    let profile = getProfile(msg);
+    const profile = getProfile(msg);
+    profile.rep = readValueFromProfile(msg, "rep");
     msg.reply("Your rep is: " + profile.rep);
 }
 
@@ -86,6 +79,20 @@ function syncProfilesToFile(){
     else{
         console.log("Dev Mode is currently active. Message not stored in file.");
     }
+}
+
+function readValueFromProfile(msg, element){
+    const _profiles = JSON.parse(fs.readFileSync('./profiles.json'));;
+
+    for(let i = 0; i < _profiles["users"].length; i++){
+        const _profile = _profiles["users"][i];
+
+        if(_profile.id == msg.author.id){
+            console.log(element + " has been read from profile.");
+            return _profile[element];
+        }
+    }
+    return null;
 }
 
 //clears the user's thread
