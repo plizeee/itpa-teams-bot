@@ -88,42 +88,6 @@ function syncProfilesToFile(){
     }
 }
 
-//command intended just for me that lets me set the rep of any user
-function setRepCommand(msg){
-    console.log("setrep command started.");
-    if(msg.author.id == 142472661841346560){                        //only allow me to use this command
-        let message = msg.content.toUpperCase();
-        let slicedMsg = message.slice(8);                           //Filters out the "!SETREP " portion of the command
-        let target = slicedMsg.slice(0, slicedMsg.indexOf(" "));    //Isolates the user's name
-        let repValue = slicedMsg.slice(slicedMsg.indexOf(" "));     //Isolates the Rep value we want to set
-
-        console.log("slicedMsg: " + slicedMsg + " | target: " + target + " | repValue: " + repValue);
-        if(!isNaN(repValue)){                                       //making sure the value is actually a number
-            let profile = getProfile(msg);
-            if(target == profile.name.toUpperCase()){               //removing case-sensitivity from the username}
-                profile.rep = parseInt(repValue);
-                syncProfilesToFile();
-                console.log("set user "  +  target + "'s rep to " + repValue);
-            }
-        }
-    }
-}
-
-//command intended just for me that let's me set everybody's rep to a specified value
-function setAllRepCommand(msg) {
-    if(msg.author.id == 142472661841346560){        //TODO make this check if admin instead
-        
-        let profile = getProfile(msg);
-        let slicedMsg = msg.content.slice(11);      //slicing out the "!setallrep " from the command
-        if (!isNaN(slicedMsg)) {                    //wanna make sure the remaining portion is a number to set rep to
-            profile.rep = parseInt(slicedMsg);      //parsing to int because it was behaving as a string
-
-            syncProfilesToFile();                   //save changes to file
-            console.log("set all users rep to " + slicedMsg + " !");
-        }
-    }
-}
-
 //clears the user's thread
 //useful to reduce chat history bias and reduces token usage 
 async function newThreadCommand(msg) {
