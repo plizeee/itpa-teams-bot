@@ -15,12 +15,12 @@ const openai = new OpenAIApi(configuration);
 const NUM_THREADS = 5; //Max # of threads to store for any given profile (more threads = more tokens used per message)
 const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the history (reduces token usage)
 
-const date = new Date();
-
+let date;
 let isMaster;
 
 module.exports = {
     checkChatCommand: function (msg, isMasterBranch) {
+        date = new Date();
         isMaster = isMasterBranch;
 
         if(!profileCreation(msg)){
@@ -56,6 +56,7 @@ module.exports = {
         return found;
     }
 };
+
 // a function to return an array of any keywords found in the prompt
 function checkKeywords(prompt){
     let keywords = ["you","me","i",""]
@@ -67,11 +68,8 @@ function checkKeywords(prompt){
 
 //function to return the rep of the user
 function repCommand(msg) {
-    profiles["users"].forEach(profile => {
-        if (profile.id == msg.author.id) {
-            msg.reply({ content: "Your rep is: " + profile.rep, allowedMentions: {repliedUser: false} });
-        }
-    });
+    let profile = getProfile(msg);
+    msg.reply("Your rep is: " + profile.rep);
 }
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
@@ -101,66 +99,61 @@ function setRepCommand(msg){
 
         console.log("slicedMsg: " + slicedMsg + " | target: " + target + " | repValue: " + repValue);
         if(!isNaN(repValue)){                                       //making sure the value is actually a number
-            profiles["users"].forEach(profile => {
-                if(target == profile.name.toUpperCase()){           //removing case-sensitivity from the username
-                    profile.rep = parseInt(repValue);
-                    syncProfilesToFile();
-                    console.log("set user "  +  target + "'s rep to " + repValue);
-                }
-            });
+            let profile = getProfile(msg);
+            if(target == profile.name.toUpperCase()){               //removing case-sensitivity from the username}
+                profile.rep = parseInt(repValue);
+                syncProfilesToFile();
+                console.log("set user "  +  target + "'s rep to " + repValue);
+            }
         }
     }
 }
 
 //command intended just for me that let's me set everybody's rep to a specified value
 function setAllRepCommand(msg) {
-    if(msg.author.id == 142472661841346560){        //only I can use this command
-        profiles["users"].forEach(profile => {
-            let slicedMsg = msg.content.slice(11);  //slicing out the "!setallrep " from the command
-            if (!isNaN(slicedMsg)) {                //wanna make sure the remaining portion is a number to set rep to
-                profile.rep = parseInt(slicedMsg);  //parsing to int because it was behaving as a string
-    
-                syncProfilesToFile();               //save changes to file
-                console.log("set all users rep to " + slicedMsg + " !");
-            }
-        });
+    if(msg.author.id == 142472661841346560){        //TODO make this check if admin instead
+        
+        let profile = getProfile(msg);
+        let slicedMsg = msg.content.slice(11);      //slicing out the "!setallrep " from the command
+        if (!isNaN(slicedMsg)) {                    //wanna make sure the remaining portion is a number to set rep to
+            profile.rep = parseInt(slicedMsg);      //parsing to int because it was behaving as a string
+
+            syncProfilesToFile();                   //save changes to file
+            console.log("set all users rep to " + slicedMsg + " !");
+        }
     }
 }
 
 //clears the user's thread
 //useful to reduce chat history bias and reduces token usage 
 async function newThreadCommand(msg) {
-    profiles["users"].forEach(profile => {
-        if (profile.id == msg.author.id) {
-            profile.messageHistory = [];
-            profile.responseHistory = [];
-            profile.messageTimestamps = [];
-            
-            syncProfilesToFile(); //save the changes to profiles.json
+    let profile = getProfile(msg);
 
-            console.log("Cleared user's thread history!");
-
-            msg.reply({ content: "You have cleared your thread's history!", allowedMentions: { repliedUser: false } });
-        }
-    });
+    clearThread(profile);
+    console.log("Cleared user's thread history!");
+    msg.reply("You have cleared your thread's history!");
 }
 
 //command similar to '!chat', but aimed to be more factual
 //it also doesn't store prompt history to reduce any history bias
 async function questionCommand(msg){
-    const userName = getUserName(msg);
+    const profile = getProfile(msg);
+
     const questionInstructions = [
         "The following is a conversation with an AI assistant",                                 //so it knows to behave as a chat bot
         "The assistant is uniquely built to answer questions, while remaining fully factual",   //intended to reduce the odds of gaslighting the user
         "Your name is Teams Bot",                                                               //TODO name it after it's username (not nickname or people can abuse it)
-        "The user's name is " + userName,                                                       //TODO change this into something a user can change (though it could be abused)
+        "The user's name is " + profile.name,                                                   //TODO change this into something a user can change (though it could be abused)
         "Do not greet the user",                                                                //reduce padding answers with small talk
         "The date is " + date                                                                   //otherwise it'll make something up
     ];
     const instructions = mergeInstructions(questionInstructions);                               //merges instructions above insto a string and adds a bit of formatting
 
-    msg.channel.sendTyping();                                                                   //this will display that the bot is typing while waiting for response to generate
-    sendPrompt(msg, instructions);
+    msg.channel.sendTyping();
+    sendPrompt({
+        msg: msg, 
+        instructions: instructions
+    });                                                                   //this will display that the bot is typing while waiting for response to generate
 }
 
 //depending on the user's rep, we want to treat them better/worse
@@ -191,20 +184,19 @@ function getPromptSentiment(rep) {
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
 function chatCommand(msg){
-    const userName = getUserName(msg);
-    const userRep = getUserRep(msg);
+    const profile = getProfile(msg);
 
-    let promptSentiment = getPromptSentiment(userRep); //predefined sentiment to save tokens
+    let promptSentiment = getPromptSentiment(profile.rep); //predefined sentiment to save tokens
 
     //using an array of strings to make adding instructions less annoying
     const chatInstructions = [
         "The following is a conversation with an AI assistant.",    //so it knows to behave as a chat bot
         "The assistant is helpful, creative, clever, and funny",    //baseline personality traits
         "Your name is Teams Bot",                                   //TODO name it after it's username (not nickname or people can abuse it)
-        "The user's name is " + userName,                           //TODO change this into something a user can change (though it could be abused)
+        "The user's name is " + profile.name,                           //TODO change this into something a user can change (though it could be abused)
         "You already know who the user is",                         //otherwise it will always say "nice to meet you"
         "You are speaking to the user",                             //this could probably be removed, but I found it reduced the odds of getting confused with who the user is
-        "Their Rep is " + userRep,                                  //TODO change this prompt so it doesn't come up so often in conversation
+        "Their Rep is " + profile.rep,                                  //TODO change this prompt so it doesn't come up so often in conversation
         "You treat the user better the higher their Rep is.",       //allows it to explain why it doesn't like a user
         promptSentiment,                                            //predefining the sentiment to save tokens  
 
@@ -221,11 +213,18 @@ function chatCommand(msg){
 
     const instructions = mergeInstructions(chatInstructions);       //merges instructions above into a string and adds a bit of formatting
 
-    const postThreadInstructions = "Their Rep is " + userRep + ". " + "The date is " + date + ".";
+    const postThreadInstructions = "Their Rep is " + profile.rep + ". " + "The date is " + date + ".";
     const thread = getThread(msg); //get a formatted string containing the chat history of the user.
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
-    sendPrompt(msg, instructions, true, thread, postThreadInstructions, true);
+    sendPrompt({
+        msg: msg, 
+        instructions: instructions, 
+        checkThread: true, 
+        thread: thread, 
+        postThreadInstructions: postThreadInstructions, 
+        checkAttitude: true
+    });
 }
 
 //merges and formats an array of instructions strings into a single string.
@@ -248,7 +247,8 @@ function mergeInstructions(arrInstructions){
 
 //sends the prompt to the API to generate the AI response and send it to the user
 //TODO make calling this function less confusing
-async function sendPrompt(msg, instructions, checkThread = false, thread = "", postThreadInstructions = "", checkAttitude = false){
+async function sendPrompt({msg, instructions, checkThread = false, thread = "", postThreadInstructions = "", checkAttitude = false}){
+    const profile = getProfile(msg);
     let message = msg.content;
 
     let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
@@ -258,20 +258,31 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
     }
 
     //putting everything together into one big happy prompt
-    let fullPrompt = instructions + thread + postThreadInstructions + " " + getUserName(msg) + ": " + slicedMsg + " You: ";
-
+    let fullPrompt = instructions + thread + postThreadInstructions + " " + profile.name + ": " + slicedMsg + " You: ";
+    
     //generate the ai response
     //TODO make some of the options configurable depending on the type of message (!q should have a lower temperature)
     const completion = await openai.createCompletion({
-        model: "text-davinci-003",                      //language model (text-davinci-003 is the best one, but most expensive)
-        prompt: fullPrompt,                             //text fed into the ai to generate a response
-        temperature: 0.75,                              //randomness of the response
-        max_tokens: 300,                                //this might cause responses to be cut off, but it's better than running out of tokens
-        top_p: 1,                                       //only uses responses within the top probability percentage (0 to 1)
-        frequency_penalty: 0,                           //positive reduces likelyhood to repeat words (-2 to 2)
-        presence_penalty: 0.6,                          //positive increases likelyhood to change topics (-2 to 2)
-        stop: [getUserName(msg) + ": "],                //the ai will stop generating text when it detects this string
+        model: "text-davinci-003",      //language model (text-davinci-003 is the best one, but most expensive)
+        prompt: fullPrompt,             //text fed into the ai to generate a response
+        temperature: 0.75,              //randomness of the response
+        max_tokens: 300,                //this might cause responses to be cut off, but it's better than running out of tokens
+        top_p: 1,                       //only uses responses within the top probability percentage (0 to 1)
+        frequency_penalty: 0,           //positive reduces likelyhood to repeat words (-2 to 2)
+        presence_penalty: 0.6,          //positive increases likelyhood to change topics (-2 to 2)
+        stop: [profile.name + ": "],    //the ai will stop generating text when it detects this string
+    })
+    //TODO produce different error messages depending on the error
+    .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
+        console.log(error);
     });
+
+    //since the catch statement above doesn't stop the function, we need to check if the completion is null
+    if(!completion) {
+        console.log("completion is null");
+        msg.reply("Something went wrong. Please try again later.");
+        return;
+    }
 
     const rawReply = completion.data.choices[0].text;   //storing the unmodified output of the ai generated response
     let replyMessage = rawReply;                        //copy of the response that will be modified 
@@ -282,10 +293,10 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
         console.log(attitude);
 
         if (attitude == "POS") {                        //detected a positive attitude
-            addRep(msg.author.id, 1);                   //earn 1 rep
+            profile.rep += 1;
         }
         else if (attitude == "NEG") {                   //detected a negative attitude
-            addRep(msg.author.id, -1);                  //lose 1 rep
+            profile.rep -= 1;
         }
         //we don't want the output to display the attitude, so we're slicing that part out
         replyMessage = replyMessage.slice(replyMessage.indexOf("]") + 1); 
@@ -294,21 +305,20 @@ async function sendPrompt(msg, instructions, checkThread = false, thread = "", p
     console.log("fullPrompt: " + fullPrompt);
     console.log("rawReply: " + rawReply);
 
-    msg.reply({ content: replyMessage, allowedMentions: { repliedUser: false } });
+    msg.reply(replyMessage);
 
     if (checkThread) { //we have checkThread because some prompts may not require threads, to save tokens
-        addPromptHistory(msg.author.id, slicedMsg, replyMessage);
+        addPromptHistory(msg, slicedMsg, replyMessage);
     }
 }
 
 //function to get the user's thread
 //return a formatted string, containing the chat history of the user 
 function getThread(msg) {
-    for (let i = 0; i < profiles["users"].length; i++) {
-        let profile = profiles["users"][i];
-        if (profile.id == msg.author.id) {
-            return createThreadFromHistory(profile); //get the formatted string of the chat history of the user
-        }
+    let profile = getProfile(msg);
+
+    if(profile != null){
+        return createThreadFromHistory(profile); //get the formatted string of the chat history of the user
     }
     return "";
 }
@@ -335,11 +345,7 @@ function createThreadFromHistory(profile) {
         }
     }
     else { //we want to clear the user's message history if they haven't said anything within a specified time
-        profile.messageHistory = [];
-        profile.responseHistory = [];
-        profile.messageTimestamps = [];
-
-        syncProfilesToFile(); //save profiles to profiles.json
+        clearThread(profile);
         console.log("Cleared expired thread");
     }
 
@@ -347,44 +353,19 @@ function createThreadFromHistory(profile) {
     return strOutput;
 }
 
-function getUserRep(msg) { //retrieves the user's rep
-    for (let i = 0; i < profiles["users"].length; i++) {
-        let profile = profiles["users"][i];
-        if (profile.id == msg.author.id) {
-            return profile.rep;
-        }
-    }
-    return 0;
-}
+function clearThread(profile){
+    profile.messageHistory = [];
+    profile.responseHistory = [];
+    profile.messageTimestamps = [];
 
-function getUserName(msg) { //retrieves the user's name
-    for (let i = 0; i < profiles["users"].length; i++) {
-        let profile = profiles["users"][i];
-        if (profile.id == msg.author.id) {
-            return profile.name;
-        }
-    }
-    return "Anon"; //if the user doesn't have a profile, return "Anon"
-}
-
-function addRep(id, numRep) { //adds a specified amount of rep to a user's profiles
-    profiles["users"].forEach(profile => {
-        if (profile.id == id) {
-            profile.rep += numRep;  //adding designated rep to the appropriate profile
-            
-            syncProfilesToFile();   //save profiles to profiles.json
-            console.log("Rep is now: " + profile.rep);
-        }
-    });
+    syncProfilesToFile(); //save profiles to profiles.json
 }
 
 function profileCreation(msg){ //generates a profile for users that don't have one
-    for(let i = 0; i < profiles["users"].length; i++){
-        let profile = profiles["users"][i];
+    const profile = getProfile(msg);
 
-        if(profile.id == msg.author.id || msg.author.bot){
-            return false;
-        }
+    if(msg.author.bot){
+        return false;
     }
 
     profiles["users"].push( //setting up all the profile stuff
@@ -427,33 +408,39 @@ function syncProfileMessages(){ //ensures some profile information is properly f
         
         //checks if any profile thread array does not exist and if so, create/reset all thread arrays (which also syncs them up)
         if(isThreadArrayMissing || !isThreadSynced){
-            profile.messageHistory = [];
-            profile.responseHistory = [];
-            profile.messageTimestamps = [];
+            clearThread(profile);
             console.log("Created new thread for profile.");
         }
     }
     syncProfilesToFile(); //Saving changes to file
 }
 
-function addPromptHistory(id, msgContent, replyContent) { //add a message to a user's message history
-    profiles["users"].forEach(profile => {
-        if (profile.id == id) {
+function addPromptHistory(msg, msgContent, replyContent) { //add a message to a user's message history
+    const profile = getProfile(msg);
 
-            //Adding msgContent to the first element of array and pushing the rest 1 position to the right
-            profile.messageHistory.unshift(msgContent);
-            profile.responseHistory.unshift(replyContent);
-            profile.messageTimestamps.unshift(date);
+    //Adding msgContent to the first element of array and pushing the rest 1 position to the right
+    profile.messageHistory.unshift(msgContent);
+    profile.responseHistory.unshift(replyContent);
+    profile.messageTimestamps.unshift(date);
 
-            if (profile.messageHistory.length > NUM_THREADS) { //making sure threads don't consume too many tokens
-                //removing the last item on the list
-                profile.messageHistory.pop();
-                profile.responseHistory.pop();
-                profile.messageTimestamps.pop();
-            }
-            syncProfilesToFile(); //saving our changes to file
+    if (profile.messageHistory.length > NUM_THREADS) { //making sure threads don't consume too many tokens
+        //removing the last item on the list
+        profile.messageHistory.pop();
+        profile.responseHistory.pop();
+        profile.messageTimestamps.pop();
+    }
+    syncProfilesToFile(); //saving our changes to file
+}
+
+function getProfile(msg){
+    for(let i = 0; i < profiles["users"].length; i++){
+        let profile = profiles["users"][i];
+
+        if(profile.id == msg.author.id){
+            return profile;
         }
-    });
+    }
+    return null;
 }
 
 //ITPA SERVER ID: 1017047682713387049
