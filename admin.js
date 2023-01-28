@@ -1,10 +1,11 @@
 const fs = require('fs'); //needed to read/write json files
-const config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
+let config;
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
 
 module.exports = {
     checkAdminCommand: function (msg, isMaster) {
         let command = msg.content.toUpperCase(), found = false;
+        config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
 
         if(command.startsWith("!DEV")){
             found = true;

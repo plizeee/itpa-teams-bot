@@ -64,27 +64,19 @@ client.message_commands = new Collection();
 client.modals = new Collection();
 client.events = new Collection();
 
-const teamsCommands = require('./teams.js');    //importing the teams.js file
-const chatCommands = require('./chat.js');      //importing the chat.js file
-const adminCommands = require('./admin.js');    //importing the admin.js file
+//importing the files used for the commands
+const teamsCommands = require('./teams.js');
+const chatCommands = require('./chat.js');
+const adminCommands = require('./admin.js');
 
 //ensures that authorized users can use dev mode
 //and prevents users from sending messages on both dev and master
 function isUserAuthorized(msg) {
-    if (devMode) {
-        if (isAdmin(msg.author.id)) { 
-            if(!isMaster){
-                return true; 
-            }
-        }
-        else{
-            if(isMaster){
-                return true;
-            }
-        }
+    if(devMode && isMaster != isAdmin(msg.author.id)) {
+        return true;
     }
-    else if(isMaster) { 
-        return true; 
+    if(!devMode && isMaster) {
+        return true;
     }
     return false;
 }
@@ -99,7 +91,6 @@ function isAdmin(id){
 }
 
 //executes this as soon as it starts
-//changed from 'client.once' to 'client.on' so that I can use this when restarting the bot
 client.on('ready', () => {
     console.log('main.js is online!');
 });
