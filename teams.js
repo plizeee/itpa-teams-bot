@@ -272,9 +272,9 @@ function getCustomSenderQuote(id) {
     profiles["users"].forEach(profile => {
         //we're cycling through all profiles, so we're checking if the currently indexed profile ID is the same as message.author.id (this)
         if (profile.id == id) {
-            let numRandomIndex = Math.floor(Math.random() * profile.messages.length);
+            let numRandomIndex = Math.floor(Math.random() * profile.teams.linkMessages.length);
 
-            let profileMessage = profile.messages[numRandomIndex];
+            let profileMessage = profile.teams.linkMessages[numRandomIndex];
 
             let link = "";
 
@@ -287,16 +287,16 @@ function getCustomSenderQuote(id) {
 
                 //user is late to class
                 if (timeDifference < 0) {
-                    let randomLateMessageIndex = Math.floor(Math.random() * profile.lateMessages.length);
-                    profileMessage = profile.lateMessages[randomLateMessageIndex];
+                    let randomLateMessageIndex = Math.floor(Math.random() * profile.teams.lateMessages.length);
+                    profileMessage = profile.teams.lateMessages[randomLateMessageIndex];
                     if (profileMessage == "") {
                         profileMessage = "You're late!";
                     }
                 }
                 //user is more than an hour early to class
                 else if (timeDifference > 60) {
-                    let randomEarlyMessageIndex = Math.floor(Math.random() * profile.earlyMessages.length);
-                    profileMessage = profile.earlyMessages[randomEarlyMessageIndex];
+                    let randomEarlyMessageIndex = Math.floor(Math.random() * profile.teams.earlyMessages.length);
+                    profileMessage = profile.teams.earlyMessages[randomEarlyMessageIndex];
                     if (profileMessage == "") {
                         profileMessage = "You're very early!";
                     }

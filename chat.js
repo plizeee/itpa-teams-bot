@@ -223,7 +223,12 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = "", 
     const profile = getProfile(msg);
     let message = msg.content;
 
-    let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    let slicedMsg = message; //the message that will be sent to the ai, it will be sliced if it's a command
+
+    if(message.startsWith("!")){
+        slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    }
+    
 
     if (postThreadInstructions != "") { //no need to format an empty string
         postThreadInstructions = "{" + postThreadInstructions + "}";
@@ -299,17 +304,18 @@ function getThread(msg) {
 //into a more chat-like format
 function createThreadFromHistory(profile) {
     let strOutput = "";
+    const history = profile.history;
 
-    const latestMessageDate = new Date(profile.messageTimestamps[0]);
+    const latestMessageDate = new Date(history.timestamps[0]);
 
     //sometimes latestMessageDate returns as NaN, so I'm setting a default value of 0 in that event
     //using milliseconds since January 1, 1970, because it felt like a simple way to calculate the difference in time, without converting days and such
     const timeSinceLastMessage = isNaN(latestMessageDate.getTime()) ? 0 : date.getTime() - latestMessageDate.getTime();
 
     if (timeSinceLastMessage < 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
-        for (let i = profile.messageHistory.length - 1; i >= 0; i--) {
-            strOutput += "\n" + profile.name + ": " + profile.messageHistory[i] + " \n";
-            strOutput += "You: " + profile.responseHistory[i] + " \n";
+        for (let i = history.messages.raw.length - 1; i >= 0; i--) {
+            strOutput += "\n" + profile.name + ": " + history.messages.raw[i] + " \n";
+            strOutput += "You: " + history.responses.raw[i] + " \n";
 
             if (i == 0) {
                 strOutput += "\n";
@@ -326,9 +332,17 @@ function createThreadFromHistory(profile) {
 }
 
 function clearThread(profile){
-    profile.messageHistory = [];
-    profile.responseHistory = [];
-    profile.messageTimestamps = [];
+    profile.history = {
+        "messages": {
+            "raw": [],
+            "summarized": []
+        },
+        "responses": {
+            "raw": [],
+            "summarized": []
+        },
+        "timestamps": []
+    };
 
     syncProfilesToFile(); //save profiles to profiles.json
 }
@@ -344,17 +358,27 @@ function profileCreation(msg){ //generates a profile for users that don't have o
         {
             "id": msg.author.id,
             "name": msg.author.username, //using their username at the time of creation, but this can be changed manually
-            
+            "rep": 0,
             //teams bot specific stuff
             //TODO move this to teams.js because I might want to have an ai-only version of this bot
-            "messages": [],
-            "lateMessages": [],
-            "earlyMessages": [],
+            "teams": {
+                "linkMessages": [],
+                "lateMessages": [],
+                "earlyMessages": [],
+            },
 
-            "rep": 0,
-            "messageHistory": [],
-            "responseHistory": [],
-            "messageTimestamps": []
+            "history": {
+                "messages": {
+                    "raw": [],
+                    "summarized": []
+                },
+                "responses": {
+                    "raw": [],
+                    "summarized": []
+                },
+                "timestamps": []
+            }
+            
         }
     );
     syncProfilesToFile(); //Saving changes to file
@@ -365,13 +389,24 @@ function syncProfileMessages(){ //ensures some profile information is properly f
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
 
-        //making the next couple parts more readable
-        let responses = profile.responseHistory;
-        let messages = profile.messageHistory;
-        let timestamps = profile.messageTimestamps;
+        let responses;
+        let messages;
+        let timestamps;
+        let isThreadArrayMissing;
+        let isThreadSynced;
+
+        if (profile.history && profile.history.responses) {
+            responses = profile.history.responses.raw;
+        }
+        if (profile.history && profile.history.messages) {
+            messages = profile.history.messages.raw;
+        }
+        if (profile.history && profile.history.timestamps) {
+            timestamps = profile.history.timestamps;
+        }
 
         //checking if any array does not exist
-        let isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));
+        isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));
         
         //checking if thread lengths are in sync with one another
         if(!isThreadArrayMissing){
@@ -389,17 +424,18 @@ function syncProfileMessages(){ //ensures some profile information is properly f
 
 function addPromptHistory(msg, msgContent, replyContent) { //add a message to a user's message history
     const profile = getProfile(msg);
+    const history = profile.history;
 
     //Adding msgContent to the first element of array and pushing the rest 1 position to the right
-    profile.messageHistory.unshift(msgContent);
-    profile.responseHistory.unshift(replyContent);
-    profile.messageTimestamps.unshift(date);
+    history.messages.raw.unshift(msgContent);
+    history.responses.raw.unshift(replyContent);
+    history.timestamps.unshift(date);
 
-    if (profile.messageHistory.length > NUM_THREADS) { //making sure threads don't consume too many tokens
+    if (history.messages.raw.length > NUM_THREADS) { //making sure threads don't consume too many tokens
         //removing the last item on the list
-        profile.messageHistory.pop();
-        profile.responseHistory.pop();
-        profile.messageTimestamps.pop();
+        history.messages.raw.pop();
+        history.responses.raw.pop();
+        history.timestamps.pop();
     }
     syncProfilesToFile(); //saving our changes to file
 }
