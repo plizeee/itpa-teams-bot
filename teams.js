@@ -71,14 +71,21 @@ module.exports = {
 
 function teamsCommand(msg){
     let message = msg.content.toUpperCase();
+    
+    d = new Date();
+    dayNum = d.getDay();
+    hours = d.getHours();
+    minutes = d.getMinutes();
+    day = dayNumToDay(dayNum);
+
     if(message.includes(" ")){
-        let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+        let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because that's where the command starts
         let replyMessage= "";
 
         if(slicedMsg == "LIST"){
             replyMessage = "__**CLASS LIST**__";
             courses["courses"].forEach(course => {
-                replyMessage += "\n" + course.name + " [" + course.code + "]";
+                replyMessage += "\n" + " [" + course.code + "] " + course.name;
             });
         }
         else if(slicedMsg.startsWith("LINK ")){
@@ -100,8 +107,25 @@ function teamsCommand(msg){
             catch (err){
                 replyMessage = "No link found.";
             }
-            
-            //replyMessage = className + ": " + getLink(className);
+        }
+        else if(slicedMsg == "TODAY"){
+            replyMessage = "__**TODAY'S CLASSES:**__";
+
+            courses["courses"].forEach(course => {
+                if(course.days.includes(day)){
+                    let startTime = course.startTimes[course.days.indexOf(day)];
+                    let endTime = course.endTimes[course.days.indexOf(day)];
+
+                    let strStartTime = formatTime(startTime);
+                    let strEndTime = formatTime(endTime);
+
+                    replyMessage += "\n" + " [" + course.code + "] " + course.name + " [" + strStartTime + " - " + strEndTime + "]";
+
+                    if(course.isOnline[course.days.indexOf(day)]){
+                        replyMessage += " - **Online**";
+                    }
+                }
+            });
         }
         else{
             replyMessage = "Command not found. Maybe get it right next time.";
@@ -112,6 +136,22 @@ function teamsCommand(msg){
         console.log("teamsLinkCommand");
         teamsLinkCommand(msg);
     }
+}
+
+function formatTime(time){
+    //formatting 4 digit time to 12 hour time
+    let hours = getTimeHour(time);
+    let minutes = getTimeMinute(time);
+
+    let ampm = hours >= 12 ? 'pm' : 'am';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes; //adding a 0 if the minutes are less than 10
+    
+    let strTime = hours + ':' + minutes + ampm;
+    
+    return strTime;
 }
 
 function getCourse(name){
@@ -129,10 +169,10 @@ function teamsLinkCommand(msg) {
 
     nextOnlineClassTime = 2400;
     courseIndex = 0;
-    d = new Date();
-    dayNum = d.getDay();
-    hours = d.getHours();
-    minutes = d.getMinutes();
+    // d = new Date();
+    // dayNum = d.getDay();
+    // hours = d.getHours();
+    // minutes = d.getMinutes();
 
     //overrides time variables (when applicable) when in debug mode
     if (DEBUG_MODE) {
@@ -144,28 +184,32 @@ function teamsLinkCommand(msg) {
     //setting this down here so it can also use debug values if applicable
     totalMinutes = hours * 60 + minutes;
 
-    //could probably make this a switch statement
-    if (dayNum == 0) { day = "Sunday"; }
-    else if (dayNum == 1) { day = "Monday"; }
-    else if (dayNum == 2) { day = "Tuesday"; }
-    else if (dayNum == 3) { day = "Wednesday"; }
-    else if (dayNum == 4) { day = "Thursday"; }
-    else if (dayNum == 5) { day = "Friday"; }
-    else if (dayNum == 6) { day = "Saturday"; }
+    //day = dayNumToDay(dayNum);
 
     message = msg;
     courses["courses"].forEach(findClass);
 }
 
+function dayNumToDay(dayNum){
+    if (dayNum == 0) { return "Sunday"; }
+    else if (dayNum == 1) { return "Monday"; }
+    else if (dayNum == 2) { return "Tuesday"; }
+    else if (dayNum == 3) { return "Wednesday"; }
+    else if (dayNum == 4) { return "Thursday"; }
+    else if (dayNum == 5) { return "Friday"; }
+    else if (dayNum == 6) { return "Saturday"; }
+    else { return "Invalid day number"; }
+}
+
 function helpCommand(msg) {
-    //Using += because it seems like the easiest way to expand the list as needed.
     //I should look into having a help command for each active script so then I don't display commands for scripts that may not be in use  
     let helpText = "\n**__!help__**: use !help for an extensive dive on all the functions !help can provide you with.\n";
-    helpText += "**__!teams__**: provides the appropriate Microsoft Teams meeting link.\n";
-    helpText += "**__!t__**: same things as \"!teams\"\n";
-    helpText += "**__ping__**: pong.\n";
-    helpText += "**__pong__**: ping.\n";
-    helpText += "**__Marco__**: Polo!\n";
+    helpText += "**__!t__**: provides the appropriate Microsoft Teams meeting link.\n";
+    helpText += "**__!t list__**: provides a list of all the classes, along with their code.\n";
+    helpText += "**__!t link [class name or code]__**: provides the appropriate Microsoft Teams meeting link.\n";
+    helpText += "**__!t today__**: provides a list of all the classes today.\n";
+    helpText += "**__!rep__**: provides your reputation.\n";
+
     msg.reply(helpText);
 }
 
