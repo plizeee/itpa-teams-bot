@@ -2,13 +2,13 @@
     "courses":
     [
         {
-            "name": "Introduction to SQL",
+            "name": "Intermediate SQL",
             "code": "SQL",
             "days": [ "Monday", "Wednesday" ],
             "startTimes": [ 930, 930 ],
             "endTimes": [ 1120, 1120 ],
             "isOnline": [ true, false ],
-            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MzZjODljMTItYWE5NS00MzkyLTljOWEtNDdhMWRmNTNjMmUx%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d"
+            "link": "https://teams.microsoft.com/dl/launcher/launcher.html?url=%2F_%23%2Fl%2Fmeetup-join%2F19%3Ameeting_MzE2NTFhZTAtNjVlMC00OTg1LTg4NGUtMjJlMDQ5OGE4NmJi%40thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%252226c9169c-4645-432c-939d-4918d4f21bdc%2522%252c%2522Oid%2522%253a%25223d03bbae-66f6-432c-bf0d-23101fb51685%2522%257d%26anon%3Dtrue&type=meetup-join&deeplinkId=d9481114-1f69-413b-8003-55a1bcd9ae78&directDl=true&msLaunch=true&enableMobilePage=true&suppressPrompt=false"
         },
         {
             "name": "Object Oriented Analysis and Design",

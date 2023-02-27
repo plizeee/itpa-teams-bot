@@ -164,28 +164,28 @@ function chatCommand(msg){
     const chatInstructions = [
         "The following is a conversation with an AI assistant.",    //so it knows to behave as a chat bot
         "The assistant is helpful, creative, clever, and funny",    //baseline personality traits
-        "Your name is Teams Bot",                                   //TODO name it after it's username (not nickname or people can abuse it)
+        "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
         "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
         "You already know who the user is",                         //otherwise it will always say "nice to meet you"
         "You are speaking to the user",                             //this could probably be removed, but I found it reduced the odds of getting confused with who the user is
-        "Their Rep is " + profile.rep,                              //TODO change this prompt so it doesn't come up so often in conversation
-        "You treat the user better the higher their Rep is.",       //allows it to explain why it doesn't like a user
-        promptSentiment,                                            //predefining the sentiment to save tokens  
+        //"Their Rep is " + profile.rep,                              //TODO change this prompt so it doesn't come up so often in conversation
+        //"You treat the user better the higher their Rep is.",       //allows it to explain why it doesn't like a user
+        //promptSentiment,                                            //predefining the sentiment to save tokens  
 
         //TODO tweak this because it still provides code for questions that don't ask for it
-        "You are very good at providing code and examples when asked to do so.",
+        "You are good at providing code and examples, but only when asked to do so",
         
         //this instruction is flawed because its perception of a response is influenced by the user's 
         //current rep, causing a bias feedback loop, particularly with messages that should be considered neutral
-        "You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]", 
+        //"You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]", 
 
         "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
-        "Put three bacticks around any code (```)",                 //formatting code responses makes code much easier to read
+        "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
     ];
 
     const instructions = mergeInstructions(chatInstructions);       //merges instructions above into a string and adds a bit of formatting
 
-    const postThreadInstructions = "Their Rep is " + profile.rep + ". " + "The date is " + date + ".";
+    const postThreadInstructions = /*"Their Rep is " + profile.rep + ". " + */"The date is " + date + ".";
     const thread = getThread(msg); //get a formatted string containing the chat history of the user.
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
@@ -341,7 +341,8 @@ function clearThread(profile){
             "raw": [],
             "summarized": []
         },
-        "timestamps": []
+        "timestamps": [],
+        "keywords": []
     };
 
     syncProfilesToFile(); //save profiles to profiles.json
@@ -376,7 +377,8 @@ function profileCreation(msg){ //generates a profile for users that don't have o
                     "raw": [],
                     "summarized": []
                 },
-                "timestamps": []
+                "timestamps": [],
+                "keywords": []
             }
             
         }
@@ -392,6 +394,7 @@ function syncProfileMessages(){ //ensures some profile information is properly f
         let responses;
         let messages;
         let timestamps;
+        let keywords;
         let isThreadArrayMissing;
         let isThreadSynced;
 
@@ -404,13 +407,18 @@ function syncProfileMessages(){ //ensures some profile information is properly f
         if (profile.history && profile.history.timestamps) {
             timestamps = profile.history.timestamps;
         }
+        if (profile.history && profile.history.keywords) {
+            keywords = profile.history.keywords;
+        }
 
         //checking if any array does not exist
-        isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps));
+        isThreadArrayMissing = !(Array.isArray(messages) && Array.isArray(responses) && Array.isArray(timestamps) && Array.isArray(keywords));
         
         //checking if thread lengths are in sync with one another
         if(!isThreadArrayMissing){
-            isThreadSynced = responses.length == messages.length && messages.length == timestamps.length;
+            isThreadSynced = responses.length == messages.length 
+            && messages.length == timestamps.length
+            && timestamps.length == keywords.length;
         }
         
         //checks if any profile thread array does not exist and if so, create/reset all thread arrays (which also syncs them up)
