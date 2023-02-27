@@ -69,6 +69,8 @@ module.exports = {
     }
 };
 
+
+
 function teamsCommand(msg){
     let message = msg.content.toUpperCase();
     
@@ -80,62 +82,89 @@ function teamsCommand(msg){
 
     if(message.includes(" ")){
         let slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because that's where the command starts
-        let replyMessage= "";
 
         if(slicedMsg == "LIST"){
-            replyMessage = "__**CLASS LIST**__";
-            courses["courses"].forEach(course => {
-                replyMessage += "\n" + " [" + course.code + "] " + course.name;
-            });
+            teamsListCommand(msg);
         }
         else if(slicedMsg.startsWith("LINK ")){
             const course = getCourse(slicedMsg.slice(slicedMsg.indexOf(" ") + 1));
-
-            try{
-                const courseName = course.name;
-                const courseLink = course.link != "" ? course.link : "No link found";
-
-                const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setURL(courseLink)
-                        .setLabel(courseName)
-                        .setStyle('Link'),
-                );
-                msg.reply({ content: "Here's the link:", components: [row] });
-                return;
-            }
-            catch (err){
-                replyMessage = "No link found.";
-            }
+            teamsGetLinkCommand(msg, course);
         }
         else if(slicedMsg == "TODAY"){
-            replyMessage = "__**TODAY'S CLASSES:**__";
-
-            courses["courses"].forEach(course => {
-                if(course.days.includes(day)){
-                    let startTime = course.startTimes[course.days.indexOf(day)];
-                    let endTime = course.endTimes[course.days.indexOf(day)];
-
-                    let strStartTime = formatTime(startTime);
-                    let strEndTime = formatTime(endTime);
-
-                    replyMessage += "\n" + " [" + course.code + "] " + course.name + " [" + strStartTime + " - " + strEndTime + "]";
-
-                    if(course.isOnline[course.days.indexOf(day)]){
-                        replyMessage += " - **Online**";
-                    }
-                }
-            });
+            teamsDayScheduleCommand(msg, day);
+        }
+        else if(isDayOfWeek(slicedMsg)){
+            teamsDayScheduleCommand(msg, slicedMsg);
         }
         else{
-            replyMessage = "Command not found. Maybe get it right next time.";
+            msg.reply("Command not found. Maybe get it right next time.");
         }
-        msg.reply(replyMessage);
     }
     else{
         console.log("teamsLinkCommand");
         teamsLinkCommand(msg);
     }
+}
+
+function teamsListCommand(msg){
+    let replyMessage = "__**CLASS LIST**__";
+    courses["courses"].forEach(course => {
+        replyMessage += "\n" + " [" + course.code + "] " + course.name;
+    });
+
+    msg.reply(replyMessage);
+}
+
+function teamsGetLinkCommand(msg, course){
+    try{
+        const courseName = course.name;
+        const courseLink = course.link != "" ? course.link : "No link found";
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setURL(courseLink)
+                .setLabel(courseName)
+                .setStyle('Link'),
+        );
+        msg.reply({ content: "Here's the link:", components: [row] });
+        return;
+    }
+    catch (err){
+        msg.reply("No link found.");
+    }
+}
+
+function teamsDayScheduleCommand(msg, day){
+    day = formatDayOfWeek(day);
+    
+    let replyMessage = "__**" + day.toUpperCase() + "'S CLASSES:**__";
+    let hasClasses = false;
+    
+
+    courses["courses"].forEach(course => {
+
+        if(course.days.includes(day)){
+            hasClasses = true;
+
+            let startTime = course.startTimes[course.days.indexOf(day)];
+            let endTime = course.endTimes[course.days.indexOf(day)];
+
+            let strStartTime = formatTime(startTime);
+            let strEndTime = formatTime(endTime);
+
+            replyMessage += "\n" + " [" + course.code + "] " + course.name + " [" + strStartTime + " - " + strEndTime + "]";
+
+            if(course.isOnline[course.days.indexOf(day)]){
+                replyMessage += " - **Online**";
+            }
+        }
+    });
+
+    if(!hasClasses){
+        replyMessage = "There are no classes on " + day + ".";
+    }
+
+    msg.reply(replyMessage);
 }
 
 function formatTime(time){
@@ -201,6 +230,31 @@ function dayNumToDay(dayNum){
     else { return "Invalid day number"; }
 }
 
+function isDayOfWeek(day){
+    day = day.toUpperCase();
+    if (day == "SUNDAY") { return true; }
+    else if (day == "MONDAY") { return true; }
+    else if (day == "TUESDAY") { return true; }
+    else if (day == "WEDNESDAY") { return true; }
+    else if (day == "THURSDAY") { return true; }
+    else if (day == "FRIDAY") { return true; }
+    else if (day == "SATURDAY") { return true; }
+    else { return false; }
+}
+
+//using this to fix case sensitivity not working with includes()
+function formatDayOfWeek(day){
+    day = day.toUpperCase();
+    if (day == "SUNDAY") { return "Sunday"; }
+    else if (day == "MONDAY") { return "Monday"; }
+    else if (day == "TUESDAY") { return "Tuesday"; }
+    else if (day == "WEDNESDAY") { return "Wednesday"; }
+    else if (day == "THURSDAY") { return "Thursday"; }
+    else if (day == "FRIDAY") { return "Friday"; }
+    else if (day == "SATURDAY") { return "Saturday"; }
+    else { return "Invalid day"; }
+}
+
 function helpCommand(msg) {
     //I should look into having a help command for each active script so then I don't display commands for scripts that may not be in use  
     let helpText = "\n**__!help__**: use !help for an extensive dive on all the functions !help can provide you with.\n";
@@ -208,6 +262,7 @@ function helpCommand(msg) {
     helpText += "**__!t list__**: provides a list of all the classes, along with their code.\n";
     helpText += "**__!t link [class name or code]__**: provides the appropriate Microsoft Teams meeting link.\n";
     helpText += "**__!t today__**: provides a list of all the classes today.\n";
+    helpText += "**__!t [day of the week]__**: provides a list of all the classes on the specified day.\n";
     helpText += "**__!rep__**: provides your reputation.\n";
 
     msg.reply(helpText);
