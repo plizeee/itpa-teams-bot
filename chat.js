@@ -282,7 +282,15 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = "", 
     console.log("fullPrompt: " + fullPrompt);
     console.log("rawReply: " + rawReply);
 
-    msg.reply(replyMessage);
+    const botReply = await msg.reply(replyMessage);
+
+    try {
+        await botReply.react('👍');
+        await botReply.react('👎');
+        await botReply.react('🔄');
+    } catch (error) {
+        console.error('One of the emojis failed to react:', error);
+    }
 
     if (checkThread) { //we have checkThread because some prompts may not require threads, to save tokens
         addPromptHistory(msg, slicedMsg, replyMessage);
