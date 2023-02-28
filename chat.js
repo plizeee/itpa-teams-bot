@@ -282,19 +282,57 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = "", 
     console.log("fullPrompt: " + fullPrompt);
     console.log("rawReply: " + rawReply);
 
-    const botReply = await msg.reply(replyMessage);
-
-    try {
-        await botReply.react('👍');
-        await botReply.react('👎');
-        await botReply.react('🔄');
-    } catch (error) {
-        console.error('One of the emojis failed to react:', error);
-    }
+    generateReactions(msg, replyMessage);
 
     if (checkThread) { //we have checkThread because some prompts may not require threads, to save tokens
         addPromptHistory(msg, slicedMsg, replyMessage);
     }
+}
+
+async function generateReactions(msg, replyMessage){
+    const message = await msg.reply(replyMessage);
+    const cachedProfile = getProfile(msg); //might not be necessary
+
+    await message.react('👍');
+    await message.react('👎');
+    await message.react('🔄');
+    
+    let filter = (reaction, user) => {
+        const isValidReaction = reaction.emoji.name === '🔄';
+        const isAuthor = user.id === msg.author.id;
+
+        return isValidReaction && isAuthor;
+    };
+
+    const collector = message.createReactionCollector({filter, time: 1000 * 60}); //TODO make the time configurable
+
+    //this will run every time a reaction is added as long as the filter is true
+    collector.on('collect', (reaction, user) => {
+        console.log("reaction.emoji.name: " + reaction.emoji.name + " user.id: " + user.id + " msg.author.id: " + msg.author.id);
+
+        chatCommand(msg);
+        message.delete();
+    });
+
+
+    //after the filter time has passed, the collector will stop and this will run
+    collector.on('end', collected => {
+        const reaction = message.reactions.cache.find(reaction => reaction.emoji.name === '🔄');
+
+        if (reaction && reaction.message && !reaction.message.deleted && reaction.me) {
+            reaction.users.remove(message.author.id)
+              .then(() => {
+                console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
+              })
+              .catch(error => {
+                console.error(`Failed to un-react to message with ID ${reaction.message.id}: ${error}`);
+              });
+          } else {
+            console.log('Cannot remove reactions from non-DM channels or the message has been deleted.');
+          }
+
+        console.log(`Collected ${collected.size} items`);
+    });
 }
 
 //function to get the user's thread
