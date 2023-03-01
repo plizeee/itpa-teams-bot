@@ -101,7 +101,6 @@ async function newThreadCommand(msg) {
     let profile = getProfile(msg);
 
     clearThread(profile);
-    console.log("Cleared user's thread history!");
     msg.reply("You have cleared your thread's history!");
 }
 
@@ -369,8 +368,8 @@ function createThreadFromHistory(profile) {
         }
     }
     else { //we want to clear the user's message history if they haven't said anything within a specified time
+        console.log("Thread expired");
         clearThread(profile);
-        console.log("Cleared expired thread");
     }
 
     console.log("strOutput: " + strOutput);
@@ -392,6 +391,7 @@ function clearThread(profile){
     };
 
     syncProfilesToFile(); //save profiles to profiles.json
+    console.log("Cleared thread");
 }
 
 function profileCreation(msg){ //generates a profile for users that don't have one
@@ -463,8 +463,9 @@ function syncProfileMessages(){ //ensures some profile information is properly f
         //checking if thread lengths are in sync with one another
         if(!isThreadArrayMissing){
             isThreadSynced = responses.length == messages.length 
-            && messages.length == timestamps.length
-            && timestamps.length == keywords.length;
+            && messages.length == timestamps.length;
+            //&& timestamps.length == keywords.length;
+            //TODO: keywords are not currently being used, so I'm not checking if they are in sync
         }
         
         //checks if any profile thread array does not exist and if so, create/reset all thread arrays (which also syncs them up)
