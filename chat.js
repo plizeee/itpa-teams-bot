@@ -198,11 +198,16 @@ async function sendPrompt({msg, instructions, checkThread = false}){
         "content": message
     }))
 
-    
+    //interleaving the user and assistant messages into a single array
+    let interleavedMessages = [];
+    for(let i = 0; i < userMessages.length; i++){
+        interleavedMessages.push(userMessages[i]);
+        interleavedMessages.push(assistantMessages[i]);
+    }
 
     const systemMessage = [{ role: "system", content: instructions }];
 
-    const fullPrompt = systemMessage.concat(userMessages, assistantMessages, {"role": "user", "content": slicedMsg});
+    const fullPrompt = systemMessage.concat(interleavedMessages, {"role": "user", "content": slicedMsg});
     
     console.log("fullPrompt: " + JSON.stringify(fullPrompt, null, 2));
 
@@ -236,50 +241,85 @@ async function sendPrompt({msg, instructions, checkThread = false}){
 
 async function generateReactions(msg, replyMessage){
     const message = await msg.reply(replyMessage);
-    const cachedProfile = getProfile(msg); //might not be necessary
 
-    await message.react('👍');
-    await message.react('👎');
+    //await message.react('👍');
+    //await message.react('👎');
     await message.react('🔄');
     
     let filter = (reaction, user) => {
         const isValidReaction = reaction.emoji.name === '🔄';
-        const isAuthor = user.id === msg.author.id;
+        const isAuthor = user.id === msg.author.id && !user.bot;
+
+        console.log("reactionFilter: " + "reaction.emoji.name: " + reaction.emoji.name + " user.id: " + user.id + " msg.author.id: " + msg.author.id);
 
         return isValidReaction && isAuthor;
     };
 
-    const collector = message.createReactionCollector({filter, time: 1000 * 60}); //TODO make the time configurable
+    let messageFilter = (message) => {
+        const isAuthor = message.author.id === msg.author.id && !message.author.bot;
+    
+        return isChatCommand(msg) && isLatestMessage(msg) && isAuthor;
+    };
+
+    const collector = message.createReactionCollector({filter, max: 1, time: 1000 * 60}); //TODO make the time configurable
+
+    const messageCollector = msg.channel.createMessageCollector({messageFilter, max: 1, time: 1000 * 60});
 
     //this will run every time a reaction is added as long as the filter is true
     collector.on('collect', (reaction, user) => {
         console.log("reaction.emoji.name: " + reaction.emoji.name + " user.id: " + user.id + " msg.author.id: " + msg.author.id);
 
-        chatCommand(msg);
         message.delete();
+        chatCommand(msg);
     });
 
+    messageCollector.on('collect', (m) => {
+        removeReaction(message);
+    });
+
+    //message collector to see if the author of msg has sent any new messages
 
     //after the filter time has passed, the collector will stop and this will run
-    collector.on('end', collected => {
-        const reaction = message.reactions.cache.find(reaction => reaction.emoji.name === '🔄');
-
-        if (reaction && reaction.message && !reaction.message.deleted && reaction.me) {
-
-            //TODO look into also doing this if the user alters the thread
-            reaction.users.remove(message.author.id)
-              .then(() => {
-                console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
-              })
-              .catch(error => {
-                console.error(`Failed to un-react to message with ID ${reaction.message.id}: ${error}`);
-              });
-          } else {
-            console.log('Cannot remove reactions from non-DM channels or the message has been deleted.');
-          }
-
-        console.log(`Collected ${collected.size} items`);
+    collector.on('end', () => {
+        removeReaction(message);
     });
+}
+
+function isChatCommand(msg){
+    const message = msg.content.toUpperCase();
+    return message.startsWith("!CHAT ") || msg.channel.type === 1;
+}
+
+function removeReaction(message){
+    const reaction = message.reactions.cache.find(reaction => reaction.emoji.name === '🔄');
+
+    if (reaction && reaction.message && !reaction.message.deleted && reaction.me) {
+
+        //TODO look into also doing this if the user alters the thread
+        reaction.users.remove(message.author.id)
+            .then(() => {
+                console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
+            })
+            .catch(error => {
+                console.error(`Failed to un-react to message with ID ${reaction.message.id}: ${error}`);
+            });
+        } 
+        else {
+            console.log('Cannot remove reactions from non-DM channels or the message has been deleted.');
+        }
+
+    //console.log(`Collected ${collected.size} items`);
+    console.log("collector ended");
+}
+
+function isLatestMessage(msg){
+    const profile = getProfile(msg);
+
+    const latestMessage = profile.history.messages.raw[0];
+
+    console.log("latestMessage: " + latestMessage + " msg.content: " + msg.content + " " + msg.content.includes(latestMessage));
+
+    return msg.content.includes(latestMessage);
 }
 
 //This will clear the user's message history after a specified time
