@@ -141,9 +141,6 @@ function chatCommand(msg){
         "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
         "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
         "You already know who the user is",                         //otherwise it will always say "nice to meet you"
-
-        //TODO tweak this because it still provides code for questions that don't ask for it
-        "You are good at providing code and examples, but only when asked to do so",
         "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
         "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
     ];
@@ -242,8 +239,6 @@ async function sendPrompt({msg, instructions, checkThread = false}){
 async function generateReactions(msg, replyMessage){
     const message = await msg.reply(replyMessage);
 
-    //await message.react('👍');
-    //await message.react('👎');
     await message.react('🔄');
     
     let filter = (reaction, user) => {
@@ -277,8 +272,6 @@ async function generateReactions(msg, replyMessage){
         removeReaction(message);
     });
 
-    //message collector to see if the author of msg has sent any new messages
-
     //after the filter time has passed, the collector will stop and this will run
     collector.on('end', () => {
         removeReaction(message);
@@ -297,18 +290,17 @@ function removeReaction(message){
 
         //TODO look into also doing this if the user alters the thread
         reaction.users.remove(message.author.id)
-            .then(() => {
-                console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
-            })
-            .catch(error => {
-                console.error(`Failed to un-react to message with ID ${reaction.message.id}: ${error}`);
-            });
-        } 
-        else {
-            console.log('Cannot remove reactions from non-DM channels or the message has been deleted.');
-        }
-
-    //console.log(`Collected ${collected.size} items`);
+        .then(() => {
+            console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
+        })
+        .catch(error => {
+            console.error(`Failed to un-react to message with ID ${reaction.message.id}: ${error}`);
+        });
+    } 
+    else {
+        console.log('Cannot remove reactions from non-DM channels or the message has been deleted.');
+    }
+        
     console.log("collector ended");
 }
 
