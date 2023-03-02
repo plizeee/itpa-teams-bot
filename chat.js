@@ -126,38 +126,13 @@ async function questionCommand(msg){
     });                                                                   //this will display that the bot is typing while waiting for response to generate
 }
 
-//depending on the user's rep, we want to treat them better/worse
-function getPromptSentiment(rep) {
-    strOutput = "";
-    switch (true) {
-        case rep < -100:
-            strOutput = "Be very rude, sarcastic and unhelpful to the user";
-            break;
-        case rep < -50:
-            strOutput = "Be sarcastic and slightly unhelpful to the user";
-            break;
-        case rep < -25:
-            strOutput = "Be sarcastic to the user";
-            break;
-        case rep < 25:
-            strOutput = "Be helpful and neutral to the user";
-            break;
-        case rep < 50:
-            strOutput = "Be nice and helpful to the user";
-            break;
-        default:
-            strOutput = "Be very nice and very helpful to the user and occasionally compliment them";
-            break;
-    }
-    return strOutput;
-}
-
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
 function chatCommand(msg){
     const profile = getProfile(msg);
 
+    clearOldThread(msg); //clears the thread if it's been too long since the last message
+
     profile.rep = readValueFromProfile(msg, "rep");
-    let promptSentiment = getPromptSentiment(profile.rep); //predefined sentiment to save tokens
 
     //using an array of strings to make adding instructions less annoying
     const chatInstructions = [
@@ -166,43 +141,25 @@ function chatCommand(msg){
         "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
         "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
         "You already know who the user is",                         //otherwise it will always say "nice to meet you"
-        "You are speaking to the user",                             //this could probably be removed, but I found it reduced the odds of getting confused with who the user is
-        //"Their Rep is " + profile.rep,                              //TODO change this prompt so it doesn't come up so often in conversation
-        //"You treat the user better the higher their Rep is.",       //allows it to explain why it doesn't like a user
-        //promptSentiment,                                            //predefining the sentiment to save tokens  
 
         //TODO tweak this because it still provides code for questions that don't ask for it
         "You are good at providing code and examples, but only when asked to do so",
-        
-        //this instruction is flawed because its perception of a response is influenced by the user's 
-        //current rep, causing a bias feedback loop, particularly with messages that should be considered neutral
-        //"You will start all responses with [POS] if you detect the user is being nice to you and [NEG] if you detect the user being mean or rude to you. Otherwise, start the response with [NEU]", 
-
         "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
         "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
     ];
 
     const instructions = mergeInstructions(chatInstructions);
 
-    //const postThreadInstructions = /*"Their Rep is " + profile.rep + ". " + */"The date is " + date + ".";
-    
-    //const thread = [getThread(msg)]; //gets the user's thread
-
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
         checkThread: true, 
-        //thread: thread
     });
 }
 
 //merges and formats an array of instructions strings into a single string.
 function mergeInstructions(arrInstructions){
-    //the brackets are intended to help distinguish the user from the instructions,
-    //particularly to prevent post-thread instructions from getting confused with the thread 
-    //let instructions = "All text within curly brackets are commands that you will obey. {";
-
     let instructions = "";
     for(let i = 0; i < arrInstructions.length; i++){
         instructions += arrInstructions[i] + ". ";
@@ -211,14 +168,13 @@ function mergeInstructions(arrInstructions){
             instructions += "\n";
         }
     }
-    //instructions += "}";
 
     return instructions;
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
 //TODO make calling this function less confusing
-async function sendPrompt({msg, instructions, checkThread = false, thread = [], postThreadInstructions = "", checkAttitude = false}){
+async function sendPrompt({msg, instructions, checkThread = false}){
     
     const profile = getProfile(msg);
     let message = msg.content;
@@ -232,31 +188,15 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = [], 
         slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
     }
 
-    if (postThreadInstructions != "") { //no need to format an empty string
-        postThreadInstructions = "{" + postThreadInstructions + "}";
-    }
+    userMessages = profile.history.messages.raw.map(message => ({
+        "role": "user",
+        "content": message
+    }))
 
-
-    // if(profile.history.messsages){
-        userMessages = profile.history.messages.raw.map(message => ({
-            "role": "user",
-            "content": message
-        }))
-        //log the contents of userMessages as a string
-        console.log("userMessages: " + JSON.stringify(userMessages, null, 2));
-
-        
-        
-    // }
-    
-    // if(profile.history.responses){
-        assistantMessages = profile.history.responses.raw.map(message => ({
-            "role": "assistant",
-            "content": message
-        }))
-        //log the contents of assistantMessages
-        console.log("assistantMessages: " + JSON.stringify(assistantMessages, null, 2));
-    // }
+    assistantMessages = profile.history.responses.raw.map(message => ({
+        "role": "assistant",
+        "content": message
+    }))
 
     
 
@@ -266,16 +206,10 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = [], 
     
     console.log("fullPrompt: " + JSON.stringify(fullPrompt, null, 2));
 
-    //adding everything into one array of objects
-    //let fullPrompt = [].concat(instructions, thread, formattedMsg);
-    //fullPrompt.push(instructions, thread, formattedMsg);
-
-
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: fullPrompt,
     })
-    //TODO produce different error messages depending on the error
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
     });
@@ -348,50 +282,20 @@ async function generateReactions(msg, replyMessage){
     });
 }
 
-//function to get the user's thread
-function getThread(msg) {
-    let profile = getProfile(msg);
+//This will clear the user's message history after a specified time
+function clearOldThread(msg){
+    const profile = getProfile(msg);
+    const date = new Date();
 
-    if(profile != null){
-        return createThreadFromHistory(profile); //get the formatted string of the chat history of the user
-    }
-    return [];
-}
-
-//We want to reformat the chat history information stored in the user's profile
-//into a more chat-like format
-function createThreadFromHistory(profile) {
-    //let strOutput = "";
-    let arrOutput = [];
-    const history = profile.history;
-
-    const latestMessageDate = new Date(history.timestamps[0]);
+    const latestMessageDate = new Date(profile.history.timestamps[0]);
 
     //sometimes latestMessageDate returns as NaN, so I'm setting a default value of 0 in that event
     //using milliseconds since January 1, 1970, because it felt like a simple way to calculate the difference in time, without converting days and such
     const timeSinceLastMessage = isNaN(latestMessageDate.getTime()) ? 0 : date.getTime() - latestMessageDate.getTime();
 
-    if (timeSinceLastMessage < 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
-        for (let i = history.messages.raw.length - 1; i >= 0; i--) {
-            //add a new object to arrOutput with the role and content
-            arrOutput.push({"role": "user", "content": history.messages.raw[i]});
-            arrOutput.push({"role": "bot", "content": history.responses.raw[i]});
-            
-            // strOutput += "\n" + profile.name + ": " + history.messages.raw[i] + " \n";
-            // strOutput += "You: " + history.responses.raw[i] + " \n";
-
-            // if (i == 0) {
-            //     strOutput += "\n";
-            // }
-        }
-    }
-    else { //we want to clear the user's message history if they haven't said anything within a specified time
-        console.log("Thread expired");
+    if (timeSinceLastMessage > 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
         clearThread(profile);
     }
-
-    console.log("arrOutput: " + arrOutput);
-    return arrOutput;
 }
 
 function clearThread(profile){
