@@ -182,19 +182,18 @@ function chatCommand(msg){
         "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
     ];
 
-    const instructions = mergeInstructions(chatInstructions);       //merges instructions above into a string and adds a bit of formatting
+    const instructions = mergeInstructions(chatInstructions);
 
-    const postThreadInstructions = /*"Their Rep is " + profile.rep + ". " + */"The date is " + date + ".";
-    const thread = getThread(msg); //get a formatted string containing the chat history of the user.
+    //const postThreadInstructions = /*"Their Rep is " + profile.rep + ". " + */"The date is " + date + ".";
+    
+    //const thread = [getThread(msg)]; //gets the user's thread
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
         checkThread: true, 
-        thread: thread, 
-        postThreadInstructions: postThreadInstructions, 
-        checkAttitude: true
+        //thread: thread
     });
 }
 
@@ -202,8 +201,9 @@ function chatCommand(msg){
 function mergeInstructions(arrInstructions){
     //the brackets are intended to help distinguish the user from the instructions,
     //particularly to prevent post-thread instructions from getting confused with the thread 
-    let instructions = "All text within curly brackets are commands that you will obey. {";
+    //let instructions = "All text within curly brackets are commands that you will obey. {";
 
+    let instructions = "";
     for(let i = 0; i < arrInstructions.length; i++){
         instructions += arrInstructions[i] + ". ";
 
@@ -211,42 +211,69 @@ function mergeInstructions(arrInstructions){
             instructions += "\n";
         }
     }
-    instructions += "}";
+    //instructions += "}";
 
     return instructions;
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
 //TODO make calling this function less confusing
-async function sendPrompt({msg, instructions, checkThread = false, thread = "", postThreadInstructions = "", checkAttitude = false}){
+async function sendPrompt({msg, instructions, checkThread = false, thread = [], postThreadInstructions = "", checkAttitude = false}){
+    
     const profile = getProfile(msg);
     let message = msg.content;
+
+    let userMessages;
+    let assistantMessages;
 
     let slicedMsg = message; //the message that will be sent to the ai, it will be sliced if it's a command
 
     if(message.startsWith("!")){
         slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
     }
-    
 
     if (postThreadInstructions != "") { //no need to format an empty string
         postThreadInstructions = "{" + postThreadInstructions + "}";
     }
 
-    //putting everything together into one big happy prompt
-    let fullPrompt = instructions + thread + postThreadInstructions + " " + profile.name + ": " + slicedMsg + " You: ";
+
+    // if(profile.history.messsages){
+        userMessages = profile.history.messages.raw.map(message => ({
+            "role": "user",
+            "content": message
+        }))
+        //log the contents of userMessages as a string
+        console.log("userMessages: " + JSON.stringify(userMessages, null, 2));
+
+        
+        
+    // }
     
-    //generate the ai response
-    //TODO make some of the options configurable depending on the type of message (!q should have a lower temperature)
-    const completion = await openai.createCompletion({
-        model: "text-davinci-003",      //language model (text-davinci-003 is the best one, but most expensive)
-        prompt: fullPrompt,             //text fed into the ai to generate a response
-        temperature: 0.75,              //randomness of the response
-        max_tokens: 300,                //this might cause responses to be cut off, but it's better than running out of tokens
-        top_p: 1,                       //only uses responses within the top probability percentage (0 to 1)
-        frequency_penalty: 0,           //positive reduces likelyhood to repeat words (-2 to 2)
-        presence_penalty: 0.6,          //positive increases likelyhood to change topics (-2 to 2)
-        stop: [profile.name + ": "],    //the ai will stop generating text when it detects this string
+    // if(profile.history.responses){
+        assistantMessages = profile.history.responses.raw.map(message => ({
+            "role": "assistant",
+            "content": message
+        }))
+        //log the contents of assistantMessages
+        console.log("assistantMessages: " + JSON.stringify(assistantMessages, null, 2));
+    // }
+
+    
+
+    const systemMessage = [{ role: "system", content: instructions }];
+
+    const fullPrompt = systemMessage.concat(userMessages, assistantMessages, {"role": "user", "content": slicedMsg});
+    
+    console.log("fullPrompt: " + JSON.stringify(fullPrompt, null, 2));
+
+    //adding everything into one array of objects
+    //let fullPrompt = [].concat(instructions, thread, formattedMsg);
+    //fullPrompt.push(instructions, thread, formattedMsg);
+
+
+    const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: fullPrompt,
     })
     //TODO produce different error messages depending on the error
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
@@ -260,25 +287,10 @@ async function sendPrompt({msg, instructions, checkThread = false, thread = "", 
         return;
     }
 
-    const rawReply = completion.data.choices[0].text;   //storing the unmodified output of the ai generated response
+    const rawReply = completion.data.choices[0].message.content;   //storing the unmodified output of the ai generated response
     let replyMessage = rawReply;                        //copy of the response that will be modified 
 
-    if(checkAttitude){                                  //I have this check because it's possible some prompts may not necessitate providing an attitude
-        //finding the attitude by checking where the brackets are and slicing them out while we're at it
-        let attitude = rawReply.slice(rawReply.indexOf("[") + 1, rawReply.indexOf("]"));
-        console.log(attitude);
-
-        if (attitude == "POS") {                        //detected a positive attitude
-            profile.rep += 1;
-        }
-        else if (attitude == "NEG") {                   //detected a negative attitude
-            profile.rep -= 1;
-        }
-        //we don't want the output to display the attitude, so we're slicing that part out
-        replyMessage = replyMessage.slice(replyMessage.indexOf("]") + 1); 
-    }
-
-    console.log("fullPrompt: " + fullPrompt);
+    //console.log("fullPrompt: " + fullPrompt);
     console.log("rawReply: " + rawReply);
 
     generateReactions(msg, replyMessage);
@@ -319,6 +331,8 @@ async function generateReactions(msg, replyMessage){
         const reaction = message.reactions.cache.find(reaction => reaction.emoji.name === '🔄');
 
         if (reaction && reaction.message && !reaction.message.deleted && reaction.me) {
+
+            //TODO look into also doing this if the user alters the thread
             reaction.users.remove(message.author.id)
               .then(() => {
                 console.log(`Successfully un-reacted to message with ID ${reaction.message.id}`);
@@ -335,20 +349,20 @@ async function generateReactions(msg, replyMessage){
 }
 
 //function to get the user's thread
-//return a formatted string, containing the chat history of the user 
 function getThread(msg) {
     let profile = getProfile(msg);
 
     if(profile != null){
         return createThreadFromHistory(profile); //get the formatted string of the chat history of the user
     }
-    return "";
+    return [];
 }
 
 //We want to reformat the chat history information stored in the user's profile
 //into a more chat-like format
 function createThreadFromHistory(profile) {
-    let strOutput = "";
+    //let strOutput = "";
+    let arrOutput = [];
     const history = profile.history;
 
     const latestMessageDate = new Date(history.timestamps[0]);
@@ -359,12 +373,16 @@ function createThreadFromHistory(profile) {
 
     if (timeSinceLastMessage < 1000 * 60 * 60 * RESET_THREAD_HOURS) { //1000ms * 60s * 60m * hrs
         for (let i = history.messages.raw.length - 1; i >= 0; i--) {
-            strOutput += "\n" + profile.name + ": " + history.messages.raw[i] + " \n";
-            strOutput += "You: " + history.responses.raw[i] + " \n";
+            //add a new object to arrOutput with the role and content
+            arrOutput.push({"role": "user", "content": history.messages.raw[i]});
+            arrOutput.push({"role": "bot", "content": history.responses.raw[i]});
+            
+            // strOutput += "\n" + profile.name + ": " + history.messages.raw[i] + " \n";
+            // strOutput += "You: " + history.responses.raw[i] + " \n";
 
-            if (i == 0) {
-                strOutput += "\n";
-            }
+            // if (i == 0) {
+            //     strOutput += "\n";
+            // }
         }
     }
     else { //we want to clear the user's message history if they haven't said anything within a specified time
@@ -372,8 +390,8 @@ function createThreadFromHistory(profile) {
         clearThread(profile);
     }
 
-    console.log("strOutput: " + strOutput);
-    return strOutput;
+    console.log("arrOutput: " + arrOutput);
+    return arrOutput;
 }
 
 function clearThread(profile){
