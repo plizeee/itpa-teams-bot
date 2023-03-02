@@ -6,3 +6,4 @@ startMaster.sh
 startDev.sh
 testDev.sh
 testMaster.sh
+node_modules
