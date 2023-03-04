@@ -14,6 +14,7 @@ const openai = new OpenAIApi(configuration);
 
 const NUM_THREADS = 5; //Max # of threads to store for any given profile (more threads = more tokens used per message)
 const RESET_THREAD_HOURS = 0.5; //# of hours before we automatically clear the history (reduces token usage)
+const RETRY_SECONDS_BEFORE_EXPIRE = 60; //# of seconds before we remove the retry button from the message
 
 let date;
 let isMaster;
@@ -170,7 +171,6 @@ function mergeInstructions(arrInstructions){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-//TODO make calling this function less confusing
 async function sendPrompt({msg, instructions, checkThread = false}){
     
     const profile = getProfile(msg);
@@ -211,6 +211,7 @@ async function sendPrompt({msg, instructions, checkThread = false}){
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: fullPrompt,
+        max_tokens: 1000,
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
@@ -229,6 +230,20 @@ async function sendPrompt({msg, instructions, checkThread = false}){
     //console.log("fullPrompt: " + fullPrompt);
     console.log("rawReply: " + rawReply);
 
+    console.log("replyMessage.length (uncut): " + replyMessage.length);
+
+    //discord has a 4000 character limit, so we need to cut the response if it's too long
+    if(replyMessage.length > 2000){
+        replyMessage = replyMessage.slice(0, 2000);
+        console.log("replyMessage.length (cut): " + replyMessage.length);
+    }
+
+    let prompt_tokens = completion.data.usage.prompt_tokens;
+    let completion_tokens = completion.data.usage.completion_tokens;
+
+    console.log("prompt_tokens: " + prompt_tokens + " completion_tokens: " + completion_tokens);
+    console.log("total tokens used: " + (prompt_tokens + completion_tokens));
+
     generateReactions(msg, replyMessage);
 
     if (checkThread) { //we have checkThread because some prompts may not require threads, to save tokens
@@ -241,7 +256,7 @@ async function generateReactions(msg, replyMessage){
 
     await message.react('🔄');
     
-    let filter = (reaction, user) => {
+    let reactionFilter = (reaction, user) => {
         const isValidReaction = reaction.emoji.name === '🔄';
         const isAuthor = user.id === msg.author.id && !user.bot;
 
@@ -250,15 +265,25 @@ async function generateReactions(msg, replyMessage){
         return isValidReaction && isAuthor;
     };
 
-    let messageFilter = (message) => {
-        const isAuthor = message.author.id === msg.author.id && !message.author.bot;
+    //console.log("filter: " + filter);
+
+    let messageFilter = (m) => m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg);//{ 
+
+    //console.log("messageFilter: " + messageFilter);
+        //return true;
+        //return (m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg));
+
+        // console.log(">>>>isAuthor: " + isAuthor + " isChatCommand(msg): " + isChatCommand(msg) + " isLatestMessage: " + isLatestMessage(msg));
     
-        return isChatCommand(msg) && isLatestMessage(msg) && isAuthor;
-    };
+        // let output = false;
+        // output = isAuthor;
 
-    const collector = message.createReactionCollector({filter, max: 1, time: 1000 * 60}); //TODO make the time configurable
+        // return output;
+    //};
 
-    const messageCollector = msg.channel.createMessageCollector({messageFilter, max: 1, time: 1000 * 60});
+    const collector = message.createReactionCollector({filter: reactionFilter, max: 1, time: 1000 * RETRY_SECONDS_BEFORE_EXPIRE});
+
+    const messageCollector = msg.channel.createMessageCollector({filter: messageFilter, max: 1, time: 1000 * RETRY_SECONDS_BEFORE_EXPIRE});
 
     //this will run every time a reaction is added as long as the filter is true
     collector.on('collect', (reaction, user) => {
@@ -268,8 +293,13 @@ async function generateReactions(msg, replyMessage){
         chatCommand(msg);
     });
 
-    messageCollector.on('collect', (m) => {
-        removeReaction(message);
+    messageCollector.on('collect', m => {
+        console.log("MESSAGE COLLECTED");
+        console.log("m.author.id: " + m.author.id + " msg.author.id: " + msg.author.id + " m.author.bot: " + m.author.bot + " isChatCommand(m): " + isChatCommand(m) + " isLatestMessage(msg): " + isLatestMessage(msg));
+        if(m.author.id == msg.author.id && !m.author.bot && isChatCommand(m) && isLatestMessage(msg)){
+            removeReaction(message);
+        }
+        //removeReaction(message);
     });
 
     //after the filter time has passed, the collector will stop and this will run
@@ -309,9 +339,17 @@ function isLatestMessage(msg){
 
     const latestMessage = profile.history.messages.raw[0];
 
-    console.log("latestMessage: " + latestMessage + " msg.content: " + msg.content + " " + msg.content.includes(latestMessage));
+    
 
-    return msg.content.includes(latestMessage);
+    let slicedMsg = msg.content;
+
+    if(msg.content.startsWith("!")){
+        slicedMsg = msg.content.slice(msg.content.indexOf(" ") + 1); //index of " " because commands will always end with that
+    }
+
+    console.log("latestMessage: " + latestMessage + " msg.content: " + msg.content + " " + (slicedMsg === latestMessage));
+
+    return slicedMsg === latestMessage;
 }
 
 //This will clear the user's message history after a specified time

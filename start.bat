@@ -1,2 +1,0 @@
-@echo
-node main.js
