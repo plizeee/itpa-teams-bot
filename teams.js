@@ -96,6 +96,9 @@ function teamsCommand(msg){
         else if(isDayOfWeek(slicedMsg)){
             teamsDayScheduleCommand(msg, slicedMsg);
         }
+        else if(slicedMsg == "SCHEDULE"){
+            teamsFullScheduleCommand(msg);
+        }
         else{
             msg.reply("Command not found. Maybe get it right next time.");
         }
@@ -104,6 +107,38 @@ function teamsCommand(msg){
         console.log("teamsLinkCommand");
         teamsLinkCommand(msg);
     }
+}
+
+function teamsFullScheduleCommand(msg){
+    //this is kinda like teamsDayScheduleCommand but it's for the whole week
+    let replyMessage = "__**FULL SCHEDULE**__";
+
+    for(let i = 0; i < 7; i++){
+        let day = dayNumToDay(i);
+
+        //only list days that have classes
+        if(courses["courses"].some(course => course.days.includes(day))){
+            replyMessage += "\n\n__" + day.toUpperCase() + "__";
+        }
+
+        courses["courses"].forEach(course => {
+            if(course.days.includes(day)){
+                let startTime = course.startTimes[course.days.indexOf(day)];
+                let endTime = course.endTimes[course.days.indexOf(day)];
+
+                let strStartTime = formatTime(startTime);
+                let strEndTime = formatTime(endTime);
+
+                replyMessage += "\n" + " [" + course.code + "] " + course.name + " [" + strStartTime + " - " + strEndTime + "]";
+
+                if(course.isOnline[course.days.indexOf(day)]){
+                    replyMessage += " - **Online**";
+                }
+            }
+        });
+    }
+
+    msg.reply(replyMessage);
 }
 
 function teamsListCommand(msg){
