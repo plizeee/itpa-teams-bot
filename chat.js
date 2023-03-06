@@ -205,6 +205,7 @@ function chatCommand(msg){
         "You already know who the user is",                         //otherwise it will always say "nice to meet you"
         "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
         "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
+        "The date is " + date,                                      //otherwise it'll make something up
     ];
 
     const instructions = mergeInstructions(chatInstructions);
