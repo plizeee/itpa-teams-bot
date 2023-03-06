@@ -20,7 +20,7 @@ let date;
 let isMaster;
 
 module.exports = {
-    checkChatCommand: function (msg, isMasterBranch) {
+    checkChatCommand: async function (msg, isMasterBranch) {
         date = new Date();
         isMaster = isMasterBranch;
 
@@ -29,6 +29,7 @@ module.exports = {
         }
 
         let command = msg.content.toUpperCase(), found = false;
+
 
         if (command.startsWith("!QUESTION ") || command.startsWith("!Q ")) { //Ignores Rep and thread history, provides more factual answers.
             found = true;
@@ -42,13 +43,73 @@ module.exports = {
             found = true;
             repCommand(msg);
         }
-        else if (command.startsWith("!CHAT ") || (msg.channel.type == 1 && !msg.author.bot && !command.startsWith("!"))) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
+        else if (await isValidChatRequirements(msg)) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
             found = true;
             chatCommand(msg);
         }
         return found;
     }
 };
+
+async function isValidChatRequirements(msg){
+    let message = msg.content.toUpperCase();
+
+    if(message.startsWith("!CHAT ")){
+        return true;
+    }
+    else if(msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!")){
+        return true;
+    }
+    else if(await isReferencingBot(msg)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+async function isReferencingBot(msg){
+    //if the message is a reply, we want to check if the referenced message was sent by a bot
+    if(msg.reference){
+        let repliedMessage = await msg.fetchReference();
+
+        return repliedMessage.author.bot;
+    }
+    else{
+        //console.log("isReferencingBot is false");
+        return false;
+    }
+}
+
+//function that returns a thread from a chain of messages
+async function getReplyThread(msg, sysMsg){
+
+    let message = msg.content;
+    if(msg.content.startsWith("!")){
+        message = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    }
+
+    let thread = [sysMsg];
+    thread.push({"role": "user", "content": message});
+
+    if(msg.reference){
+        let repliedMessage = await msg.fetchReference();
+
+        while(repliedMessage){
+            if(repliedMessage.author.bot){
+                thread.unshift({"role": "assistant", "content": repliedMessage.content});
+            }
+            else{
+                thread.unshift({"role": "user", "content": repliedMessage.content});
+            }
+
+            repliedMessage = await repliedMessage.fetchReference()
+            .catch(err => console.log("No reference found"));
+        }
+    }
+
+    return thread;
+}
 
 // a function to return an array of any keywords found in the prompt
 function checkKeywords(prompt){
@@ -172,12 +233,15 @@ function mergeInstructions(arrInstructions){
 
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, checkThread = false}){
+    //let fullPrompt = [];
+
+    let fullPrompt = await getReplyThread(msg, {"role": "system", "content": instructions});
+
+    console.log(fullPrompt);
     
     const profile = getProfile(msg);
     let message = msg.content;
 
-    let userMessages;
-    let assistantMessages;
 
     let slicedMsg = message; //the message that will be sent to the ai, it will be sliced if it's a command
 
@@ -185,33 +249,11 @@ async function sendPrompt({msg, instructions, checkThread = false}){
         slicedMsg = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
     }
 
-    userMessages = profile.history.messages.raw.map(message => ({
-        "role": "user",
-        "content": message
-    }))
-
-    assistantMessages = profile.history.responses.raw.map(message => ({
-        "role": "assistant",
-        "content": message
-    }))
-
-    //interleaving the user and assistant messages into a single array
-    let interleavedMessages = [];
-    for(let i = 0; i < userMessages.length; i++){
-        interleavedMessages.push(userMessages[i]);
-        interleavedMessages.push(assistantMessages[i]);
-    }
-
-    const systemMessage = [{ role: "system", content: instructions }];
-
-    const fullPrompt = systemMessage.concat(interleavedMessages, {"role": "user", "content": slicedMsg});
-    
-    console.log("fullPrompt: " + JSON.stringify(fullPrompt, null, 2));
-
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: fullPrompt,
         max_tokens: 1000,
+        //TODO look into adding 'stream' so you can see a response as it's being generated
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
@@ -265,21 +307,7 @@ async function generateReactions(msg, replyMessage){
         return isValidReaction && isAuthor;
     };
 
-    //console.log("filter: " + filter);
-
-    let messageFilter = (m) => m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg);//{ 
-
-    //console.log("messageFilter: " + messageFilter);
-        //return true;
-        //return (m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg));
-
-        // console.log(">>>>isAuthor: " + isAuthor + " isChatCommand(msg): " + isChatCommand(msg) + " isLatestMessage: " + isLatestMessage(msg));
-    
-        // let output = false;
-        // output = isAuthor;
-
-        // return output;
-    //};
+    let messageFilter = (m) => m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg);
 
     const collector = message.createReactionCollector({filter: reactionFilter, max: 1, time: 1000 * RETRY_SECONDS_BEFORE_EXPIRE});
 
