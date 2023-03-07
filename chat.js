@@ -19,6 +19,7 @@ let isMaster;
 
 module.exports = {
     checkChatCommand: async function (msg, isMasterBranch) {
+        let found = false;
         date = new Date();
         isMaster = isMasterBranch;
 
