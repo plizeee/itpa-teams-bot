@@ -26,12 +26,46 @@ module.exports = {
         profileCreation(msg);
 
         if (await isValidChatRequirements(msg)) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
+
             found = true;
-            chatCommand(msg);
+            if(await isReferencingBot(msg) || !msg.reference){
+                chatCommand(msg);
+            }
+            else{
+                crossReferenceCommand(msg);
+            }
         }
         return found;
     }
 };
+
+async function crossReferenceCommand(msg){
+    console.log("CROSS REFERENCE MESSAGE COMMAND");
+
+    const profile = getProfile(msg);
+
+    const refMsg = await msg.fetchReference();
+
+    const chatInstructions = [
+        "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
+        "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
+        "You already know who the user is",                         //otherwise it will always say "nice to meet you"
+        "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
+        "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
+        "The date is " + date,                                      //otherwise it'll make something up
+        "The following message is what the user is referring to: ",
+        refMsg.content,
+    ];
+
+    const instructions = mergeInstructions(chatInstructions);
+
+    msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
+    sendPrompt({
+        msg: msg, 
+        instructions: instructions, 
+        //checkThread: true, 
+    });
+}
 
 async function isValidChatRequirements(msg){
     let message = msg.content.toUpperCase();
@@ -45,9 +79,7 @@ async function isValidChatRequirements(msg){
     else if(await isReferencingBot(msg)){
         return true;
     }
-    else{
-        return false;
-    }
+    return false;
 }
 
 async function isReferencingBot(msg){
@@ -57,33 +89,33 @@ async function isReferencingBot(msg){
 
         return repliedMessage.author.bot;
     }
-    else{
+    /*else{
         return false;
-    }
+    }*/
+    return false;
 }
 
 //function that returns a thread from a chain of messages
 async function getReplyThread(msg, sysMsg){
 
-    let message = msg.content;
-    if(msg.content.startsWith("!")){
-        message = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
-    }
+    let message = stripCommand(msg.content);
 
     let thread = [];
 
     if(msg.reference){
-        let repliedMessage = await msg.fetchReference();
+        let repliedMessageRef = await msg.fetchReference();
 
-        while(repliedMessage){
-            if(repliedMessage.author.bot){
-                thread.unshift({"role": "assistant", "content": repliedMessage.content});
+        while(repliedMessageRef){
+
+            let repliedMessage = stripCommand(repliedMessageRef.content);
+            if(repliedMessageRef.author.bot){
+                thread.unshift({"role": "assistant", "content": repliedMessage});
             }
             else{
-                thread.unshift({"role": "user", "content": repliedMessage.content});
+                thread.unshift({"role": "user", "content": repliedMessage});
             }
 
-            repliedMessage = await repliedMessage.fetchReference()
+            repliedMessageRef = await repliedMessageRef.fetchReference()
             .catch(err => console.log("No reference found"));
         }
     }
@@ -94,13 +126,12 @@ async function getReplyThread(msg, sysMsg){
     return thread;
 }
 
-// a function to return an array of any keywords found in the prompt
-function checkKeywords(prompt){
-    let keywords = ["you","me","i",""]
-    let output = []
-    
-    for (i of keywords){if (prompt.toLowerCase().includes(i.toLowerCase())){output += i}}
-    return output
+function stripCommand(message){
+    if(message.startsWith("!")){
+        message = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    }
+
+    return message;
 }
 
 //This will replace whatever is inside profiles.json with the value of the profiles variable
