@@ -35,6 +35,14 @@ module.exports = {
     }
 };
 
+function stripCommand(message){
+    if(message.startsWith("!")){
+        message = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
+    }
+
+    return message;
+}
+
 function devCommand(msg, isMaster){
     config.devMode = true;
 
@@ -63,12 +71,11 @@ function branchCommand(msg, isMaster){
 
 function setRepCommand(msg, isMaster){
     if(isAuthorized(isMaster)){
-        let message = msg.content.toUpperCase();
-        let slicedMsg = message.slice(8);                           //Filters out the "!SETREP " portion of the command
-        let target = slicedMsg.slice(0, slicedMsg.indexOf(" "));    //Isolates the user's name
-        let repValue = slicedMsg.slice(slicedMsg.indexOf(" "));     //Isolates the Rep value we want to set
+        let message = stripCommand(msg.content);                           //Filters out the "!SETREP " portion of the command
+        let target = message.slice(0, message.indexOf(" "));    //Isolates the user's name
+        let repValue = message.slice(message.indexOf(" "));     //Isolates the Rep value we want to set
 
-        console.log("slicedMsg: " + slicedMsg + " | target: " + target + " | repValue: " + repValue);
+        console.log("message: " + message + " | target: " + target + " | repValue: " + repValue);
         if(!isNaN(repValue)){                                       //making sure the value is actually a number
             let profile = getProfile(msg);
             if(target == profile.name.toUpperCase()){               //removing case-sensitivity from the username}
@@ -83,12 +90,12 @@ function setRepCommand(msg, isMaster){
 function setAllRepCommand(msg, isMaster) {
     if(isAuthorized(isMaster)){
         let profile = getProfile(msg);
-        let slicedMsg = msg.content.slice(11);      //slicing out the "!setallrep " from the command
-        if (!isNaN(slicedMsg)) {                    //wanna make sure the remaining portion is a number to set rep to
-            profile.rep = parseInt(slicedMsg);      //parsing to int because it was behaving as a string
+        let message = stripCommand(msg.content);      //slicing out the "!setallrep " from the command
+        if (!isNaN(message)) {                    //wanna make sure the remaining portion is a number to set rep to
+            profile.rep = parseInt(message);      //parsing to int because it was behaving as a string
     
             syncProfilesToFile(isMaster);                   //save changes to file
-            console.log("set all users rep to " + slicedMsg + " !");
+            console.log("set all users rep to " + message + " !");
         }
     }
 }

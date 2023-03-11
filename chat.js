@@ -63,7 +63,6 @@ async function crossReferenceCommand(msg){
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
-        //checkThread: true, 
     });
 }
 
@@ -89,9 +88,6 @@ async function isReferencingBot(msg){
 
         return repliedMessage.author.bot;
     }
-    /*else{
-        return false;
-    }*/
     return false;
 }
 
@@ -121,7 +117,7 @@ async function getReplyThread(msg, sysMsg){
     }
 
     thread.push({"role": "user", "content": message});
-    thread.unshift(sysMsg);
+    thread.unshift({"role": "system", "content": sysMsg});
 
     return thread;
 }
@@ -168,9 +164,8 @@ function readValueFromProfile(msg, element){
 function chatCommand(msg){
     const profile = getProfile(msg);
 
-    //clearOldThread(msg); //clears the thread if it's been too long since the last message
-
     profile.rep = readValueFromProfile(msg, "rep");
+
 
     //using an array of strings to make adding instructions less annoying
     const chatInstructions = [
@@ -190,7 +185,6 @@ function chatCommand(msg){
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
-        //checkThread: true, 
     });
 }
 
@@ -212,7 +206,7 @@ function mergeInstructions(arrInstructions){
 async function sendPrompt({msg, instructions/*, checkThread = false*/}){
     //let fullPrompt = [];
 
-    let fullPrompt = await getReplyThread(msg, {"role": "system", "content": instructions});
+    let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
 
