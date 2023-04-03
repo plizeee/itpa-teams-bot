@@ -3,6 +3,7 @@ const { Configuration, OpenAIApi } = require("openai");
 
 const fs = require('fs'); //needed to read/write json files
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
+const prompts = JSON.parse(fs.readFileSync('./prompts.json')); //creating a snapshot of the contents of prompts.json
 
 require('dotenv').config();
 
@@ -46,18 +47,7 @@ async function crossReferenceCommand(msg){
 
     const refMsg = await msg.fetchReference();
 
-    const chatInstructions = [
-        "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
-        "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
-        "You already know who the user is",                         //otherwise it will always say "nice to meet you"
-        "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
-        "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
-        "The date is " + date,                                      //otherwise it'll make something up
-        "The following message is what the user is referring to: ",
-        refMsg.content,
-    ];
-
-    const instructions = mergeInstructions(chatInstructions);
+    const instructions = prompts["Terry"] + " The following message is the message the user is referring to: " //+ refMsg.author.username + ": " + refMsg.content //mergeInstructions(chatInstructions);
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
@@ -95,20 +85,21 @@ async function isReferencingBot(msg){
 async function getReplyThread(msg, sysMsg){
 
     let message = stripCommand(msg.content);
+    let profile = getProfile(msg);
 
     let thread = [];
 
     if(msg.reference){
         let repliedMessageRef = await msg.fetchReference();
-
+        
         while(repliedMessageRef){
-
+            let refProfile = getProfile(repliedMessageRef);
             let repliedMessage = stripCommand(repliedMessageRef.content);
             if(repliedMessageRef.author.bot){
-                thread.unshift({"role": "assistant", "content": repliedMessage});
+                thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
             }
             else{
-                thread.unshift({"role": "user", "content": repliedMessage});
+                thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.username + "): " + repliedMessage});
             }
 
             repliedMessageRef = await repliedMessageRef.fetchReference()
@@ -116,7 +107,7 @@ async function getReplyThread(msg, sysMsg){
         }
     }
 
-    thread.push({"role": "user", "content": message});
+    thread.push({"role": "user", "content": profile.name + "(" + msg.author.username + "): " + message});
     thread.unshift({"role": "system", "content": sysMsg});
 
     return thread;
@@ -164,22 +155,9 @@ function readValueFromProfile(msg, element){
 function chatCommand(msg){
     const profile = getProfile(msg);
 
-    profile.rep = readValueFromProfile(msg, "rep");
-
-
-    //using an array of strings to make adding instructions less annoying
-    const chatInstructions = [
-        "The following is a conversation with an AI assistant.",    //so it knows to behave as a chat bot
-        "The assistant is helpful, creative, clever, and funny",    //baseline personality traits
-        "Your name is Teams Bot, but you also go by the name Terry",                                   //TODO name it after it's username (not nickname or people can abuse it)
-        "The user's name is " + profile.name,                       //TODO change this into something a user can change (though it could be abused)
-        "You already know who the user is",                         //otherwise it will always say "nice to meet you"
-        "Do not introduce yourself unless asked to",                //otherwise it will constantly introduce itself
-        "Put three backticks around any code (```)",                 //formatting code responses makes code much easier to read
-        "The date is " + date,                                      //otherwise it'll make something up
-    ];
-
-    const instructions = mergeInstructions(chatInstructions);
+    //profile.rep = readValueFromProfile(msg, "rep");
+    
+    const instructions = prompts["Terry"] + ". The date is " + date + ".";
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
@@ -202,6 +180,13 @@ function mergeInstructions(arrInstructions){
     return instructions;
 }
 
+function stripNameFromResponse(response){
+    if(response.startsWith("Terry: ")){
+        response = response.replace("Terry: ", "");
+    }
+    return response;
+}
+
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions/*, checkThread = false*/}){
     //let fullPrompt = [];
@@ -213,12 +198,13 @@ async function sendPrompt({msg, instructions/*, checkThread = false*/}){
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: fullPrompt,
-        max_tokens: 1000,
+        max_tokens: 2000,
         //TODO look into adding 'stream' so you can see a response as it's being generated
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
     });
+
 
     //since the catch statement above doesn't stop the function, we need to check if the completion is null
     if(!completion) {
@@ -228,7 +214,8 @@ async function sendPrompt({msg, instructions/*, checkThread = false*/}){
     }
 
     const rawReply = completion.data.choices[0].message.content;   //storing the unmodified output of the ai generated response
-    let replyMessage = rawReply;                        //copy of the response that will be modified 
+
+    let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified 
 
     console.log("rawReply: " + rawReply);
 
