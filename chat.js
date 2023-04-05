@@ -43,11 +43,7 @@ module.exports = {
 async function crossReferenceCommand(msg){
     console.log("CROSS REFERENCE MESSAGE COMMAND");
 
-    const profile = getProfile(msg);
-
-    const refMsg = await msg.fetchReference();
-
-    const instructions = prompts["Terry"] + " The following message is the message the user is referring to: " //+ refMsg.author.username + ": " + refMsg.content //mergeInstructions(chatInstructions);
+    const instructions = prompts["Terry"] + " The following message is the message the user is referring to: ";
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
@@ -137,26 +133,8 @@ function syncProfilesToFile(){
     }
 }
 
-function readValueFromProfile(msg, element){
-    const _profiles = JSON.parse(fs.readFileSync('./profiles.json'));;
-
-    for(let i = 0; i < _profiles["users"].length; i++){
-        const _profile = _profiles["users"][i];
-
-        if(_profile.id == msg.author.id){
-            console.log(element + " has been read from profile.");
-            return _profile[element];
-        }
-    }
-    return null;
-}
-
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
 function chatCommand(msg){
-    const profile = getProfile(msg);
-
-    //profile.rep = readValueFromProfile(msg, "rep");
-    
     const instructions = prompts["Terry"] + ". The date is " + date + ".";
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
@@ -164,20 +142,6 @@ function chatCommand(msg){
         msg: msg, 
         instructions: instructions, 
     });
-}
-
-//merges and formats an array of instructions strings into a single string.
-function mergeInstructions(arrInstructions){
-    let instructions = "";
-    for(let i = 0; i < arrInstructions.length; i++){
-        instructions += arrInstructions[i] + ". ";
-
-        if(i == arrInstructions.length){
-            instructions += "\n";
-        }
-    }
-
-    return instructions;
 }
 
 function stripNameFromResponse(response){
@@ -189,8 +153,6 @@ function stripNameFromResponse(response){
 
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions/*, checkThread = false*/}){
-    //let fullPrompt = [];
-
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
