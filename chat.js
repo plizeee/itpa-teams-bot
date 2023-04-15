@@ -13,7 +13,7 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-const RETRY_SECONDS_BEFORE_EXPIRE = 60; //# of seconds before we remove the retry button from the message
+const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the retry button from the message
 
 let date;
 let isMaster;
@@ -145,14 +145,15 @@ function chatCommand(msg){
 }
 
 function stripNameFromResponse(response){
-    if(response.startsWith("Terry: ")){
-        response = response.replace("Terry: ", "");
+    //TODO this fails when it responds with a newline instead of a space
+    if(response.startsWith("Terry:")){
+        response = response.replace("Terry:", "").trim();
     }
     return response;
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function sendPrompt({msg, instructions/*, checkThread = false*/}){
+async function sendPrompt({msg, instructions}){
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
@@ -263,6 +264,7 @@ function removeReaction(message){
     console.log("collector ended");
 }
 
+//TODO remove this, maybe? it's causing errors and I can't remember if this is for old code
 function isLatestMessage(msg){
     const profile = getProfile(msg);
 

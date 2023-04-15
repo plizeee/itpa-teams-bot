@@ -31,6 +31,10 @@ module.exports = {
             found = true;
             repCommand(msg, isMaster);
         }
+        else if(command.startsWith("!KILL")){
+            found = true;
+            process.exit();
+        }
         return found;
     }
 };
