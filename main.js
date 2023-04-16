@@ -126,7 +126,6 @@ client.on("messageCreate", async msg => {
             profile.instanceId = 0;
             console.log("no instance id found defaulting")
         }
-        console.log(instanceID,profile.instanceId)
         if(!(instanceID == profile.instanceId)) {
             console.log("message ignored, user on different instance");
             return;

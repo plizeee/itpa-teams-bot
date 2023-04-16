@@ -34,13 +34,18 @@ function InstanceCommand(msg,configIN){
         let instance = args[0]
         if (args.length >= 2) profile = getProfileById(args[1]);
         console.log(profile);
+        if (isNaN(instance)){
+            msg.reply("Invalid instance id, id must be a numebr atm");
+            return;
+        }
         profile.instanceId = Number(instance);
-        syncProfilesToFile(true); // should store instance whenever
+        syncProfilesToFile(true); // should store profile on all active instances 
         msg.reply(`Your Instance has been set to: ${instance}`);
+        console.log(`setting profile: ${profile.name} id: ${profile.id} to instance: ${instance}`)
 
     }
     else {
-        let log = `terry instance id: ${configIN.instanceId} your instance id: ${profile.instanceId}`
+        let log = `Host instance: ${config.instanceId}\nClient instance: ${profile.instanceId}`
         console.log(config);
         console.log(log);
         msg.reply(log);
