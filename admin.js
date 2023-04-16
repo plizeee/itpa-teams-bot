@@ -4,40 +4,41 @@ const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the prof
 
 module.exports = {
     checkAdminCommand: function (msg, isMaster) {
-        let command = msg.content.toUpperCase(), found = false;
+        let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
+        let prefix = "!" //allows for changing the prefix
+        command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefeix
 
-        if(command.startsWith("!DEV")){
-            found = true;
-            devCommand(msg, isMaster);
-        }
-        else if(command.startsWith("!MASTER")) {
-            found = true;
-            masterCommand(msg, isMaster);
-        }
-        else if(command.startsWith("!BRANCH")){
-            found = true;
-            branchCommand(msg, isMaster);
-        }
-        else if(command.startsWith("!SETREP")){
-            found = true;
-            setRepCommand(msg, isMaster);
-        }
-        else if(command.startsWith("!SETALLREP")){
-            found = true;
-            setAllRepCommand(msg, isMaster);
-        }
-        else if (command.startsWith("!REP")) { //Set a specific user's Rep based on their 
-            found = true;
-            repCommand(msg, isMaster);
-        }
-        else if(command.startsWith("!KILL")){
-            found = true;
-            process.exit();
+        console.log(`Admin Command attempting: ${command}`);
+
+        switch (command){
+            case "DEV": devCommand(msg, isMaster); break;
+            case "MASTER": masterCommand(msg, isMaster); break;
+            case "BRANCH": branchCommand(msg, isMaster); break;
+            case "SETREP": setRepCommand(msg, isMaster); break;
+            case "SETALLREP": setAllRepCommand(msg, isMaster); break;
+            case "REP": repCommand(msg, isMaster); break;
+            case "KILL": process.exit(); break;
+            case "INSTANCE": InstanceCommand(msg); break;
+            default: found = false;
         }
         return found;
     }
 };
+// a command to set a users instance, allows for testing of terry by multiple users.
+function InstanceCommand(msg){
+    let args = msg.content.split(" ");
+    args.shift();
+    let profile = getProfile(msg);
+    let instance = args[0]
+    console.log(args.length);
+    console.log(args);
+    if (args.length >= 2) profile = getProfileById(args[1]);
+    console.log(profile);
+    profile.instanceId = instance;
+    syncProfilesToFile(true); // should store instance whenever
+    msg.reply(`Your Instance has been set to: ${instance}`);
+}
 
 function stripCommand(message){
     if(message.startsWith("!")){
@@ -113,15 +114,37 @@ function repCommand(msg, isMaster) {
 }
 
 function getProfile(msg){
+    // for(let profile of profiles["users"]){
+    //     console.log(`checking profile: ${profile.name} id: ${profile.id} against: ${msg.author.id}`);
+    //     if(profile.id == msg.author.id) {return profile;}
+    // }
+    // return null;
+    for(let i = 0; i < profiles["users"].length; i++){
+        let profile = profiles["users"][i];
+        console.log(`checking profile: ${profile.name} id: ${profile.id} against: ${msg.author.id}`);
+        if(profile.id == msg.author.id){
+            console.log("returning profile: " + profile);
+            return profile;
+        }
+    }
+    console.log("returning null");
+    return null;
+}
+function getProfileById(id){
+    // for(let profile of profiles["users"]){
+    //     if(profile.id == id) {return profile;}
+    // }
+    // return null;
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
 
-        if(profile.id == msg.author.id){
+        if(profile.id == id){
             return profile;
         }
     }
     return null;
 }
+
 
 function isAuthorized(isMaster) {
     if (config.devMode) {

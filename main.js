@@ -47,15 +47,18 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     const defaultValue = {
         "devMode": false,
         "isMaster": true,
-        "admins": []
+        "admins": [],
+        "instanceID": 0 // defualts to 0, should probably not be used or have only basics implemented
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
 
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
+const profiles = JSON.parse(fs.readFileSync(profilePath))
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
+const instanceID = config.instanceID;
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -91,6 +94,17 @@ function isAdmin(id){
     return false;
 }
 
+function getProfile(id){
+    for(let i = 0; i < profiles["users"].length; i++){
+        let profile = profiles["users"][i];
+
+        if(profile.id == id){
+            return profile;
+        }
+    }
+    return null;
+}
+
 //executes this as soon as it starts
 client.on('ready', () => {
     console.log('main.js is online!');
@@ -102,6 +116,18 @@ client.on("messageCreate", async msg => {
     devMode = config.devMode; //this will be evaluated every time a message is sent
     admins = config.admins; //this will be evaluated every time a message is sent
     const isAuthorized = isUserAuthorized(msg);
+    let profile = getProfile(msg.author.id);
+    // checking if the user is part of the current instance
+    
+    if(!msg.content.toLowerCase().includes("!instance") && profile != null)
+    {
+        if (!Object.hasOwn(profile, 'instanceId')) profile.instanceId = 0;
+        if(instanceID!= profile.instanceId) {
+            console.log("message ignored, user on different instance");
+            return;
+        }
+    }
+    console.log(msg.content);
 
     if(isAdmin(msg.author.id)){
         if(adminCommands.checkAdminCommand(msg, isMaster)){
