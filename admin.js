@@ -9,7 +9,6 @@ module.exports = {
         let prefix = "!" //allows for changing the prefix
         command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefeix
 
-        console.log(`Admin Command attempting: ${command}`);
 
         switch (command){
             case "DEV": devCommand(msg, isMaster); break;
@@ -22,6 +21,7 @@ module.exports = {
             case "INSTANCE": InstanceCommand(msg); break;
             default: found = false;
         }
+        if (found) console.log(`Admin Command attempting: ${command}`);
         return found;
     }
 };
@@ -121,7 +121,6 @@ function getProfile(msg){
     // return null;
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
-        console.log(`checking profile: ${profile.name} id: ${profile.id} against: ${msg.author.id}`);
         if(profile.id == msg.author.id){
             console.log("returning profile: " + profile);
             return profile;

@@ -127,7 +127,6 @@ client.on("messageCreate", async msg => {
             return;
         }
     }
-    console.log(msg.content);
 
     if(isAdmin(msg.author.id)){
         if(adminCommands.checkAdminCommand(msg, isMaster)){
