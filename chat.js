@@ -69,7 +69,8 @@ async function isValidChatRequirements(msg){
 
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
-    if(msg.reference){
+    //we also want to exclude threads and system messages
+    if(msg.reference && msg.channel.type != 11 && msg.channel.type != 12){
         let repliedMessage = await msg.fetchReference();
 
         return repliedMessage.author.bot;
@@ -145,7 +146,6 @@ function chatCommand(msg){
 }
 
 function stripNameFromResponse(response){
-    //TODO this fails when it responds with a newline instead of a space
     if(response.startsWith("Terry:")){
         response = response.replace("Terry:", "").trim();
     }
@@ -210,7 +210,7 @@ async function generateReactions(msg, replyMessage){
         return isValidReaction && isAuthor;
     };
 
-    let messageFilter = (m) => m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg) && isLatestMessage(msg);
+    let messageFilter = (m) => m.author.id === msg.author.id && !m.author.bot && isChatCommand(msg);
 
     const collector = message.createReactionCollector({filter: reactionFilter, max: 1, time: 1000 * RETRY_SECONDS_BEFORE_EXPIRE});
 
@@ -226,8 +226,8 @@ async function generateReactions(msg, replyMessage){
 
     messageCollector.on('collect', m => {
         console.log("MESSAGE COLLECTED");
-        console.log("m.author.id: " + m.author.id + " msg.author.id: " + msg.author.id + " m.author.bot: " + m.author.bot + " isChatCommand(m): " + isChatCommand(m) + " isLatestMessage(msg): " + isLatestMessage(msg));
-        if(m.author.id == msg.author.id && !m.author.bot && isChatCommand(m) && isLatestMessage(msg)){
+        console.log("m.author.id: " + m.author.id + " msg.author.id: " + msg.author.id + " m.author.bot: " + m.author.bot + " isChatCommand(m): " + isChatCommand(m));
+        if(m.author.id == msg.author.id && !m.author.bot && isChatCommand(m)){
             removeReaction(message);
         }
     });
@@ -262,21 +262,6 @@ function removeReaction(message){
     }
         
     console.log("collector ended");
-}
-
-//TODO remove this, maybe? it's causing errors and I can't remember if this is for old code
-function isLatestMessage(msg){
-    const profile = getProfile(msg);
-
-    const latestMessage = profile.history.messages.raw[0];
-
-    let slicedMsg = msg.content;
-
-    if(msg.content.startsWith("!")){
-        slicedMsg = msg.content.slice(msg.content.indexOf(" ") + 1); //index of " " because commands will always end with that
-    }
-
-    return slicedMsg === latestMessage;
 }
 
 function profileCreation(msg){ //generates a profile for users that don't have one
