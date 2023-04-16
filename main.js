@@ -59,7 +59,8 @@ const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
 if(!Object.hasOwn(config, "instanceId")){ config.instanceId = 0;}// defaults no instanceId to 0 or main instances
-const instanceID = config.instanceId;
+let argInstanceID = isNaN(process.argv[2])? false: Number(process.argv[2]); 
+const instanceID = argInstanceID || config.instanceID;
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -108,7 +109,7 @@ function getProfile(id){
 
 //executes this as soon as it starts
 client.on('ready', () => {
-    console.log('main.js is online! instance id: ' + config.instanceId);
+    console.log('main.js is online! instance id: ' + instanceID);
 });
 
 //executes every time someone sends a message
@@ -134,7 +135,7 @@ client.on("messageCreate", async msg => {
     }
 
     if(isAdmin(msg.author.id)){
-        if(adminCommands.checkAdminCommand(msg, isMaster)){
+        if(adminCommands.checkAdminCommand(msg, isMaster,instanceID)){
             return;
         }
     }

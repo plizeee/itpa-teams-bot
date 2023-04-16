@@ -3,7 +3,7 @@ let config;
 let profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
 
 module.exports = {
-    checkAdminCommand: function (msg, isMaster) {
+    checkAdminCommand: function (msg, isMaster,INSTANCE) {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
         let prefix = "!" //allows for changing the prefix
@@ -18,7 +18,7 @@ module.exports = {
             case "SETALLREP": setAllRepCommand(msg, isMaster); break;
             case "REP": repCommand(msg, isMaster); break;
             case "KILL": process.exit(); break;
-            case "INSTANCE": InstanceCommand(msg, config); break;
+            case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
@@ -26,7 +26,7 @@ module.exports = {
     }
 };
 // a command to set a users instance, allows for testing of terry by multiple users.
-function InstanceCommand(msg,configIN){
+function InstanceCommand(msg,InstanceID){
     let args = msg.content.split(" ");
     args.shift();
     let profile = getProfile(msg);
@@ -45,7 +45,7 @@ function InstanceCommand(msg,configIN){
 
     }
     else {
-        let log = `Host instance: ${config.instanceId}\nClient instance: ${profile.instanceId}`
+        let log = `Host instance: ${InstanceID}\nClient instance: ${profile.instanceId}`
         console.log(config);
         console.log(log);
         msg.reply(log);
