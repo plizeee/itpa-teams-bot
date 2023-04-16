@@ -1,6 +1,6 @@
 const fs = require('fs'); //needed to read/write json files
 let config;
-const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
+let profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
 
 module.exports = {
     checkAdminCommand: function (msg, isMaster) {
@@ -18,26 +18,33 @@ module.exports = {
             case "SETALLREP": setAllRepCommand(msg, isMaster); break;
             case "REP": repCommand(msg, isMaster); break;
             case "KILL": process.exit(); break;
-            case "INSTANCE": InstanceCommand(msg); break;
+            case "INSTANCE": InstanceCommand(msg, config); break;
             default: found = false;
         }
-        if (found) console.log(`Admin Command attempting: ${command}`);
+        if (found) console.log(`Admin Command runnnig: ${command}`);
         return found;
     }
 };
 // a command to set a users instance, allows for testing of terry by multiple users.
-function InstanceCommand(msg){
+function InstanceCommand(msg,configIN){
     let args = msg.content.split(" ");
     args.shift();
     let profile = getProfile(msg);
-    let instance = args[0]
-    console.log(args.length);
-    console.log(args);
-    if (args.length >= 2) profile = getProfileById(args[1]);
-    console.log(profile);
-    profile.instanceId = instance;
-    syncProfilesToFile(true); // should store instance whenever
-    msg.reply(`Your Instance has been set to: ${instance}`);
+    if(args.length>0){
+        let instance = args[0]
+        if (args.length >= 2) profile = getProfileById(args[1]);
+        console.log(profile);
+        profile.instanceId = Number(instance);
+        syncProfilesToFile(true); // should store instance whenever
+        msg.reply(`Your Instance has been set to: ${instance}`);
+
+    }
+    else {
+        let log = `terry instance id: ${configIN.instanceId} your instance id: ${profile.instanceId}`
+        console.log(config);
+        console.log(log);
+        msg.reply(log);
+    }
 }
 
 function stripCommand(message){

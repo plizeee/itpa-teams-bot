@@ -48,7 +48,7 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
         "devMode": false,
         "isMaster": true,
         "admins": [],
-        "instanceID": 0 // defualts to 0, should probably not be used or have only basics implemented
+        "instanceId": 0 // defualts to 0,
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
@@ -58,7 +58,7 @@ const profiles = JSON.parse(fs.readFileSync(profilePath))
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
-const instanceID = config.instanceID;
+const instanceID = config.instanceId;
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -107,7 +107,7 @@ function getProfile(id){
 
 //executes this as soon as it starts
 client.on('ready', () => {
-    console.log('main.js is online! instance id: ' + config.instanceID);
+    console.log('main.js is online! instance id: ' + config.instanceId);
 });
 
 //executes every time someone sends a message
@@ -122,7 +122,7 @@ client.on("messageCreate", async msg => {
     if(!msg.content.toLowerCase().includes("!instance") && profile != null)
     {
         if (!Object.hasOwn(profile, 'instanceId')) profile.instanceId = 0;
-        if(instanceID!= profile.instanceId) {
+        if(instanceID != profile.instanceId) {
             console.log("message ignored, user on different instance");
             return;
         }
