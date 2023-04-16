@@ -54,7 +54,7 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
 }
 
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
-const profiles = JSON.parse(fs.readFileSync(profilePath))
+let profiles = JSON.parse(fs.readFileSync(profilePath))
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
@@ -113,6 +113,7 @@ client.on('ready', () => {
 //executes every time someone sends a message
 client.on("messageCreate", async msg => {
     config = JSON.parse(fs.readFileSync(configPath)) //read the config file
+    profiles = JSON.parse(fs.readFileSync(profilePath)) 
     devMode = config.devMode; //this will be evaluated every time a message is sent
     admins = config.admins; //this will be evaluated every time a message is sent
     const isAuthorized = isUserAuthorized(msg);
@@ -121,8 +122,12 @@ client.on("messageCreate", async msg => {
     
     if(!msg.content.toLowerCase().includes("!instance") && profile != null)
     {
-        if (!Object.hasOwn(profile, 'instanceId')) profile.instanceId = 0;
-        if(instanceID != profile.instanceId) {
+        if (!Object.hasOwn(profile, 'instanceId')) {
+            profile.instanceId = 0;
+            console.log("no instance id found defaulting")
+        }
+        console.log(instanceID,profile.instanceId)
+        if(!(instanceID == profile.instanceId)) {
             console.log("message ignored, user on different instance");
             return;
         }
