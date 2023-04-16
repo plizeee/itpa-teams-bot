@@ -107,7 +107,7 @@ function getProfile(id){
 
 //executes this as soon as it starts
 client.on('ready', () => {
-    console.log('main.js is online!');
+    console.log('main.js is online! instance id: ' + config.instanceID);
 });
 
 //executes every time someone sends a message
