@@ -58,6 +58,7 @@ let profiles = JSON.parse(fs.readFileSync(profilePath))
 const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
+if(!Object.hasOwn(config, "instanceId")){ config.instanceId = 0;}// defaults no instanceId to 0 or main instances
 const instanceID = config.instanceId;
 
 // Handler:
