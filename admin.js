@@ -3,7 +3,7 @@ let config;
 let profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
 
 module.exports = {
-    checkAdminCommand: function (msg, isMaster,INSTANCE) {
+    checkAdminCommand: function (msg, isMaster,INSTANCE, client) {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
         let prefix = "!" //allows for changing the prefix
@@ -19,12 +19,29 @@ module.exports = {
             case "REP": repCommand(msg, isMaster); break;
             case "KILL": process.exit(); break;
             case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
+            case "MOOD": moodCommand(msg,client); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
         return found;
     }
 };
+function moodCommand(msg, client){
+    let statusMessage = msg.content;
+    statusMessage = statusMessage.slice(statusMessage.indexOf(" ")+1);
+    console.log(`attempting to change status to ${statusMessage}`);
+    if(!(statusMessage) || statusMessage.toUpperCase().includes("!MOOD")) {statusMessage = "You can't spell 'Teams Bot' without 'Stab Me'";}
+    // activity = {
+    //     name: 'Mood',
+    //     type: 4,
+    //     details: statusMessage,
+    // }
+    presence = client.user.setActivity(statusMessage, { type: 0});
+    //client.user.setPresence({activities: [activity], status: 'online' });
+    //console.log(presence);
+    msg.reply(`status set to ${statusMessage}`);
+}
+
 // a command to set a users instance, allows for testing of terry by multiple users.
 function InstanceCommand(msg,InstanceID){
     let args = msg.content.split(" ");

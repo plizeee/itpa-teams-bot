@@ -120,9 +120,11 @@ client.on("messageCreate", async msg => {
     admins = config.admins; //this will be evaluated every time a message is sent
     const isAuthorized = isUserAuthorized(msg);
     let profile = getProfile(msg.author.id);
-    // checking if the user is part of the current instance
     
-    if(!msg.content.toLowerCase().includes("!instance") && profile != null)
+    // checking if the user is part of the current instance
+    // bypassing admin check if it's instance command. not a great solution... could just 
+    if(msg.content.toLowerCase().startsWith("!instance") && adminCommands.checkAdminCommand(msg, isMaster,instanceID,client)) return;
+    else if(profile != null)
     {
         if (!Object.hasOwn(profile, 'instanceId')) {
             profile.instanceId = 0;
@@ -135,7 +137,7 @@ client.on("messageCreate", async msg => {
     }
 
     if(isAdmin(msg.author.id)){
-        if(adminCommands.checkAdminCommand(msg, isMaster,instanceID)){
+        if(adminCommands.checkAdminCommand(msg, isMaster,instanceID,client)){
             return;
         }
     }
