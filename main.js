@@ -41,6 +41,7 @@ if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
     fs.writeFileSync(profilePath, JSON.stringify(defaultValue));
 }
 
+
 const configPath = './config.json';
 if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     console.log(`The file ${configPath} does not exist, creating a new one`);
@@ -59,8 +60,8 @@ const isMaster = config.isMaster; //only check this on launch
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
 if(!Object.hasOwn(config, "instanceId")){ config.instanceId = 0;}// defaults no instanceId to 0 or main instances
-let argInstanceID = isNaN(process.argv[2])? false: Number(process.argv[2]); 
-const instanceID = argInstanceID || config.instanceID;
+let argInstanceID = isNaN(process.argv[2])? null:  Number(process.argv[2]); 
+const instanceID = argInstanceID?? config.instanceId;
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -146,7 +147,7 @@ client.on("messageCreate", async msg => {
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
             return;
         }
-        else if (chatCommands.checkChatCommand(msg, isMaster)) {
+        else if (chatCommands.checkChatCommand(msg, isMaster,client)) {
             return;
         }
     }

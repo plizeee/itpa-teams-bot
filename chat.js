@@ -17,23 +17,31 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 
 let date;
 let isMaster;
+// default date so that it's not null.
+let LastThreadChatSentDate = new Date(year=2020);
+//not a const, needs to change for when no message is sent
+let ThreadCooldownLength = 80000;
 
 module.exports = {
-    checkChatCommand: async function (msg, isMasterBranch) {
+    checkChatCommand: async function (msg, isMasterBranch,client) {
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
 
         profileCreation(msg);
-
-        if (await isValidChatRequirements(msg)) { //we wanna use !chat when we're not in a channel (DM) and we don't want it to talk to itself so we exclude its id
-
+        let chatType = await isValidChatRequirements(msg,client)
+        if (chatType) {
             found = true;
-            if(await isReferencingBot(msg) || !msg.reference){
-                chatCommand(msg);
-            }
-            else{
-                crossReferenceCommand(msg);
+            switch(chatType){
+                case 1: case 2: case 3:
+                    chatCommand(msg); 
+                    break;
+                case 4:
+                    console.log("calling threadChatCommand");
+                    threadChatCommand(msg, 5);
+                    break;
+                default:
+                    crossReferenceCommand(msg);
             }
         }
         return found;
@@ -52,20 +60,47 @@ async function crossReferenceCommand(msg){
     });
 }
 
-async function isValidChatRequirements(msg){
+//I altered this to better determine what type of chat causes his response -will
+async function isValidChatRequirements(msg,client){
     let message = msg.content.toUpperCase();
+    // //() groups statments, gets around js auto placing semicolons were we don't want them.
+    // return (
+    //     message.startsWith("!CHAT ")
+    //     || (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))
+    //     || await isReferencingBot(msg)
+    //     || (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadCooldownLength))
+    // );
 
-    if(message.startsWith("!CHAT ")){
-        return true;
-    }
-    else if(msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!")){
-        return true;
-    }
-    else if(await isReferencingBot(msg)){
-        return true;
-    }
+    return message.startsWith("!CHAT ")? 1:
+    (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
+    await isReferencingBot(msg)? 3:
+    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadCooldownLength))? 4: false;
+
+    // if(message.startsWith("!CHAT ")){
+    //     return true;
+    // }
+    // else if(msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!")){
+    //     return true;
+    // }
+    // else if(await isReferencingBot(msg)){
+    //     return true;
+    // }
+    // return false;
+}
+//checks if it's a thread then checks if starting message author is terry(user) then returns true if so otherwise false;
+async function isTerryThread(msg,terry){
+    if(msg.channel.isThread()) {
+        startMsg = await msg.channel.fetchStarterMessage();
+        return (startMsg.author == terry);
+    };
     return false;
 }
+let isOffChatCooldown = (msg, cooldown = 300000) => {
+    let log = (msg.createdAt.getTime() - LastThreadChatSentDate.getTime()) >= cooldown;
+    console.log(log);
+    return log;
+}
+
 
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
@@ -78,6 +113,7 @@ async function isReferencingBot(msg){
     return false;
 }
 
+// Maybe we should rename this type of thread to chain, to distungiush from discord threads. -will
 //function that returns a thread from a chain of messages
 async function getReplyThread(msg, sysMsg){
 
@@ -144,6 +180,53 @@ function chatCommand(msg){
         instructions: instructions, 
     });
 }
+async function getThreadMessages(thread, maxNumOfMsgs){
+    let messages = await thread.messages.fetch({limit: maxNumOfMsgs})
+    let parsedMessages = []
+    for(let [snowflake,message] of messages){
+        let profile = getProfileByid(message.author.id)
+        let role = message.author.bot? "assitant":"user";
+        parsedMessages.unshift({"role": role, "content": profile.name + "(" + message.author.username + "): " + message.content});
+    }
+    return parsedMessages;
+}
+async function threadChatCommand(msg,maxNumOfMsgs =3){
+    const instructions = prompts["Terry-Simple"] + prompts["Thread-Chat"];
+    console.log("calling getThreadMessages");
+    let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
+    thread.unshift({"role": "system", "content": instructions});
+    msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
+    const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: thread,
+        max_tokens: 500,
+    }).then()
+    .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
+        console.log(error);
+    });
+    if(!completion){
+        console.log("completion is null");
+        msg.reply("Something went wrong. Please try again later.");
+        return;
+    }
+    const rawReply = completion.data.choices[0].message.content; 
+    
+    console.log("rawReply: " + rawReply);
+
+    let replyMessage = stripNameFromResponse(rawReply);
+    let prompt_tokens = completion.data.usage.prompt_tokens;
+    let completion_tokens = completion.data.usage.completion_tokens;
+    let uncut_reply_length = replyMessage.length;
+
+    //discord has a 4000 character limit, so we need to cut the response if it's too long
+    if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
+
+    console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
+    if (rawReply.includes("[NULL]")) {ThreadCooldownLength = 60000; console.log("responding not nessacary");}
+    else msg.reply(replyMessage);
+    LastThreadChatSentDate = date;
+
+}
 
 function stripNameFromResponse(response){
     if(response.startsWith("Terry:")){
@@ -167,7 +250,6 @@ async function sendPrompt({msg, instructions}){
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
     });
-
 
     //since the catch statement above doesn't stop the function, we need to check if the completion is null
     if(!completion) {
@@ -296,6 +378,13 @@ function getProfile(msg){
         if(profile.id == msg.author.id){
             return profile;
         }
+    }
+    return null;
+}
+
+function getProfileByid(id){
+    for(let profile of profiles["users"]){
+        if(profile.id == id) {return profile;}
     }
     return null;
 }
