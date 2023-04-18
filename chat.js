@@ -17,10 +17,12 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 
 let date;
 let isMaster;
-// default date so that it's not null.
-let LastThreadChatSentDate = new Date(year=2020);
-//not a const, needs to change for when no message is sent
-let ThreadCooldownLength = 80000;
+
+let ThreadData = {
+    LastChatSentDate: new Date(year=2020),
+    Cooldown: 80000,
+    set setCooldown(seconds) {this.Cooldown = (1000*seconds)} 
+}
 
 module.exports = {
     checkChatCommand: async function (msg, isMasterBranch,client) {
@@ -74,7 +76,7 @@ async function isValidChatRequirements(msg,client){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadCooldownLength))? 4: false;
+    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown))? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -96,8 +98,8 @@ async function isTerryThread(msg,terry){
     return false;
 }
 let isOffChatCooldown = (msg, cooldown = 300000) => {
-    let log = (msg.createdAt.getTime() - LastThreadChatSentDate.getTime()) >= cooldown;
-    console.log(log);
+    let log = (msg.createdAt.getTime() - ThreadData.LastChatSentDate.getTime()) >= cooldown;
+    console.log(`off cooldown?: ${log}`);
     return log;
 }
 
@@ -184,14 +186,19 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     let messages = await thread.messages.fetch({limit: maxNumOfMsgs})
     let parsedMessages = []
     for(let [snowflake,message] of messages){
-        let profile = getProfileByid(message.author.id)
-        let role = message.author.bot? "assitant":"user";
-        parsedMessages.unshift({"role": role, "content": profile.name + "(" + message.author.username + "): " + message.content});
+        let profile = getProfileByid(message.author.id);
+        let role = "user";
+        let content = `${profile.name}(${message.author.username}): ${message.content}`;
+        if (message.author.bot){
+            role = "assistant";
+            content.slice(start=content.indexOf(":"));
+        }
+        parsedMessages.unshift({"role": role, "content": content});
     }
     return parsedMessages;
 }
 async function threadChatCommand(msg,maxNumOfMsgs =3){
-    const instructions = prompts["Terry-Simple"] + prompts["Thread-Chat"];
+    const instructions = prompts["Terry-Simple"] + prompts["Thread-Chat"] + prompts["Meta-Info"];
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
     thread.unshift({"role": "system", "content": instructions});
@@ -200,7 +207,7 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
         model: "gpt-3.5-turbo",
         messages: thread,
         max_tokens: 500,
-    }).then()
+    })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
     });
@@ -222,9 +229,15 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    if (rawReply.includes("[NULL]")) {ThreadCooldownLength = 60000; console.log("responding not nessacary");}
-    else msg.reply(replyMessage);
-    LastThreadChatSentDate = date;
+    if (rawReply.includes("[NULL]")) {
+        ThreadData.setCooldown = 60; 
+        console.log("decided to not respond");
+    }
+    else {
+        msg.reply(replyMessage);
+        ThreadData.setCooldown = (msg.channel.memberCount > 2)? 80:10;
+    }
+    ThreadData.LastChatSentDate = date;
 
 }
 

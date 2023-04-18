@@ -7,4 +7,3 @@ startDev.sh
 testDev.sh
 testMaster.sh
 node_modules
-prompts.json
