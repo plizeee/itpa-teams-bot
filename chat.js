@@ -191,7 +191,7 @@ async function getThreadMessages(thread, maxNumOfMsgs){
         let content = `${profile.name}(${message.author.username}): ${message.content}`;
         if (message.author.bot){
             role = "assistant";
-            content.slice(start=content.indexOf(":"));
+            content = message.content;
         }
         parsedMessages.unshift({"role": role, "content": content});
     }
@@ -229,13 +229,13 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    if (rawReply.includes("[NULL]")) {
+    if (rawReply.includes("[NULL]") || rawReply.includes("[NUL]")) {
         ThreadData.setCooldown = 60; 
         console.log("decided to not respond");
     }
     else {
         msg.reply(replyMessage);
-        ThreadData.setCooldown = (msg.channel.memberCount > 2)? 80:10;
+        ThreadData.setCooldown = (msg.channel.memberCount > 2)? 80:15;
     }
     ThreadData.LastChatSentDate = date;
 
