@@ -76,7 +76,7 @@ async function isValidChatRequirements(msg,client){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown))? 4: false;
+    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown) && (isReferencingBot || !msg.reference))? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -107,7 +107,7 @@ let isOffChatCooldown = (msg, cooldown = 300000) => {
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
     //we also want to exclude threads and system messages
-    if(msg.reference && msg.channel.type != 11 && msg.channel.type != 12){
+    if(msg.reference){
         let repliedMessage = await msg.fetchReference();
 
         return repliedMessage.author.bot;
