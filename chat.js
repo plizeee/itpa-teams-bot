@@ -229,7 +229,12 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-
+    
+    // regex patterns for future use. using .match(str) on them should return an array in which the index 0 is the match. 
+    //the array has a .group property that should be an object with the properties matching the named capturing groups, aka doRespond and replyTo.
+    // post proccessing will be needed on the capturing groups to determine thier value, but it should be limited to certain things so it shouldn't be too hard.
+    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im
+    let replyPattern = /\[reply(?:to): (?<replyTo>\d{18}|n(?:ul{0,2})?)\]/im
     let noResponsePattern = /\[n(r|u?l{0,2})\]/gim
     if (noResponsePattern.test(rawReply)) {
         ThreadData.setCooldown = 60; 
