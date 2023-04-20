@@ -76,7 +76,7 @@ async function isValidChatRequirements(msg,client){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown) && (isReferencingBot || !msg.reference))? 4: false;
+    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown) && !msg.reference)? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -106,7 +106,6 @@ let isOffChatCooldown = (msg, cooldown = 300000) => {
 
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
-    //we also want to exclude threads and system messages
     if(msg.reference){
         let repliedMessage = await msg.fetchReference();
 
@@ -198,7 +197,7 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     return parsedMessages;
 }
 async function threadChatCommand(msg,maxNumOfMsgs =3){
-    const instructions = prompts["Terry-Simple"] + prompts["Thread-Chat"] + prompts["Meta-Info"];
+    const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Thread-Chat"] + prompts["Meta-Info"];
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
     thread.unshift({"role": "system", "content": instructions});
@@ -229,7 +228,9 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    if (rawReply.includes("[NULL]") || rawReply.includes("[NUL]")) {
+
+    let noResponsePattern = /\[n(r|u?l{0,2})\]/gim
+    if (noResponsePattern.test(rawReply)) {
         ThreadData.setCooldown = 60; 
         console.log("decided to not respond");
     }
