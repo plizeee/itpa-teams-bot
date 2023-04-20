@@ -7,7 +7,7 @@ module.exports = {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
         let prefix = "!" //allows for changing the prefix
-        command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefeix
+        command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefix
 
 
         switch (command){
@@ -19,6 +19,7 @@ module.exports = {
             case "REP": repCommand(msg, isMaster); break;
             case "KILL": process.exit(); break;
             case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
+            case "INSTANCES": InstancesCommand(msg, INSTANCE); break;
             case "MOOD": moodCommand(msg,client); break;
             default: found = false;
         }
@@ -47,7 +48,7 @@ function InstanceCommand(msg,InstanceID){
     let args = msg.content.split(" ");
     args.shift();
     let profile = getProfile(msg);
-    if(args.length>0){
+    if(args.length>0){ //if there are arguments
         let instance = args[0]
         if (args.length >= 2) profile = getProfileById(args[1]);
         console.log(profile);
@@ -57,16 +58,22 @@ function InstanceCommand(msg,InstanceID){
         }
         profile.instanceId = Number(instance);
         syncProfilesToFile(true); // should store profile on all active instances 
-        msg.reply(`Your Instance has been set to: ${instance}`);
-        console.log(`setting profile: ${profile.name} id: ${profile.id} to instance: ${instance}`)
-
+        InstanceID === profile.instanceId ? msg.reply(`Your Instance has been set to: ${instance}`) : null;
     }
-    else {
+    else if(InstanceID == profile.instanceId) { // if no arguments are given
         let log = `Host instance: ${InstanceID}\nClient instance: ${profile.instanceId}`
         console.log(config);
         console.log(log);
         msg.reply(log);
     }
+}
+
+function InstancesCommand(msg, InstanceID){
+    let profile = getProfile(msg);
+    let log = `Host instance: ${InstanceID}\nClient instance: ${profile.instanceId}`
+    console.log(config);
+    console.log(log);
+    msg.reply(log);
 }
 
 function stripCommand(message){
