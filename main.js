@@ -49,7 +49,8 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
         "devMode": false,
         "isMaster": true,
         "admins": [],
-        "instanceId": 0 // defualts to 0,
+        "instanceId": 0, // defualts to 0
+        "chatrooms": true
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
@@ -147,7 +148,7 @@ client.on("messageCreate", async msg => {
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
             return;
         }
-        else if (chatCommands.checkChatCommand(msg, isMaster,client)) {
+        else if (chatCommands.checkChatCommand(msg, isMaster,client, config)) {
             return;
         }
     }

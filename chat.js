@@ -25,13 +25,13 @@ let ThreadData = {
 }
 
 module.exports = {
-    checkChatCommand: async function (msg, isMasterBranch,client) {
+    checkChatCommand: async function (msg, isMasterBranch,client,config) {
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
 
         profileCreation(msg);
-        let chatType = await isValidChatRequirements(msg,client)
+        let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
         if (chatType) {
             found = true;
             switch(chatType){
@@ -40,7 +40,7 @@ module.exports = {
                     break;
                 case 4:
                     console.log("calling threadChatCommand");
-                    threadChatCommand(msg, 5);
+                    threadChatCommand(msg, 10);
                     break;
                 default:
                     crossReferenceCommand(msg);
@@ -63,7 +63,7 @@ async function crossReferenceCommand(msg){
 }
 
 //I altered this to better determine what type of chat causes his response -will
-async function isValidChatRequirements(msg,client){
+async function isValidChatRequirements(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
     // //() groups statments, gets around js auto placing semicolons were we don't want them.
     // return (
@@ -76,7 +76,7 @@ async function isValidChatRequirements(msg,client){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown) && !msg.reference)? 4: false;
+    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown))? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -192,12 +192,12 @@ async function getThreadMessages(thread, maxNumOfMsgs){
             role = "assistant";
             content = message.content;
         }
-        parsedMessages.unshift({"role": role, "content": content});
+        parsedMessages.unshift({"role": role, "content": content, "name": message.author.id});
     }
     return parsedMessages;
 }
 async function threadChatCommand(msg,maxNumOfMsgs =3){
-    const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Thread-Chat"] + prompts["Meta-Info"];
+    const instructions = prompts["Terry-Simple"] + prompts["Thread-Chat"] + prompts["Discord-Chat-formatting"] + prompts["Meta-Info"];
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
     thread.unshift({"role": "system", "content": instructions});
@@ -205,7 +205,8 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: thread,
-        max_tokens: 500,
+        max_tokens: 900,
+        temperature: 0.7
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
