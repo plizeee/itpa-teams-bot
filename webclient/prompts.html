@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord.js Bot Web Client</title>
+    <!--<link rel="stylesheet" href="styles.css">-->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        #add-command-btn {
+            font-size: 2rem;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 50%;
+            padding: 0.5rem;
+            color: white;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .command-box-container {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+
+        .command-name {
+            display: block;
+            width: 100%;
+        }
+
+        textarea {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .command-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f0f0f0; /* Change the background color */
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px; /* Add border-radius */
+        }
+
+        .edit-command-btn {
+            font-size: 1rem;
+            background-color: #2196F3;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            color: white;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 4px;
+            max-width: 400px;
+            width: 80%;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #close-modal-btn {
+            float: right;
+            font-size: 1.5rem;
+            background-color: transparent;
+            border: none;
+            color: #333;
+        }
+
+        #close-modal-btn:hover {
+            color: #f00;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        #save-command-btn {
+            margin-top: 1rem;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        #save-command-btn:hover {
+            background-color: #45a049;
+        }
+
+        #delete-command-btn {
+            font-size: 1.5rem;
+            background-color: transparent;
+            border: none;
+            color: #f00;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        #delete-command-btn:hover {
+            cursor: pointer;
+        }
+
+        
+
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #f4f4f4;
+            padding: 1rem 0;
+        }
+
+        nav a {
+            color: #333;
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Prompts</h1>
+    </header>
+
+    <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="prompts.html">Prompts</a>
+        <a href="courses.html">Schedule</a>
+        <a href="config.html">Config</a>
+    </nav>
+    <div class="container">
+        <h1>Commands</h1>
+        <div class="command-box-container"> <!-- Add the new command-box-container div -->
+            <button id="add-command-btn">+</button>
+            <ul id="command-list">
+                <!-- Commands will be added here dynamically -->
+            </ul>
+        </div>
+    </div>
+    <template id="command-item-template">
+        <li class="command-item">
+          <div class="command-name">
+              <div><strong>Name:</strong> <span class="command-title-value"></span></div>
+              <div><strong>Command:</strong> <span class="command-name-value"></span></div>
+            <div><strong>Description:</strong> <span class="command-description-value"></span></div>
+            <div><strong>Permission Level:</strong> <span class="command-permission-level-value"></span></div>
+            <div><strong>System Prompt:</strong> <span class="command-prompt-value"></span></div>
+          </div>
+          <button class="edit-command-btn">Edit</button>
+        </li>
+      </template>
+    <div id="command-modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="close-modal-btn">&times;</button>
+            <h2>Add/Edit Command</h2>
+            <form id="command-form">
+                <label for="command-title-input">Name:</label>
+                <input type="text" id="command-title-input" required>
+                <label for="command-name-input">Command:</label>
+                <input type="text" id="command-name-input" required>
+                <label for="command-description-input">Description:</label>
+                <input type="text" id="command-description-input" required>
+                <label for="command-permission-level-input">Permission Level:</label>
+                <input type="number" id="command-permission-level-input" required>
+                <label for="command-prompt-input">System Prompt:</label>
+                <textarea id="command-prompt-input" rows="4"></textarea>
+                <button type="submit" id="save-command-btn">Save</button>
+                <button id="delete-command-btn" class="hidden">🗑️</button>
+            </form>
+        </div>
+    </div>
+    <script src="prompts.js"></script>
+</body>
+</html>

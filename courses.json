@@ -1,68 +1,54 @@
 {
-    "courses":
-    [
-        {
-            "name": "Intermediate SQL",
-            "code": "SQL",
-            "days": [ "Monday", "Wednesday" ],
-            "startTimes": [ 930, 930 ],
-            "endTimes": [ 1120, 1120 ],
-            "isOnline": [ true, false ],
-            "link": "https://teams.microsoft.com/dl/launcher/launcher.html?url=%2F_%23%2Fl%2Fmeetup-join%2F19%3Ameeting_MzE2NTFhZTAtNjVlMC00OTg1LTg4NGUtMjJlMDQ5OGE4NmJi%40thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%252226c9169c-4645-432c-939d-4918d4f21bdc%2522%252c%2522Oid%2522%253a%25223d03bbae-66f6-432c-bf0d-23101fb51685%2522%257d%26anon%3Dtrue&type=meetup-join&deeplinkId=d9481114-1f69-413b-8003-55a1bcd9ae78&directDl=true&msLaunch=true&enableMobilePage=true&suppressPrompt=false"
-        },
-        {
-            "name": "Object Oriented Analysis and Design",
-            "code": "OOAD",
-            "days": [ "Monday", "Wednesday" ],
-            "startTimes": [ 1330, 1330 ],
-            "endTimes": [ 1520, 1520 ],
-            "isOnline": [ true, false ],
-            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_NWJhMjkwNjUtYTI3My00MmQ1LWJjZDgtNTI0Mzk3ZjI2YjFi%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%22a84b1917-a87a-4eb1-a3d1-c16978a5c731%22%7d"
-        },
-        {
-            "name": "Project Management",
-            "code": "PM",
-            "days": [ "Friday" ],
-            "startTimes": [ 1330 ],
-            "endTimes": [ 1520 ],
-            "isOnline": [ true ],
-            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ODMwODBhMzktODQxYS00MjBjLWIzZTItYWU0MzM4MzlmMzhi%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%222ec0014d-5ad7-4b8e-a6ac-c0f4f8f8ba0d%22%7d"
-        },
-        {
-            "name": "Quality Assurance Testing",
-            "code": "QA",
-            "days": [ "Friday" ],
-            "startTimes": [ 930 ],
-            "endTimes": [ 1120 ],
-            "isOnline": [ true ],
-            "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ODdlM2M5YTgtMzI2Ni00MDIwLThiNjktYjMxMTQ5NmI2YmRh%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d"
-        },
-        {
-            "name": "Object Oriented Programming",
-            "code": "OOP",
-            "days": [ "Tuesday", "Thursday" ],
-            "startTimes": [ 930, 1330 ],
-            "endTimes": [ 1120, 1520 ],
-            "isOnline": [ false, false ],
-            "link": ""
-        },
-        {
-            "name": "Hardware Components and Set Up",
-            "code": "HW",
-            "days": [ "Tuesday" ],
-            "startTimes": [ 1330 ],
-            "endTimes": [ 1520 ],
-            "isOnline": [ false ],
-            "link": ""
-        },
-        {
-            "name": "JavaScript Programming",
-            "code": "JS",
-            "days": [ "Thursday" ],
-            "startTimes": [ 930 ],
-            "endTimes": [ 1120 ],
-            "isOnline": [ false ],
-            "link": ""
-        }
-    ]
+	"courses": [
+		{
+			"name": "Database Programming",
+			"code": "DBP",
+			"link": "https://teams.microsoft.com/l/channel/19%3ahjIua_cAnXFvxhHjZwnpt0b-khzfCmAY8tpkvCmpwvU1%40thread.tacv2/General?groupId=f5ecdc15-15d3-4aab-a751-46477209d900&tenantId=26c9169c-4645-432c-939d-4918d4f21bdc",
+			"days": [
+				"Monday",
+				"Tuesday",
+				"Wednesday",
+				"Wednesday"
+			],
+			"startTimes": [
+				830,
+				1030,
+				830,
+				1030
+			],
+			"endTimes": [
+				1020,
+				1220,
+				1020,
+				1220
+			],
+			"isOnline": [
+				true,
+				true,
+				false,
+				false
+			]
+		},
+		{
+			"name": "Networking for Programmers",
+			"code": "NET",
+			"link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_YTAzMzgxOGMtMjQwYy00NTMxLWFiZWUtZjE3ZjFhNDg3MTll%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d",
+			"days": [
+				"Monday",
+				"Wednesday"
+			],
+			"startTimes": [
+				1030,
+				1030
+			],
+			"endTimes": [
+				1220,
+				1220
+			],
+			"isOnline": [
+				true,
+				false
+			]
+		}
+	]
 }
