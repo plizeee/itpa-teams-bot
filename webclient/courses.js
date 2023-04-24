@@ -1,3 +1,6 @@
+//TODO if it's an online course, make the session-info a hyperlink
+//TODO sort courses by day and time
+
 let coursesData = {
     courses: []
   };
@@ -62,6 +65,24 @@ let coursesData = {
     const addSessionBtn = document.createElement('button');
     addSessionBtn.classList.add('addSessionBtn');
     addSessionBtn.textContent = '+';
+
+    function formatTime(time) {
+      let strOutput = '';  
+
+      
+
+      //add am/pm
+      if (time >= 1300) {
+          strOutput +=  time - 1200 + ' pm';
+      } else {
+          strOutput += time + ' am';
+      }
+
+      //add : to the time
+      strOutput = strOutput.slice(0, -5) + ':' + strOutput.slice(-5);
+
+      return strOutput;
+    }
   
     function renderCourses() {
         coursesList.innerHTML = '';
@@ -85,7 +106,7 @@ let coursesData = {
                   editSession(courseIndex, sessionIndex);
               });
   
-                sessionInfoEl.textContent = `${day} ${course.startTimes[sessionIndex]}-${course.endTimes[sessionIndex]} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
+                sessionInfoEl.textContent = `${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
   
                 deleteSessionBtn.addEventListener('click', () => deleteSession(courseIndex, sessionIndex));
   
