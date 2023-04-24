@@ -21,12 +21,15 @@ module.exports = {
             case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
             case "INSTANCES": InstancesCommand(msg, INSTANCE); break;
             case "MOOD": moodCommand(msg,client); break;
+            case "TOGGLE-CHATROOMS": toggleChats(msg,config.chatrooms??false); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
         return found;
     }
 };
+//this should take the current value from the config and flip it
+function toggleChats(msg, currentVal){config.chatrooms = !currentVal; syncConfig(); msg.reply(`chatrooms set to: ${config.chatrooms}`)}
 function moodCommand(msg, client){
     let statusMessage = msg.content;
     statusMessage = statusMessage.slice(statusMessage.indexOf(" ")+1);

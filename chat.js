@@ -25,13 +25,13 @@ let ThreadData = {
 }
 
 module.exports = {
-    checkChatCommand: async function (msg, isMasterBranch,client) {
+    checkChatCommand: async function (msg, isMasterBranch,client,config) {
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
 
         profileCreation(msg);
-        let chatType = await isValidChatRequirements(msg,client)
+        let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
         if (chatType) {
             found = true;
             switch(chatType){
@@ -40,7 +40,7 @@ module.exports = {
                     break;
                 case 4:
                     console.log("calling threadChatCommand");
-                    threadChatCommand(msg, 5);
+                    threadChatCommand(msg, 10);
                     break;
                 default:
                     crossReferenceCommand(msg);
@@ -63,7 +63,7 @@ async function crossReferenceCommand(msg){
 }
 
 //I altered this to better determine what type of chat causes his response -will
-async function isValidChatRequirements(msg,client){
+async function isValidChatRequirements(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
     // //() groups statments, gets around js auto placing semicolons were we don't want them.
     // return (
@@ -76,7 +76,7 @@ async function isValidChatRequirements(msg,client){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown) && !msg.reference)? 4: false;
+    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown))? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -187,25 +187,28 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     for(let [snowflake,message] of messages){
         let profile = getProfileByid(message.author.id);
         let role = "user";
-        let content = `${profile.name}(${message.author.username}): ${message.content}`;
+        let content = `messageID:${message.id} ${profile.name}(${message.author.username}): ${message.content}`;
         if (message.author.bot){
             role = "assistant";
             content = message.content;
         }
-        parsedMessages.unshift({"role": role, "content": content});
+        parsedMessages.unshift({"role": role, "content": content, "name": message.author.id});
     }
     return parsedMessages;
 }
 async function threadChatCommand(msg,maxNumOfMsgs =3){
-    const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Thread-Chat"] + prompts["Meta-Info"];
+    const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Meta-Info"];
+    const instructions2 = prompts["Thread-Chat"];
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
+    thread.unshift({"role": "user", "content": instructions2, "name": "System"});
     thread.unshift({"role": "system", "content": instructions});
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: thread,
-        max_tokens: 500,
+        max_tokens: 1200,
+        temperature: 1
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
@@ -228,14 +231,20 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-
-    let noResponsePattern = /\[n(r|u?l{0,2})\]/gim
+    
+    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, 
+    let replyPattern = /\[reply(?:to): (?<replyTo>\d{17,20}|n(?:ul{0,2})?)\]/im;
+    let matches = rawReply.match(replyPattern)
+    if(matches)replyMessage = replyMessage.replace(replyPattern,"");
+    let replyTarget = matches?.groups["replyTo"];
+    let noResponsePattern = /\[n(r|u?l{0,2})\]/gim;
     if (noResponsePattern.test(rawReply)) {
         ThreadData.setCooldown = 60; 
         console.log("decided to not respond");
     }
     else {
-        msg.reply(replyMessage);
+        let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget}} : replyMessage;
+        await msg.channel.send(reply);
         ThreadData.setCooldown = (msg.channel.memberCount > 2)? 80:15;
     }
     ThreadData.LastChatSentDate = date;
