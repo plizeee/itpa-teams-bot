@@ -63,9 +63,6 @@ let coursesData = {
     addSessionBtn.classList.add('addSessionBtn');
     addSessionBtn.textContent = '+';
   
-  
-    let editingCourseIndex = null;
-  
     function renderCourses() {
         coursesList.innerHTML = '';
   
@@ -99,6 +96,7 @@ let coursesData = {
             sessionsContainer.appendChild(addSessionBtn.cloneNode(true));
             sessionsContainer.lastChild.addEventListener('click', () => {
                 editingCourseIndex = courseIndex;
+                editingSessionCourseIndex = courseIndex;
                 showSessionForm();
             });
             courseInfoEl.appendChild(sessionsContainer);
@@ -114,24 +112,26 @@ let coursesData = {
     }
   
     function editSession(courseIndex, sessionIndex) {
+      console.log('Editing session', sessionIndex, 'of course', courseIndex);
       const course = coursesData.courses[courseIndex];
-  
+    
       const day = course.days[sessionIndex];
       const startTime = course.startTimes[sessionIndex];
       const endTime = course.endTimes[sessionIndex];
       const isOnline = course.isOnline[sessionIndex];
-  
+    
       document.getElementById('sessionDay').value = day;
       document.getElementById('sessionStartTime').value = startTime.toString().replace(/(\d{2})(\d{2})/, '$1:$2');
       document.getElementById('sessionEndTime').value = endTime.toString().replace(/(\d{2})(\d{2})/, '$1:$2');
       document.getElementById('sessionIsOnline').checked = isOnline;
-  
+    
       showSessionForm();
     }
   
   
     function showSessionForm() {
       sessionModal.style.display = 'block';
+      //editingSessionIndex = null;
     }
   
     function hideSessionForm() {
@@ -140,16 +140,19 @@ let coursesData = {
   
     function submitSessionForm(event) {
       event.preventDefault();
-  
+    
       const newDay = document.getElementById('sessionDay').value;
       const newStartTime = parseInt(document.getElementById('sessionStartTime').value.replace(':', ''));
       const newEndTime = parseInt(document.getElementById('sessionEndTime').value.replace(':', ''));
       const isOnline = document.getElementById('sessionIsOnline').checked;
-  
-      
-  
-      const course = coursesData.courses[editingCourseIndex];
-  
+    
+      if (editingSessionCourseIndex === null && editingSessionIndex === null) {
+        alert('Please select a course before adding a session.');
+        return;
+      }
+    
+      const course = coursesData.courses[editingSessionCourseIndex];
+    
       if (editingSessionIndex === null) {
           course.days.push(newDay);
           course.startTimes.push(newStartTime);
@@ -161,11 +164,16 @@ let coursesData = {
           course.endTimes[editingSessionIndex] = newEndTime;
           course.isOnline[editingSessionIndex] = isOnline;
       }
-  
+    
+      editingSessionIndex = null;
+      editingSessionCourseIndex = null;
+    
       renderCourses();
       saveCoursesData();
       hideSessionForm();
     }
+    
+    
   
     function showCourseForm() {
         courseModal.style.display = 'block';

@@ -26,11 +26,12 @@ let totalMinutes;
 let message;
 
 //assigning the json data into these objects
-const courses = JSON.parse(fs.readFileSync('./courses.json'));
+let courses = JSON.parse(fs.readFileSync('./courses.json'));
 const profiles = JSON.parse(fs.readFileSync('./profiles.json'));
 
 module.exports = {
     checkTeamsCommand: function (msg) {
+        courses = JSON.parse(fs.readFileSync('./courses.json'));
         let command = msg.content.toUpperCase(), found = false;
 
         if(command.startsWith("!TEAMS") || command.startsWith("!T")){

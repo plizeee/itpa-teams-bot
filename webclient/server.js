@@ -26,11 +26,6 @@ const server = http.createServer((req, res) => {
     });
   } else {
     let filePath;
-    // if (parsedUrl.pathname === '/') {
-    //   filePath = path.join('.', 'index.html');
-    // } else {
-    //   filePath = path.join(__dirname, parsedUrl.pathname);
-    // }
 
     if (parsedUrl.pathname === '/') {
       filePath = path.join('.', 'index.html');
