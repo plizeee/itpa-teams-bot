@@ -20,8 +20,8 @@ let isMaster;
 
 let ThreadData = {
     LastChatSentDate: new Date(year=2020),
-    Cooldown: 80000,
-    set setCooldown(seconds) {this.Cooldown = (1000*seconds)} 
+    Cooldown: 100000,
+    set setCooldown(seconds) {this.Cooldown = (1000*Number(seconds))} 
 }
 
 module.exports = {
@@ -40,7 +40,7 @@ module.exports = {
                     break;
                 case 4:
                     console.log("calling threadChatCommand");
-                    threadChatCommand(msg, 10);
+                    threadChatCommand(msg, config.chatroomMessages??8, config.chatRoomCooldowns);
                     break;
                 default:
                     crossReferenceCommand(msg);
@@ -196,7 +196,10 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     }
     return parsedMessages;
 }
-async function threadChatCommand(msg,maxNumOfMsgs =3){
+async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, noResponse: 60, normal: 80}){
+    cooldowns.solo??= 15;
+    cooldowns.noResponse??= 60;
+    cooldowns.normal??= 80;
     const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Meta-Info"];
     const instructions2 = prompts["Thread-Chat"];
     console.log("calling getThreadMessages");
@@ -239,14 +242,15 @@ async function threadChatCommand(msg,maxNumOfMsgs =3){
     let replyTarget = matches?.groups["replyTo"];
     let noResponsePattern = /\[n(r|u?l{0,2})\]/gim;
     if (noResponsePattern.test(rawReply)) {
-        ThreadData.setCooldown = 60; 
+        ThreadData.setCooldown = cooldowns.noResponse; 
         console.log("decided to not respond");
     }
     else {
         let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget}} : replyMessage;
         await msg.channel.send(reply);
-        ThreadData.setCooldown = (msg.channel.memberCount > 2)? 80:15;
+        ThreadData.setCooldown = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
     }
+    console.log(`cooldown set to ${ThreadData.Cooldown}`);
     ThreadData.LastChatSentDate = date;
 
 }
