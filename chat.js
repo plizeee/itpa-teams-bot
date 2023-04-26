@@ -21,7 +21,8 @@ let isMaster;
 let ThreadData = {
     LastChatSentDate: new Date(year=2020),
     Cooldown: 100000,
-    set setCooldown(seconds) {this.Cooldown = (1000*Number(seconds))} 
+    set CooldownSeconds(seconds) {this.Cooldown = (1000*Number(seconds))} ,
+    status: ""
 }
 
 module.exports = {
@@ -201,7 +202,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     cooldowns.noResponse??= 60;
     cooldowns.normal??= 80;
     const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Meta-Info"];
-    const instructions2 = prompts["Thread-Chat"];
+    const instructions2 = prompts["Thread-Chat"] + `your current status ${ThreadData.status}`;
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
     thread.unshift({"role": "user", "content": instructions2, "name": "System"});
@@ -237,18 +238,25 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     
     let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, 
     let replyPattern = /\[reply(?:to): (?<replyTo>\d{17,20}|n(?:ul{0,2})?)\]/im;
-    let matches = rawReply.match(replyPattern)
-    if(matches)replyMessage = replyMessage.replace(replyPattern,"");
-    let replyTarget = matches?.groups["replyTo"];
+    let statusPattern = /\[status: (?<status>.*)\]/im;
+    let replyMatches = rawReply.match(replyPattern);
+    let statusMatch = rawReply.match(statusPattern);
+    if(statusMatch) {
+        console.log(statusMatch);
+        ThreadData.status = statusMatch.groups["status"];
+        replyMessage = replyMessage.replace(statusPattern,"");
+    }
+    if(replyMatches) replyMessage = replyMessage.replace(replyPattern,"");
+    let replyTarget = replyMatches?.groups["replyTo"];
     let noResponsePattern = /\[n(r|u?l{0,2})\]/gim;
     if (noResponsePattern.test(rawReply)) {
-        ThreadData.setCooldown = cooldowns.noResponse; 
+        ThreadData.CooldownSeconds = cooldowns.noResponse; 
         console.log("decided to not respond");
     }
     else {
         let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget}} : replyMessage;
         await msg.channel.send(reply);
-        ThreadData.setCooldown = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
+        ThreadData.CooldownSeconds = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
     }
     console.log(`cooldown set to ${ThreadData.Cooldown}`);
     ThreadData.LastChatSentDate = date;
