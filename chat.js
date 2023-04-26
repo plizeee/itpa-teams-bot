@@ -47,9 +47,14 @@ module.exports = {
                     crossReferenceCommand(msg);
             }
         }
+        else if(msg.content.toLowerCase().startsWith("!chatroom")){chatroomCommand(msg);}
         return found;
     }
 };
+async function chatroomCommand(msg){
+   threadMessage = await msg.reply("Here You Go");
+   threadMessage.startThread({name: "Chatroom", reason:"chatroom command"});
+}
 
 async function crossReferenceCommand(msg){
     console.log("CROSS REFERENCE MESSAGE COMMAND");
@@ -98,7 +103,7 @@ async function isTerryThread(msg,terry){
     };
     return false;
 }
-let isOffChatCooldown = (msg, cooldown = 300000) => {
+function isOffChatCooldown(msg, cooldown = 300000){
     let log = (msg.createdAt.getTime() - ThreadData.LastChatSentDate.getTime()) >= cooldown;
     console.log(`off cooldown?: ${log}`);
     return log;
