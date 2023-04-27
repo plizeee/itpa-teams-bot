@@ -6,4 +6,6 @@ startMaster.sh
 startDev.sh
 testDev.sh
 testMaster.sh
+startWebclient.sh
+courses.json
 node_modules
