@@ -1,4 +1,3 @@
-//TODO if it's an online course, make the session-info a hyperlink
 //TODO sort courses by day and time
 
 let coursesData = {
@@ -9,24 +8,24 @@ let coursesData = {
   let editingSessionIndex = null;
   let editingSessionCourseIndex = null;
   
-  function saveCoursesData() {
-    fetch('/save-courses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(coursesData)
-    })
-    .then(response => {
+  async function saveCoursesData() {
+    try {
+      const response = await fetch('/save-courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(coursesData)
+      });
+  
       if (response.ok) {
-        console.log('Data saved successfully');
+        console.log('Courses data updated successfully');
       } else {
-        console.log('Error saving data:', response.statusText);
+        console.error('Error updating courses data:', response.statusText);
       }
-    })
-    .catch(error => {
-      console.log('Error saving data:', error);
-    });
+    } catch (error) {
+      console.error('Error updating courses data:', error);
+    }
   }
   
   
@@ -69,8 +68,6 @@ let coursesData = {
     function formatTime(time) {
       let strOutput = '';  
 
-      
-
       //add am/pm
       if (time >= 1300) {
           strOutput +=  time - 1200 + ' pm';
@@ -106,7 +103,10 @@ let coursesData = {
                   editSession(courseIndex, sessionIndex);
               });
   
-                sessionInfoEl.textContent = `${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
+              course.isOnline[sessionIndex] ? sessionInfoEl.innerHTML = `<a href="${course.link}">${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} (Online)</a>` :
+              sessionInfoEl.textContent = `${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
+
+
   
                 deleteSessionBtn.addEventListener('click', () => deleteSession(courseIndex, sessionIndex));
   

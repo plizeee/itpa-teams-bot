@@ -1,54 +1,75 @@
 {
-	"courses": [
-		{
-			"name": "Database Programming",
-			"code": "DBP",
-			"link": "https://teams.microsoft.com/l/channel/19%3ahjIua_cAnXFvxhHjZwnpt0b-khzfCmAY8tpkvCmpwvU1%40thread.tacv2/General?groupId=f5ecdc15-15d3-4aab-a751-46477209d900&tenantId=26c9169c-4645-432c-939d-4918d4f21bdc",
-			"days": [
-				"Monday",
-				"Tuesday",
-				"Wednesday",
-				"Thursday"
-			],
-			"startTimes": [
-				830,
-				1030,
-				830,
-				1030
-			],
-			"endTimes": [
-				1020,
-				1220,
-				1020,
-				1220
-			],
-			"isOnline": [
-				true,
-				true,
-				false,
-				false
-			]
-		},
-		{
-			"name": "Networking for Programmers",
-			"code": "NET",
-			"link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_YTAzMzgxOGMtMjQwYy00NTMxLWFiZWUtZjE3ZjFhNDg3MTll%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d",
-			"days": [
-				"Monday",
-				"Wednesday"
-			],
-			"startTimes": [
-				1030,
-				1030
-			],
-			"endTimes": [
-				1220,
-				1220
-			],
-			"isOnline": [
-				true,
-				false
-			]
-		}
-	]
+  "courses": [
+    {
+      "name": "Database Programming",
+      "code": "DBP",
+      "link": "https://teams.microsoft.com/l/channel/19%3ahjIua_cAnXFvxhHjZwnpt0b-khzfCmAY8tpkvCmpwvU1%40thread.tacv2/General?groupId=f5ecdc15-15d3-4aab-a751-46477209d900&tenantId=26c9169c-4645-432c-939d-4918d4f21bdc",
+      "days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday"
+      ],
+      "startTimes": [
+        830,
+        1030,
+        830,
+        1030
+      ],
+      "endTimes": [
+        1020,
+        1220,
+        1020,
+        1220
+      ],
+      "isOnline": [
+        true,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "Networking for Programmers",
+      "code": "NET",
+      "link": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_YTAzMzgxOGMtMjQwYy00NTMxLWFiZWUtZjE3ZjFhNDg3MTll%40thread.v2/0?context=%7b%22Tid%22%3a%2226c9169c-4645-432c-939d-4918d4f21bdc%22%2c%22Oid%22%3a%223d03bbae-66f6-432c-bf0d-23101fb51685%22%7d",
+      "days": [
+        "Monday",
+        "Wednesday"
+      ],
+      "startTimes": [
+        1030,
+        1030
+      ],
+      "endTimes": [
+        1220,
+        1220
+      ],
+      "isOnline": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "Advanced Javascript",
+      "code": "AJS",
+      "link": "https://teams.microsoft.com/dl/launcher/launcher.html?url=%2F_%23%2Fl%2Fmeetup-join%2F19%3Ameeting_YmU0NGFlYjQtZTljYy00OGNiLWIyZTYtZWI1ODg3NWVkMTBj%40thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%252226c9169c-4645-432c-939d-4918d4f21bdc%2522%252c%2522Oid%2522%253a%2522a84b1917-a87a-4eb1-a3d1-c16978a5c731%2522%257d%26anon%3Dtrue&type=meetup-join&deeplinkId=ead734e6-4366-4519-96f1-09a8d0cb2136&directDl=true&msLaunch=true&enableMobilePage=true&suppressPrompt=false",
+      "days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "startTimes": [
+        830,
+        830
+      ],
+      "endTimes": [
+        1020,
+        1020
+      ],
+      "isOnline": [
+        true,
+        false
+      ]
+    }
+  ]
 }
