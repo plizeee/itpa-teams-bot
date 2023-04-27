@@ -16,6 +16,9 @@ const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const WEBCLIENT_URL = process.env.WEBCLIENT_URL;
 const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + '/auth/github/callback';
 
+// Allowed GitHub users
+const allowedUsers = process.env.AUTHORIZED_USERS.split(',');
+
 // Set up passport with GitHub strategy
 passport.use(new GitHubStrategy({
     clientID: GITHUB_CLIENT_ID,
@@ -23,7 +26,11 @@ passport.use(new GitHubStrategy({
     callbackURL: GITHUB_CALLBACK_URL
   },
   function(accessToken, refreshToken, profile, cb) {
-    return cb(null, profile);
+    if (allowedUsers.includes(profile.username) || allowedUsers.includes(profile.id)) {
+      return cb(null, profile);
+    } else {
+      return cb(new Error('Unauthorized user'));
+    }
   }
 ));
 
@@ -47,17 +54,29 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.json());
 
-
 // GitHub OAuth routes
 app.get('/auth/github', passport.authenticate('github'));
 
-app.get('/auth/github/callback',
-  passport.authenticate('github', { failureRedirect: '/login' }),
-  function(req, res) {
-    // Successful authentication, redirect to the main page.
-    res.redirect('/');
-  }
-);
+app.get('/auth/github/callback', (req, res, next) => {
+  passport.authenticate('github', (err, user, info) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.redirect('/unauthorized');
+    }
+    if (!user) {
+      return res.redirect('/unauthorized');
+    }
+
+    req.logIn(user, (err) => {
+      if (err) {
+        console.error('Error:', err);
+        return res.redirect('/unauthorized');
+      }
+      return res.redirect('/');
+    });
+  })(req, res, next);
+});
+
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
@@ -65,7 +84,6 @@ function ensureAuthenticated(req, res, next) {
   }
   res.redirect('/auth/github');
 }
-
 
 // Serve static files from the webclient folder
 app.get('/', ensureAuthenticated, (req, res) => {
@@ -100,7 +118,6 @@ app.get('/config.js', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'config.js'));
 });
 
-
 app.get('/courses.json', ensureAuthenticated, (req, res) => {
   const coursesPath = path.join(__dirname, '..', 'courses.json');
   res.sendFile(coursesPath);
@@ -122,6 +139,10 @@ app.post('/save-courses', (req, res) => {
 
 app.get('/private', ensureAuthenticated, (req, res) => {
   res.send('This is a private page. You have been authenticated!');
+});
+
+app.get('/unauthorized', (req, res) => {
+  res.sendFile(path.join(__dirname, 'unauthorized.html'));
 });
 
 app.listen(port, '0.0.0.0', () => {
