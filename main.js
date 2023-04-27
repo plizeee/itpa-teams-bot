@@ -108,6 +108,9 @@ function getProfile(id){
     }
     return null;
 }
+function syncProfilesToFile(){
+    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), err => err? console.log(err):console.log("JSON saved to ./profiles.json"));
+}
 
 //executes this as soon as it starts
 client.on('ready', () => {
@@ -130,6 +133,7 @@ client.on("messageCreate", async msg => {
     {
         if (!Object.hasOwn(profile, 'instanceId')) {
             profile.instanceId = 0;
+            syncProfilesToFile();
             console.log("no instance id found defaulting")
         }
         if(!(instanceID == profile.instanceId)) {
