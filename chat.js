@@ -18,23 +18,41 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 let date;
 let isMaster;
 
-let InstanceData = {
-    LastChatSentDate: new Date(year=2020),
-    Cooldown: 100000,
-    set CooldownSeconds(seconds) {this.Cooldown = (1000*Number(seconds))} ,
+class TokenStatTemplate {
+    constructor() {
+        //defining an average function
+        let average = {get() {
+            return this.reduce((total, curValue) => total + curValue,0)/this.length;
+        }}
+        //setting prompt and completion to empty array
+        this.#prompt = Object.defineProperty([],"average",average);
+        this.#completion = Object.defineProperty([],"average",average);
+    }
+    #calls= 0;
+    #prompt;
+    #completion;
+    get promptTokens() {return this.#prompt}
+    get completionTokens() {return this.#completion}
+    get numOfCalls() {return this.#calls}
+    get avgTotal() {
+        return (this.#completion.reduce((total, curValue) => total + curValue,0) + this.#prompt.reduce((total, curValue) => total + curValue,0))/this.#calls;    
+    };
+    storeData(promptTokens, completionTokens){
+        if (!promptTokens || !completionTokens) console.log("no tokens receieved")
+        else console.log(`tokens stored: ${promptTokens} ${completionTokens}`)
+        this.#prompt.push(promptTokens);
+        this.#completion.push(completionTokens);
+        this.#calls++;
+    }
+}
+let InstanceData = {    
+    LastChatSentDate: new Date("2022-01-01"),
+    Cooldown:60000,
+    set CooldownSeconds(seconds) {this.Cooldown = (1000*Number(seconds))},
     status: "",
-    promptTokensUsed: [],
-    completionTokensUsed: [],
-    totalTokenUsed: [],
-    get avgPromptTokens() {
-        return this.promptTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.promptTokensUsed.length;
-    },
-    get avgCompletionTokens() {
-        return this.completionTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.completionTokensUsed.length;
-    },
-    get avgTotalTokens() {
-        return this.totalTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.totalTokensUsed.length;
-    },
+    chatTokenStats: new TokenStatTemplate(),
+    chatroomTokenStats: new TokenStatTemplate()
+    
 }
 
 module.exports = {
@@ -172,7 +190,21 @@ function stripCommand(message){
 
     return message;
 }
-
+function syncStats(){
+    const filepath = "./stats.json";
+    if(!fs.existsSync(filepath)){console.log("Creating Stats File")}
+    const chatStats = InstanceData.chatTokenStats;
+    const chatroomStats = InstanceData.chatroomTokenStats;
+    const stats = {
+        "avgChatPromptToken": chatStats.promptTokens.average,
+        "avgChatCompleteToken": chatStats.completionTokens.average,
+        "avgChatTotalTokens": chatStats.avgTotal,
+        "avgChatRoomPromptToken": chatroomStats.promptTokens.average,
+        "avgChatRoomCompleteToken": chatroomStats.completionTokens.average,
+        "avgChatRoomTotalTokens": chatroomStats.avgTotal,
+    }
+    fs.writeFileSync(filepath,JSON.stringify(stats, space="\t"));
+}
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
     if(isMaster){ //I only want to write to file in master branch
@@ -247,9 +279,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     let prompt_tokens = completion.data.usage.prompt_tokens;
     let completion_tokens = completion.data.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
-    InstanceData.promptTokensUsed.push(prompt_tokens);
-    InstanceData.completionTokensUsed.push(completion_tokens);
-    InstanceData.totalTokenUsed.push(prompt_tokens + completion_tokens);
+    InstanceData.chatroomTokenStats.storeData(prompt_tokens,completion_tokens);
     //discord has a 4000 character limit, so we need to cut the response if it's too long
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
@@ -273,13 +303,13 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
         console.log("decided to not respond");
     }
     else {
-        let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget}} : replyMessage;
+        let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget, failIfNotExists: false}} : replyMessage;
         await msg.channel.send(reply);
         InstanceData.CooldownSeconds = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
     }
     console.log(`cooldown set to ${InstanceData.Cooldown}`);
     InstanceData.LastChatSentDate = date;
-
+    syncStats();
 }
 
 function stripNameFromResponse(response){
@@ -321,6 +351,7 @@ async function sendPrompt({msg, instructions}){
     let prompt_tokens = completion.data.usage.prompt_tokens;
     let completion_tokens = completion.data.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
+    InstanceData.chatTokenStats.storeData(prompt_tokens,completion_tokens);
 
     //discord has a 4000 character limit, so we need to cut the response if it's too long
     if(replyMessage.length > 2000){
@@ -328,7 +359,7 @@ async function sendPrompt({msg, instructions}){
     }
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-
+    syncStats();
     generateReactions(msg, replyMessage);
 }
 

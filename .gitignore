@@ -7,3 +7,4 @@ startDev.sh
 testDev.sh
 testMaster.sh
 node_modules
+stats.json
