@@ -18,11 +18,23 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 let date;
 let isMaster;
 
-let ThreadData = {
+let InstanceData = {
     LastChatSentDate: new Date(year=2020),
     Cooldown: 100000,
     set CooldownSeconds(seconds) {this.Cooldown = (1000*Number(seconds))} ,
-    status: ""
+    status: "",
+    promptTokensUsed: [],
+    completionTokensUsed: [],
+    totalTokenUsed: [],
+    get avgPromptTokens() {
+        return this.promptTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.promptTokensUsed.length;
+    },
+    get avgCompletionTokens() {
+        return this.completionTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.completionTokensUsed.length;
+    },
+    get avgTotalTokens() {
+        return this.totalTokensUsed.reduce((accumulator, currentValue) => accumulator + currentValue)/this.totalTokensUsed.length;
+    },
 }
 
 module.exports = {
@@ -82,7 +94,7 @@ async function isValidChatRequirements(msg,client,chatrooms){
     return message.startsWith("!CHAT ")? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
-    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadData.Cooldown))? 4: false;
+    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false;
 
     // if(message.startsWith("!CHAT ")){
     //     return true;
@@ -104,7 +116,7 @@ async function isTerryThread(msg,terry){
     return false;
 }
 function isOffChatCooldown(msg, cooldown = 300000){
-    let log = (msg.createdAt.getTime() - ThreadData.LastChatSentDate.getTime()) >= cooldown;
+    let log = (msg.createdAt.getTime() - InstanceData.LastChatSentDate.getTime()) >= cooldown;
     console.log(`off cooldown?: ${log}`);
     return log;
 }
@@ -207,7 +219,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     cooldowns.noResponse??= 60;
     cooldowns.normal??= 80;
     const instructions = prompts["Terry-Simple"] + prompts["Discord-Chat-formatting"] + prompts["Meta-Info"];
-    const instructions2 = prompts["Thread-Chat"] + `your current status ${ThreadData.status}`;
+    const instructions2 = prompts["Thread-Chat"] + `your current status ${InstanceData.status}`;
     console.log("calling getThreadMessages");
     let thread = await getThreadMessages(msg.channel, maxNumOfMsgs);
     thread.unshift({"role": "user", "content": instructions2, "name": "System"});
@@ -235,7 +247,9 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     let prompt_tokens = completion.data.usage.prompt_tokens;
     let completion_tokens = completion.data.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
-
+    InstanceData.promptTokensUsed.push(prompt_tokens);
+    InstanceData.completionTokensUsed.push(completion_tokens);
+    InstanceData.totalTokenUsed.push(prompt_tokens + completion_tokens);
     //discord has a 4000 character limit, so we need to cut the response if it's too long
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
@@ -248,23 +262,23 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     let statusMatch = rawReply.match(statusPattern);
     if(statusMatch) {
         console.log(statusMatch);
-        ThreadData.status = statusMatch.groups["status"];
+        InstanceData.status = statusMatch.groups["status"];
         replyMessage = replyMessage.replace(statusPattern,"");
     }
     if(replyMatches) replyMessage = replyMessage.replace(replyPattern,"");
     let replyTarget = replyMatches?.groups["replyTo"];
     let noResponsePattern = /\[n(r|u?l{0,2})\]/gim;
     if (noResponsePattern.test(rawReply)) {
-        ThreadData.CooldownSeconds = cooldowns.noResponse; 
+        InstanceData.CooldownSeconds = cooldowns.noResponse; 
         console.log("decided to not respond");
     }
     else {
         let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget}} : replyMessage;
         await msg.channel.send(reply);
-        ThreadData.CooldownSeconds = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
+        InstanceData.CooldownSeconds = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
     }
-    console.log(`cooldown set to ${ThreadData.Cooldown}`);
-    ThreadData.LastChatSentDate = date;
+    console.log(`cooldown set to ${InstanceData.Cooldown}`);
+    InstanceData.LastChatSentDate = date;
 
 }
 
