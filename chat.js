@@ -18,26 +18,36 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 let date;
 let isMaster;
 
-class TokenStatTemplate {
-    constructor() {
-        //defining an average function
-        let average = {get() {
-            return this.reduce((total, curValue) => total + curValue,0)/this.length;
-        }}
-        //setting prompt and completion to empty array
-        this.#prompt = Object.defineProperty([],"average",average);
-        this.#completion = Object.defineProperty([],"average",average);
+class StatArray extends Array{
+    sum = () => this.reduce((total, curValue) => total + curValue,0)
+    average = () => this.sum()/this.length;
+    rate(time) {
+        return this.sum()/time
     }
+}
+
+class TokenStatTemplate {
+    #firstCallDate;
+    #lastCallDate;
     #calls= 0;
-    #prompt;
-    #completion;
+    #prompt = new StatArray();
+    #completion = new StatArray();
     get promptTokens() {return this.#prompt}
     get completionTokens() {return this.#completion}
     get numOfCalls() {return this.#calls}
-    get avgTotal() {
+    get lastCallDate() {return this.#lastCallDate}
+    get firstCallDate() {return this.#firstCallDate}
+    TotalAverage() {
         return (this.#completion.reduce((total, curValue) => total + curValue,0) + this.#prompt.reduce((total, curValue) => total + curValue,0))/this.#calls;    
     };
+    TotalRate(timefactor = 36000000) {
+        if (!this.#firstCallDate) return null;
+        return (this.#prompt.sum()+this.#completion.sum())/((this.#lastCallDate.getTime()-this.#firstCallDate.getTime())/timefactor);
+    }
     storeData(promptTokens, completionTokens){
+        let date = new Date()
+        this.#firstCallDate??= date;
+        this.#lastCallDate = date;
         if (!promptTokens || !completionTokens) console.log("no tokens receieved")
         else console.log(`tokens stored: ${promptTokens} ${completionTokens}`)
         this.#prompt.push(promptTokens);
@@ -196,14 +206,16 @@ function syncStats(){
     const chatStats = InstanceData.chatTokenStats;
     const chatroomStats = InstanceData.chatroomTokenStats;
     const stats = {
-        "avgChatPromptToken": chatStats.promptTokens.average,
-        "avgChatCompleteToken": chatStats.completionTokens.average,
-        "avgChatTotalTokens": chatStats.avgTotal,
-        "avgChatRoomPromptToken": chatroomStats.promptTokens.average,
-        "avgChatRoomCompleteToken": chatroomStats.completionTokens.average,
-        "avgChatRoomTotalTokens": chatroomStats.avgTotal,
+        "avgChatPromptToken": chatStats.promptTokens.average(),
+        "avgChatCompleteToken": chatStats.completionTokens.average(),
+        "avgChatTotalTokens": chatStats.TotalAverage(),
+        "chatTokenRate": chatStats.TotalRate(),
+        "avgChatRoomPromptToken": chatroomStats.promptTokens.average(),
+        "avgChatRoomCompleteToken": chatroomStats.completionTokens.average(),
+        "avgChatRoomTotalTokens": chatroomStats.TotalAverage(),
+        "chatroomTokenRate": chatroomStats.TotalRate()
     }
-    fs.writeFileSync(filepath,JSON.stringify(stats, space="\t"));
+    fs.writeFileSync(filepath,JSON.stringify(stats, space="\r\n"));
 }
 //This will replace whatever is inside profiles.json with the value of the profiles variable
 function syncProfilesToFile(){
@@ -309,7 +321,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
     }
     console.log(`cooldown set to ${InstanceData.Cooldown}`);
     InstanceData.LastChatSentDate = date;
-    syncStats();
+    if(completion) syncStats();
 }
 
 function stripNameFromResponse(response){
