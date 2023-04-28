@@ -8,6 +8,14 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 
+//gets the ips of the server
+const os = require('os');
+const networkInterfaces = os.networkInterfaces();
+
+//get local ip address
+const LOCAL_IP_ADDRESS = networkInterfaces['wlan0'].find(details => details.family === 'IPv4').address;
+console.log(LOCAL_IP_ADDRESS);
+
 const port = 6969;
 
 // GitHub OAuth configuration
@@ -20,19 +28,20 @@ const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + '/auth/github/callback'
 const allowedUsers = process.env.AUTHORIZED_USERS.split(',');
 
 // Set up passport with GitHub strategy
-passport.use(new GitHubStrategy({
+function createGitHubStrategy(clientIP) {
+
+  return new GitHubStrategy({
     clientID: GITHUB_CLIENT_ID,
     clientSecret: GITHUB_CLIENT_SECRET,
     callbackURL: GITHUB_CALLBACK_URL
-  },
-  function(accessToken, refreshToken, profile, cb) {
+  }, function (accessToken, refreshToken, profile, cb) {
     if (allowedUsers.includes(profile.username) || allowedUsers.includes(profile.id)) {
       return cb(null, profile);
     } else {
       return cb(new Error('Unauthorized user'));
     }
-  }
-));
+  });
+}
 
 passport.serializeUser((user, cb) => {
   cb(null, user);
@@ -55,7 +64,11 @@ app.use(passport.session());
 app.use(bodyParser.json());
 
 // GitHub OAuth routes
-app.get('/auth/github', passport.authenticate('github'));
+app.get('/auth/github', (req, res, next) => {
+  passport.use(createGitHubStrategy(req.socket.remoteAddress));
+
+  passport.authenticate('github')(req, res, next);
+});
 
 app.get('/auth/github/callback', (req, res, next) => {
   passport.authenticate('github', (err, user, info) => {
@@ -80,45 +93,59 @@ app.get('/auth/github/callback', (req, res, next) => {
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
+    // User is authenticated, so we continue
     return next();
   }
   res.redirect('/auth/github');
 }
 
+function allowLocal(req, res, next) {
+  const URL_ADDRESS = req.headers.host + req.url;
+  if (URL_ADDRESS.includes(LOCAL_IP_ADDRESS) || URL_ADDRESS.includes('localhost')) {
+    console.log('local');
+    // Allow local requests without authentication
+    return next();
+  }
+  
+  console.log(req.socket.remoteAddress);
+  console.log(URL_ADDRESS);
+  ensureAuthenticated(req, res, next);
+}
+
 // Serve static files from the webclient folder
-app.get('/', ensureAuthenticated, (req, res) => {
+app.get('/', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/index.html', ensureAuthenticated, (req, res) => {
+app.get('/index.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/courses.html', ensureAuthenticated, (req, res) => {
+app.get('/courses.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'courses.html'));
 });
 
-app.get('/courses.js', ensureAuthenticated, (req, res) => {
+app.get('/courses.js', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'courses.js'));
 });
 
-app.get('/prompts.html', ensureAuthenticated, (req, res) => {
+app.get('/prompts.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'prompts.html'));
 });
 
-app.get('/prompts.js', ensureAuthenticated, (req, res) => {
+app.get('/prompts.js', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'prompts.js'));
 });
 
-app.get('/config.html', ensureAuthenticated, (req, res) => {
+app.get('/config.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'config.html'));
 });
 
-app.get('/config.js', ensureAuthenticated, (req, res) => {
+app.get('/config.js', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'config.js'));
 });
 
-app.get('/courses.json', ensureAuthenticated, (req, res) => {
+app.get('/courses.json', allowLocal, (req, res) => {
   const coursesPath = path.join(__dirname, '..', 'courses.json');
   res.sendFile(coursesPath);
 });
@@ -137,7 +164,7 @@ app.post('/save-courses', (req, res) => {
   });
 });
 
-app.get('/private', ensureAuthenticated, (req, res) => {
+app.get('/private', allowLocal, (req, res) => {
   res.send('This is a private page. You have been authenticated!');
 });
 
