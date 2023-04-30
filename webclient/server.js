@@ -12,9 +12,27 @@ require('dotenv').config();
 const os = require('os');
 const networkInterfaces = os.networkInterfaces();
 
+console.log(networkInterfaces);
+
 //get local ip address
-const LOCAL_IP_ADDRESS = networkInterfaces['wlan0'].find(details => details.family === 'IPv4').address;
-console.log(LOCAL_IP_ADDRESS);
+const LOCAL_IP_ADDRESSES = getLocalIPs();
+
+function getLocalIPs() { 
+  let localIPs = [];
+  for(let key in networkInterfaces) {
+    if(networkInterfaces.hasOwnProperty(key)) {
+      let details = networkInterfaces[key];
+      for(let i=0; i<details.length; i++) {
+        if(details[i].family === 'IPv4' && !details[i].internal) {
+          localIPs.push(details[i].address);
+        }
+      }
+    }
+  }
+  return localIPs;
+}
+
+console.log('local addresses:' + LOCAL_IP_ADDRESSES);
 
 const port = 6969;
 
@@ -25,6 +43,7 @@ const WEBCLIENT_URL = process.env.WEBCLIENT_URL;
 const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + '/auth/github/callback';
 
 // Allowed GitHub users
+console.log(process.env.AUTHORIZED_USERS);
 const allowedUsers = process.env.AUTHORIZED_USERS.split(',');
 
 // Set up passport with GitHub strategy
@@ -36,6 +55,7 @@ function createGitHubStrategy(clientIP) {
     callbackURL: GITHUB_CALLBACK_URL
   }, function (accessToken, refreshToken, profile, cb) {
     if (allowedUsers.includes(profile.username) || allowedUsers.includes(profile.id)) {
+      console.log('Authorized user:', profile.username, 'from IP:', clientIP);
       return cb(null, profile);
     } else {
       return cb(new Error('Unauthorized user'));
@@ -101,8 +121,11 @@ function ensureAuthenticated(req, res, next) {
 
 function allowLocal(req, res, next) {
   const URL_ADDRESS = req.headers.host + req.url;
-  if (URL_ADDRESS.includes(LOCAL_IP_ADDRESS) || URL_ADDRESS.includes('localhost')) {
-    console.log('local');
+
+  // Check if the request is coming from a local IP address
+  const urlIncludesLocalIP = LOCAL_IP_ADDRESSES.some(ip => URL_ADDRESS.includes(ip));
+  if (urlIncludesLocalIP || URL_ADDRESS.includes('localhost')) {
+    console.log('Local connection. No authentication required.');
     // Allow local requests without authentication
     return next();
   }
