@@ -187,6 +187,25 @@ app.post('/save-courses', (req, res) => {
   });
 });
 
+app.get('/promptCommands.json', allowLocal, (req, res) => {
+  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
+  res.sendFile(promptPath);
+});
+
+app.post('/save-prompts', (req, res) => {
+  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
+  const newPromptData = req.body;
+
+  fs.writeFile(promptPath, JSON.stringify(newPromptData, null, 2), (err) => {
+    if (err) {
+      res.status(500).send('Error writing to file');
+      console.error('Error writing to file:', err);
+    } else {
+      res.status(200).send('File updated successfully');
+    }
+  });
+});
+
 app.get('/private', allowLocal, (req, res) => {
   res.send('This is a private page. You have been authenticated!');
 });

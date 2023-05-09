@@ -222,10 +222,11 @@
     <template id="command-item-template">
         <li class="command-item">
           <div class="command-name">
-              <div><strong>Name:</strong> <span class="command-title-value"></span></div>
-              <div><strong>Command:</strong> <span class="command-name-value"></span></div>
-            <div><strong>Description:</strong> <span class="command-description-value"></span></div>
-            <div><strong>Permission Level:</strong> <span class="command-permission-level-value"></span></div>
+              <div><strong>Name:</strong> <span class="prompt-name-value"></span></div>
+              <div><strong>Command:</strong> <span class="prompt-command-value"></span></div>
+            <div><strong>Description:</strong> <span class="prompt-description-value"></span></div>
+            <div><strong>Permission Level:</strong> <span class="prompt-permission-level-value"></span></div>
+            <div><strong>Model:</strong> <span class="prompt-model-value"></span></div>
             <div><strong>System Prompt:</strong> <span class="command-prompt-value"></span></div>
           </div>
           <button class="edit-command-btn">Edit</button>
@@ -236,14 +237,19 @@
             <button id="close-modal-btn">&times;</button>
             <h2>Add/Edit Command</h2>
             <form id="command-form">
-                <label for="command-title-input">Name:</label>
-                <input type="text" id="command-title-input" required>
-                <label for="command-name-input">Command:</label>
-                <input type="text" id="command-name-input" required>
-                <label for="command-description-input">Description:</label>
-                <input type="text" id="command-description-input" required>
-                <label for="command-permission-level-input">Permission Level:</label>
-                <input type="number" id="command-permission-level-input" required>
+                <label for="prompt-name-input">Name:</label>
+                <input type="text" id="prompt-name-input" required>
+                <label for="prompt-command-input">Command:</label>
+                <input type="text" id="prompt-command-input" required>
+                <label for="prompt-description-input">Description:</label>
+                <input type="text" id="prompt-description-input" required>
+                <label for="prompt-permission-level-input">Permission Level:</label>
+                <input type="number" id="prompt-permission-level-input" required>
+                <label for="prompt-model-input">Model:</label>
+                <select name="prompt-model-input" id="prompt-model-input">
+                    <option selected value="gpt-3.5-turbo">gpt-3.5-turbo (default)</option>
+                    <option value="gpt-4">gpt-4</option>
+                </select>
                 <label for="command-prompt-input">System Prompt:</label>
                 <textarea id="command-prompt-input" rows="4"></textarea>
                 <button type="submit" id="save-command-btn">Save</button>

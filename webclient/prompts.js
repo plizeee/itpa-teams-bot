@@ -1,15 +1,58 @@
-const addCommandBtn = document.getElementById('add-command-btn');
-const commandList = document.getElementById('command-list');
-const commandItemTemplate = document.getElementById('command-item-template');
-const commandModal = document.getElementById('command-modal');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const commandForm = document.getElementById('command-form');
-const saveCommandBtn = document.getElementById('save-command-btn');
-const deleteCommandBtn = document.getElementById('delete-command-btn');
+
 
 let isEditMode = false;
 let activeCommandIndex = null;
-let commands = [];
+let promptCommands = {
+    commands: []
+};
+
+async function savePrompts() {
+    try {
+      const response = await fetch('/save-prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(promptCommands)
+      });
+  
+      if (response.ok) {
+        console.log('Prompts updated successfully');
+      } else {
+        console.error('Error updating prompt data:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error updating prompt data:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/promptCommands.json')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      promptCommands = data;
+      renderCommandList();
+    })
+    .catch(error => {
+      console.log('Error reading file:', error);
+    });
+
+    const addCommandBtn = document.getElementById('add-command-btn');
+    const commandList = document.getElementById('command-list');
+    const commandItemTemplate = document.getElementById('command-item-template');
+    const commandModal = document.getElementById('command-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const commandForm = document.getElementById('command-form');
+    const saveCommandBtn = document.getElementById('save-command-btn');
+    const deleteCommandBtn = document.getElementById('delete-command-btn');
+
+    const promptNameInput = document.getElementById('prompt-command-input');
+    const promptCommandInput = document.getElementById('prompt-name-input');
+    const promptDescriptionInput = document.getElementById('prompt-description-input');
+    const promptPermissionInput = document.getElementById('prompt-permission-level-input');
+    const promptModelInput = document.getElementById('prompt-model-input');
+    const commandPromptInput = document.getElementById('command-prompt-input');
 
 addCommandBtn.addEventListener('click', () => {
     isEditMode = false;
@@ -56,53 +99,58 @@ deleteCommandBtn.addEventListener('click', function() {
 function deleteCommand() {
     const index = parseInt(deleteCommandBtn.getAttribute('data-index'), 10);
     console.log("index: " + index);
-    if (index >= 0 && index < commands.length) {
-        commands.splice(index, 1);
+    if (index >= 0 && index < promptCommands.commands.length) {
+        promptCommands.commands.splice(index, 1);
     }
     closeModal();
     renderCommandList();
+    savePrompts();
     commandForm.reset(); 
 }
 
 
 function saveCommand() {
-    const commandTitle = document.getElementById('command-title-input').value;
-    const commandName = document.getElementById('command-name-input').value;
-    const commandDescription = document.getElementById('command-description-input').value;
-    const commandPermissionLevel = document.getElementById('command-permission-level-input').value;
+    const promptName = document.getElementById('prompt-name-input').value;
+    const promptCommand = document.getElementById('prompt-command-input').value;
+    const promptDescription = document.getElementById('prompt-description-input').value;
+    const promptPermission = document.getElementById('prompt-permission-level-input').value;
+    const promptModel = document.getElementById('prompt-model-input').value;
     const commandPrompt = document.getElementById('command-prompt-input').value;
 
     if (isEditMode) {
-        updateCommand(activeCommandIndex, { title: commandTitle, name: commandName, description: commandDescription, permissionLevel: commandPermissionLevel, prompt: commandPrompt });
+        updateCommand(activeCommandIndex, { name: promptName, command: promptCommand, description: promptDescription, permission: promptPermission, model: promptModel, prompt: commandPrompt });
     } else {
-        addCommand({ title: commandTitle, name: commandName, description: commandDescription, permissionLevel: commandPermissionLevel, prompt: commandPrompt });
+        //addCommand({ title: commandTitle, name: commandName, description: commandDescription, permissionLevel: commandPermissionLevel, commandModel: commandModel, prompt: commandPrompt });
+        addCommand({ name: promptName, command: promptCommand, description: promptDescription, permission: promptPermission, model: promptModel, prompt: commandPrompt });
     }
 
     renderCommandList();
+    savePrompts();
     closeModal();
     commandForm.reset(); 
 }
 
 function addCommand(command) {
-    commands.push(command);
+    promptCommands.commands.push(command);
 }
 
 function updateCommand(index, command) {
-    commands[index] = command;
+    promptCommands.commands[index] = command;
 }
 
 function renderCommandList() {
     commandList.innerHTML = '';
 
-    commands.forEach((command, index) => {
+    promptCommands.commands.forEach((command, index) => {
         const commandItem = commandItemTemplate.content.cloneNode(true);
         
         // Update the text content for each field
-        commandItem.querySelector('.command-title-value').textContent = command.title;
-        commandItem.querySelector('.command-name-value').textContent = command.name;
-        commandItem.querySelector('.command-description-value').textContent = command.description;
-        commandItem.querySelector('.command-permission-level-value').textContent = command.permissionLevel;
-        commandItem.querySelector('.command-prompt-value').textContent = command.prompt;
+        commandItem.querySelector('.prompt-name-value').innerHTML = command.name;
+        commandItem.querySelector('.prompt-command-value').innerHTML = command.command;
+        commandItem.querySelector('.prompt-description-value').innerHTML = command.description;
+        commandItem.querySelector('.prompt-permission-level-value').innerHTML = command.permission;
+        commandItem.querySelector('.prompt-model-value').innerHTML = command.model;
+        commandItem.querySelector('.command-prompt-value').innerHTML = command.prompt;
 
 
         const editCommandBtn = commandItem.querySelector('.edit-command-btn');
@@ -114,11 +162,12 @@ function renderCommandList() {
             openModal();
             
             // Prefill the form with the current command values
-            document.getElementById('command-title-input').value = command.title;
-            document.getElementById('command-name-input').value = command.name;
-            document.getElementById('command-description-input').value = command.description;
-            document.getElementById('command-permission-level-input').value = command.permissionLevel;
-            document.getElementById('command-prompt-input').value = command.prompt;
+            promptNameInput.value = command.name;
+            promptCommandInput.value = command.command;
+            promptDescriptionInput.value = command.description;
+            promptPermissionInput.value = command.permission;
+            promptModelInput.value = command.model;
+            commandPromptInput.value = command.prompt;
         });
 
         commandList.appendChild(commandItem);
@@ -126,3 +175,4 @@ function renderCommandList() {
 }
 
 renderCommandList();
+});

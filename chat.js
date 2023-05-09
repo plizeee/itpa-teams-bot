@@ -2,8 +2,13 @@
 const { Configuration, OpenAIApi } = require("openai");
 
 const fs = require('fs'); //needed to read/write json files
+const { profile } = require("console");
+//const { get } = require("http");
+//const { config } = require("dotenv");
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
 const prompts = JSON.parse(fs.readFileSync('./prompts.json')); //creating a snapshot of the contents of prompts.json
+const promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json')); //creating a snapshot of the contents of promptCommands.json
+let config;
 
 require('dotenv').config();
 
@@ -66,17 +71,21 @@ let InstanceData = {
 }
 
 module.exports = {
-    checkChatCommand: async function (msg, isMasterBranch,client,config) {
+    checkChatCommand: async function (msg, isMasterBranch,client,config_) {
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
+        config =  config_; //read the config file
 
         profileCreation(msg);
         let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
         if (chatType) {
             found = true;
             switch(chatType){
-                case 1: case 2: case 3:
+                case 1:
+                    chatCommand(msg, getModelFromMessage(msg), isAuthorized(msg), getSystemPromptFromMessage(msg));
+                    break;
+                case 2: case 3:
                     chatCommand(msg); 
                     break;
                 case 4:
@@ -108,33 +117,69 @@ async function crossReferenceCommand(msg){
     });
 }
 
+function getPromptCommands(){
+    let array = [];
+    for (let i = 0; i < promptCommands.commands.length; i++) {
+        array.push(promptCommands.commands[i].command);
+    }
+    console.log("Commands: " + array);
+    //console.log("PromptCommands: " + promptCommands);
+    return array;
+}
+
+function getPromptCommand(msg){
+    let message = msg.content.toUpperCase();
+    let commands = getPromptCommands();
+    let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " "));
+    return command;
+}
+
+function getModelFromMessage(msg){
+    let promptCommand = getPromptCommand(msg);
+    let model = promptCommands.commands.find(command => command.command == promptCommand).model;
+    return model;
+}
+
+function getPromptPermissionFromMessage(msg){
+    let promptCommand = getPromptCommand(msg);
+    let permission = promptCommands.commands.find(command => command.command == promptCommand).permission;
+    return permission;
+}
+
+function getSystemPromptFromMessage(msg){
+    let promptCommand = getPromptCommand(msg);
+    let systemPrompt = promptCommands.commands.find(command => command.command == promptCommand).prompt;
+    return systemPrompt;
+}
+
+function isAuthorized(msg){
+    let profile = getProfile(msg);
+    let promptPermission = getPromptPermissionFromMessage(msg);
+    
+    //TODO make permission levels instead of just admin or not
+    let admins = config.admins;
+    let userPermission = admins.includes(profile.id) ? 1 : 0;
+
+    console.log("User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
+    return userPermission >= promptPermission;
+}
+
 //I altered this to better determine what type of chat causes his response -will
 async function isValidChatRequirements(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
-    // //() groups statments, gets around js auto placing semicolons were we don't want them.
-    // return (
-    //     message.startsWith("!CHAT ")
-    //     || (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))
-    //     || await isReferencingBot(msg)
-    //     || (await isTerryThread(msg,client.user) && isOffChatCooldown(msg, ThreadCooldownLength))
-    // );
 
-    return message.startsWith("!CHAT ")? 1:
+    //get all the "command" values from the promptCommands object
+    let command = getPromptCommand(msg);
+    console.log("Command: " + command);
+
+    //return message.startsWith("!CHAT ")? 1:
+    return command? 1:
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
     await isReferencingBot(msg)? 3:
     (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false;
 
-    // if(message.startsWith("!CHAT ")){
-    //     return true;
-    // }
-    // else if(msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!")){
-    //     return true;
-    // }
-    // else if(await isReferencingBot(msg)){
-    //     return true;
-    // }
-    // return false;
 }
+
 //checks if it's a thread then checks if starting message author is terry(user) then returns true if so otherwise false;
 async function isTerryThread(msg,terry){
     if(msg.channel.isThread()) {
@@ -234,13 +279,20 @@ function syncProfilesToFile(){
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg){
-    const instructions = prompts["Terry"] + ". The date is " + date + ".";
+function chatCommand(msg, model = "gpt-3.5-turbo", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
+
+    if(!isUserAuthorized){
+        return;
+    }
+
+    console.log("Model: " + model);
+    const instructions = systemPrompt + ". The date is " + date + ".";
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
+        model: model,
     });
 }
 async function getThreadMessages(thread, maxNumOfMsgs){
@@ -332,13 +384,13 @@ function stripNameFromResponse(response){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function sendPrompt({msg, instructions}){
+async function sendPrompt({msg, instructions, model}){
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
 
     const completion = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
+        model: model,
         messages: fullPrompt,
         max_tokens: 2000,
         //TODO look into adding 'stream' so you can see a response as it's being generated
