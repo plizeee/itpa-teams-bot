@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Config Editor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    nav {
+            display: flex;
+            justify-content: center;
+            background-color: #f4f4f4;
+            padding: 1rem 0;
+        }
+
+        nav a {
+            color: #333;
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+
+h1 {
+  /* background-color: #3f51b5; */
+  color: white;
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 300;
+}
+
+form {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: white;
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+div {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: .5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+input[type="checkbox"] {
+  margin-top: .5rem;
+}
+
+input[type="number"],
+input[type="text"] {
+  width: 100%;
+  padding: .5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#adminList li {
+  padding: .5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: .5rem;
+}
+
+#searchUser {
+  margin-top: .5rem;
+}
+
+/* styles.css */
+/* ... previous code ... */
+
+#searchUser {
+  margin-top: .5rem;
+}
+
+#searchResults {
+  border: 1px solid #ccc;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+  position: absolute;
+  width: 100%;
+  background-color: white;
+  z-index: 1;
+  border-radius: 4px;
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+}
+
+#searchResults li {
+  padding: .5rem;
+  cursor: pointer;
+  color: #333;
+}
+
+#searchResults li:hover {
+  background-color: #f0f0f0;
+}
+
+button {
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  padding: .5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+button[type="submit"] {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+button:hover {
+  background-color: #283593;
+}
+
+/* styles.css */
+/* ... previous code ... */
+
+.removeAdmin {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  transition: background-color 0.3s;
+  float: right;
+}
+
+.removeAdmin:hover {
+  background-color: darkred;
+}
+
+
+
+
+  </style>
+</head>
+<body>
+    <header>
+        <h1><strong>Config Editor</strong></h1>
+    </header>
+
+    <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="prompts.html">Prompts</a>
+        <a href="courses.html">Schedule</a>
+        <a href="config.html">Config</a>
+    </nav>
+  <form id="configForm">
+    <div>
+      <label for="devMode">Dev Mode:</label>
+      <input type="checkbox" id="devMode">
+    </div>
+    <div>
+      <label for="isMaster">Is Master:</label>
+      <input type="checkbox" id="isMaster">
+    </div>
+    <div>
+      <label for="instanceId">Instance ID:</label>
+      <input type="number" id="instanceId">
+    </div>
+    <div>
+      <label for="chatrooms">Chatrooms Enabled:</label>
+      <input type="checkbox" id="chatrooms">
+    </div>
+    <div>
+      <label for="chatRoomCooldownsNormal">Chat Room Cooldowns - Normal:</label>
+      <input type="number" id="chatRoomCooldownsNormal">
+    </div>
+    <div>
+      <label for="chatRoomCooldownsNoRespond">Chat Room Cooldowns - No Respond:</label>
+      <input type="number" id="chatRoomCooldownsNoRespond">
+    </div>
+    <div>
+      <label>Admins:</label>
+      <ul id="adminList"></ul>
+      <input type="text" id="searchUser" placeholder="Search user">
+      <ul id="searchResults"></ul>
+      <button type="button" id="addAdmin">Add</button>
+    </div>
+    <button type="submit">Save Changes</button>
+  </form>
+  <script src="config.js"></script>
+</body>
+</html>

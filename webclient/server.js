@@ -168,6 +168,11 @@ app.get('/config.js', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'config.js'));
 });
 
+app.get('/profiles.json', allowLocal, (req, res) => {
+  const profilesPath = path.join(__dirname, '..', 'profiles.json');
+  res.sendFile(profilesPath);
+});
+
 app.get('/courses.json', allowLocal, (req, res) => {
   const coursesPath = path.join(__dirname, '..', 'courses.json');
   res.sendFile(coursesPath);
@@ -197,6 +202,25 @@ app.post('/save-prompts', (req, res) => {
   const newPromptData = req.body;
 
   fs.writeFile(promptPath, JSON.stringify(newPromptData, null, 2), (err) => {
+    if (err) {
+      res.status(500).send('Error writing to file');
+      console.error('Error writing to file:', err);
+    } else {
+      res.status(200).send('File updated successfully');
+    }
+  });
+});
+
+app.get('/config.json', allowLocal, (req, res) => {
+  const configPath = path.join(__dirname, '..', 'config.json');
+  res.sendFile(configPath);
+});
+
+app.post('/save-config', (req, res) => {
+  const configPath = path.join(__dirname, '..', 'config.json');
+  const newConfigData = req.body;
+
+  fs.writeFile(configPath, JSON.stringify(newConfigData, null, 2), (err) => {
     if (err) {
       res.status(500).send('Error writing to file');
       console.error('Error writing to file:', err);

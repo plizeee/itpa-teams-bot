@@ -23,6 +23,14 @@
       "permission": "1",
       "model": "gpt-3.5-turbo",
       "prompt": "test prompt"
+    },
+    {
+      "name": "ben",
+      "command": "ben",
+      "description": "stoopid",
+      "permission": "1",
+      "model": "gpt-3.5-turbo",
+      "prompt": "you are ben. reply to every message with some variation of the phrase \"ben is a dum dum\""
     }
   ]
 }
