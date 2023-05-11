@@ -76,6 +76,7 @@ client.events = new Collection();
 const teamsCommands = require('./teams.js');
 const chatCommands = require('./chat.js');
 const adminCommands = require('./admin.js');
+const SharedFunctions = require("./util.js");
 
 //ensures that authorized users can use dev mode
 //and prevents users from sending messages on both dev and master
@@ -98,7 +99,7 @@ function isAdmin(id){
     return false;
 }
 
-function getProfile(id){
+/*function util.getProfileById(id){
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
 
@@ -107,10 +108,10 @@ function getProfile(id){
         }
     }
     return null;
-}
-function syncProfilesToFile(){
+}*/
+/*function syncProfilesToFile(){
     fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), err => err? console.log(err):console.log("JSON saved to ./profiles.json"));
-}
+}*/
 
 //executes this as soon as it starts
 client.on('ready', () => {
@@ -124,7 +125,7 @@ client.on("messageCreate", async msg => {
     devMode = config.devMode; //this will be evaluated every time a message is sent
     admins = config.admins; //this will be evaluated every time a message is sent
     const isAuthorized = isUserAuthorized(msg);
-    let profile = getProfile(msg.author.id);
+    let profile = SharedFunctions.getProfileById(msg.author.id);
     if (msg.system || msg.author.bot) return;
     // checking if the user is part of the current instance
     // bypassing admin check if it's instance command. not a great solution... could just 
@@ -133,7 +134,7 @@ client.on("messageCreate", async msg => {
     {
         if (!Object.hasOwn(profile, 'instanceId')) {
             profile.instanceId = 0;
-            syncProfilesToFile();
+            SharedFunctions.syncProfilesToFile(isMaster);
             console.log("no instance id found defaulting")
         }
         if(!(instanceID == profile.instanceId)) {

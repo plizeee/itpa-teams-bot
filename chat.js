@@ -3,6 +3,7 @@ const { Configuration, OpenAIApi } = require("openai");
 
 const fs = require('fs'); //needed to read/write json files
 const { profile } = require("console");
+const SharedFunctions = require("./util.js");
 //const { get } = require("http");
 //const { config } = require("dotenv");
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
@@ -102,7 +103,7 @@ module.exports = {
 };
 async function chatroomCommand(msg){
    threadMessage = await msg.reply("Here You Go");
-   threadMessage.startThread({name: "Chatroom", reason:"chatroom command"});
+   threadMessage.startThread({name: "Terry Chatroom", reason:"chatroom command"});
 }
 
 async function crossReferenceCommand(msg){
@@ -153,7 +154,7 @@ function getSystemPromptFromMessage(msg){
 }
 
 function isAuthorized(msg){
-    let profile = getProfile(msg);
+    let profile = SharedFunctions.getProfile(msg);
     let promptPermission = getPromptPermissionFromMessage(msg);
     
     //TODO make permission levels instead of just admin or not
@@ -165,6 +166,7 @@ function isAuthorized(msg){
 }
 
 //I altered this to better determine what type of chat causes his response -will
+//should be renamed to like checkChatType
 async function isValidChatRequirements(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
 
@@ -210,7 +212,7 @@ async function isReferencingBot(msg){
 async function getReplyThread(msg, sysMsg){
 
     let message = stripCommand(msg.content);
-    let profile = getProfile(msg);
+    let profile = SharedFunctions.getProfile(msg);
 
     let thread = [];
 
@@ -218,7 +220,7 @@ async function getReplyThread(msg, sysMsg){
         let repliedMessageRef = await msg.fetchReference();
         
         while(repliedMessageRef){
-            let refProfile = getProfile(repliedMessageRef);
+            let refProfile = SharedFunctions.getProfile(repliedMessageRef);
             let repliedMessage = stripCommand(repliedMessageRef.content);
             if(repliedMessageRef.author.bot){
                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
@@ -263,7 +265,7 @@ function syncStats(){
     fs.writeFileSync(filepath,JSON.stringify(stats, space="\r\n"));
 }
 //This will replace whatever is inside profiles.json with the value of the profiles variable
-function syncProfilesToFile(){
+/*function syncProfilesToFile(){
     if(isMaster){ //I only want to write to file in master branch
         fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
             if (err) {
@@ -276,7 +278,7 @@ function syncProfilesToFile(){
     else{
         console.log("Dev Mode is currently active. Message not stored in file.");
     }
-}
+}*/
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
 function chatCommand(msg, model = "gpt-3.5-turbo", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
@@ -299,7 +301,7 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     let messages = await thread.messages.fetch({limit: maxNumOfMsgs})
     let parsedMessages = []
     for(let [snowflake,message] of messages){
-        let profile = getProfileByid(message.author.id);
+        let profile = SharedFunctions.getProfileById(message.author.id);
         let role = "user";
         let content = `messageID:${message.id} ${profile.name}(${message.author.username}): ${message.content}`;
         if (message.author.bot){
@@ -496,7 +498,7 @@ function removeReaction(message){
 }
 
 function profileCreation(msg){ //generates a profile for users that don't have one
-    const profile = getProfile(msg);
+    const profile = SharedFunctions.getProfile(msg);
 
     if(msg.author.bot || profile != null){
         return;
@@ -516,27 +518,11 @@ function profileCreation(msg){ //generates a profile for users that don't have o
             }
         }
     );
-    syncProfilesToFile(); //Saving changes to file
+    SharedFunctions.syncProfilesToFile(isMaster); //Saving changes to file
     return;
 }
 
-function getProfile(msg){
-    for(let i = 0; i < profiles["users"].length; i++){
-        let profile = profiles["users"][i];
 
-        if(profile.id == msg.author.id){
-            return profile;
-        }
-    }
-    return null;
-}
-
-function getProfileByid(id){
-    for(let profile of profiles["users"]){
-        if(profile.id == id) {return profile;}
-    }
-    return null;
-}
 
 //ITPA SERVER ID: 1017047682713387049
 //TEST SERVER ID: 1023927168281104505
