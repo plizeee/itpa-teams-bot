@@ -178,6 +178,24 @@ app.get('/courses.json', allowLocal, (req, res) => {
   res.sendFile(coursesPath);
 });
 
+app.get('/promptCommands.json', allowLocal, (req, res) => {
+  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
+  res.sendFile(promptPath);
+});
+
+app.get('/config.json', allowLocal, (req, res) => {
+  const configPath = path.join(__dirname, '..', 'config.json');
+  res.sendFile(configPath);
+});
+
+app.get('/private', allowLocal, (req, res) => {
+  res.send('This is a private page. You have been authenticated!');
+});
+
+app.get('/unauthorized', (req, res) => {
+  res.sendFile(path.join(__dirname, 'unauthorized.html'));
+});
+
 app.post('/save-courses', (req, res) => {
   const coursesPath = path.join(__dirname, '..', 'courses.json');
   const newCoursesData = req.body;
@@ -190,11 +208,6 @@ app.post('/save-courses', (req, res) => {
       res.status(200).send('File updated successfully');
     }
   });
-});
-
-app.get('/promptCommands.json', allowLocal, (req, res) => {
-  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
-  res.sendFile(promptPath);
 });
 
 app.post('/save-prompts', (req, res) => {
@@ -211,11 +224,6 @@ app.post('/save-prompts', (req, res) => {
   });
 });
 
-app.get('/config.json', allowLocal, (req, res) => {
-  const configPath = path.join(__dirname, '..', 'config.json');
-  res.sendFile(configPath);
-});
-
 app.post('/save-config', (req, res) => {
   const configPath = path.join(__dirname, '..', 'config.json');
   const newConfigData = req.body;
@@ -228,14 +236,6 @@ app.post('/save-config', (req, res) => {
       res.status(200).send('File updated successfully');
     }
   });
-});
-
-app.get('/private', allowLocal, (req, res) => {
-  res.send('This is a private page. You have been authenticated!');
-});
-
-app.get('/unauthorized', (req, res) => {
-  res.sendFile(path.join(__dirname, 'unauthorized.html'));
 });
 
 app.listen(port, '0.0.0.0', () => {
