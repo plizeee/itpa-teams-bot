@@ -136,6 +136,8 @@ function allowLocal(req, res, next) {
 }
 
 // Serve static files from the webclient folder
+
+// app.get
 app.get('/', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -196,6 +198,12 @@ app.get('/unauthorized', (req, res) => {
   res.sendFile(path.join(__dirname, 'unauthorized.html'));
 });
 
+// get css files
+app.get('/styles.css', allowLocal, (req, res) => {
+  res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+// app.post
 app.post('/save-courses', (req, res) => {
   const coursesPath = path.join(__dirname, '..', 'courses.json');
   const newCoursesData = req.body;
