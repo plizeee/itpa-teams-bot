@@ -99,6 +99,7 @@ function isAdmin(id){
     return false;
 }
 
+//                              ~~ moved to util.js ~~
 /*function util.getProfileById(id){
     for(let i = 0; i < profiles["users"].length; i++){
         let profile = profiles["users"][i];
