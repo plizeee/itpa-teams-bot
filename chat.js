@@ -2,7 +2,7 @@
 const { Configuration, OpenAIApi } = require("openai");
 
 const fs = require('fs'); //needed to read/write json files
-const { profile } = require("console");
+const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
 //const { get } = require("http");
 //const { config } = require("dotenv");
@@ -11,6 +11,8 @@ const prompts = JSON.parse(fs.readFileSync('./prompts.json')); //creating a snap
 const promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json')); //creating a snapshot of the contents of promptCommands.json
 let config;
 
+const GPT4_RATE_LIMIT = 10;
+const GPT4_RATE_LIMIT_TIME = 60*60*1000; //1 hour
 require('dotenv').config();
 
 const configuration = new Configuration({
@@ -156,13 +158,48 @@ function getSystemPromptFromMessage(msg){
 function isAuthorized(msg){
     let profile = SharedFunctions.getProfile(msg);
     let promptPermission = getPromptPermissionFromMessage(msg);
+
+    let model = getModelFromMessage(msg);
     
     //TODO make permission levels instead of just admin or not
     let admins = config.admins;
     let userPermission = admins.includes(profile.id) ? 1 : 0;
 
+    let isAuthorized = userPermission >= promptPermission;
+
+    //rate limit non-admins if they are using gpt-4
+    //if user is not an admin and has permission to use gpt-4
+    //TODO make this a function
+    if(model == "gpt-4" && isAuthorized && userPermission == 0){
+        let timeSinceLastGpt4 = Date.now() - profile.gpt4Timestamps[profile.gpt4Timestamps.length - 1];
+        
+        console.log("timeSinceLastGpt4: " + timeSinceLastGpt4 + " \ngpt4Timestamps.length: " + profile.gpt4Timestamps.length);
+
+        if(profile.gpt4Timestamps.length >= GPT4_RATE_LIMIT && timeSinceLastGpt4 < GPT4_RATE_LIMIT_TIME){
+            isAuthorized = false;
+            console.log("User is not authorized to use gpt-4. Rate limit exceeded.");
+            msg.reply("Rate limit exceeded.");
+        }
+        else{
+            profile.gpt4Timestamps.push(Date.now());
+
+            //remove timestamps that are older than the rate limit time or greater than the rate limit
+            for(let i = 1; i <= profile.gpt4Timestamps.length; i++){
+                if(i > GPT4_RATE_LIMIT){
+                    profile.gpt4Timestamps.shift();
+
+                    i--;
+                    console.log("removed timestamp");
+                }
+            }
+
+            SharedFunctions.syncProfilesToFile();
+            console.log("profile timestamps: " + profile.gpt4Timestamps);
+        }
+    }
+
     console.log("User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
-    return userPermission >= promptPermission;
+    return isAuthorized;//userPermission >= promptPermission;
 }
 
 //I altered this to better determine what type of chat causes his response -will
@@ -501,6 +538,11 @@ function profileCreation(msg){ //generates a profile for users that don't have o
     const profile = SharedFunctions.getProfile(msg);
 
     if(msg.author.bot || profile != null){
+        if(!profile.gpt4Timestamps) {
+            profile.gpt4Timestamps = [];
+            console.log("Added gpt4Timestamps to profile.");
+            console.log(profile);
+        }
         return;
     }
 
@@ -515,7 +557,8 @@ function profileCreation(msg){ //generates a profile for users that don't have o
                 "linkMessages": [],
                 "lateMessages": [],
                 "earlyMessages": [],
-            }
+            },
+            "gpt4Timestamps": []
         }
     );
     SharedFunctions.syncProfilesToFile(isMaster); //Saving changes to file
