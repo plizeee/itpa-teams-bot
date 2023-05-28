@@ -59,7 +59,7 @@ let coursesData = {
     const sessionForm = document.getElementById('sessionForm');
     const sessionFormSubmitBtn = document.getElementById('sessionFormSubmitBtn');
     const sessionFormCancelBtn = document.getElementById('sessionFormCancelBtn');
-    const closeSessionBtn = document.querySelector('.close-session');
+    const closeBtns = document.querySelectorAll('.close');
   
     const addSessionBtn = document.createElement('button');
     addSessionBtn.classList.add('addSessionBtn');
@@ -149,16 +149,6 @@ let coursesData = {
       showSessionForm();
     }
   
-  
-    function showSessionForm() {
-      sessionModal.style.display = 'block';
-      //editingSessionIndex = null;
-    }
-  
-    function hideSessionForm() {
-      sessionModal.style.display = 'none';
-    }
-  
     function submitSessionForm(event) {
       event.preventDefault();
     
@@ -191,7 +181,8 @@ let coursesData = {
     
       renderCourses();
       saveCoursesData();
-      hideSessionForm();
+      //hideSessionForm();
+      closeModal();
     }
     
     
@@ -203,7 +194,21 @@ let coursesData = {
     function hideCourseForm() {
         courseModal.style.display = 'none';
     }
+
+    function showSessionForm() {
+      sessionModal.style.display = 'block';
+      //editingSessionIndex = null;
+    }
   
+    function hideSessionForm() {
+      sessionModal.style.display = 'none';
+    }
+  
+    function closeModal(){
+      courseModal.style.display = 'none';
+      sessionModal.style.display = 'none';
+    }
+
     function submitCourseForm(event) {
       event.preventDefault();
   
@@ -233,8 +238,8 @@ let coursesData = {
       }
         renderCourses();
         saveCoursesData();
-        hideCourseForm();
-  
+        //hideCourseForm();
+        closeModal();
       }
   
       function addCourse(event) {
@@ -328,17 +333,15 @@ let coursesData = {
     
     courseForm.addEventListener('submit', submitCourseForm);
   
-    courseFormCancelBtn.addEventListener('click', hideCourseForm);
+    courseFormCancelBtn.addEventListener('click', closeModal);
   
-    const closeBtn = document.querySelector('.close');
-  
-    closeBtn.addEventListener('click', hideCourseForm);
+    //closeBtn.addEventListener('click', closeModal);
+    closeBtns.forEach(btn => btn.addEventListener('click', closeModal));
   
     courseFormSubmitBtn.addEventListener('click', submitCourseForm);
   
     sessionForm.addEventListener('submit', submitSessionForm);
-    sessionFormCancelBtn.addEventListener('click', hideSessionForm);
-    closeSessionBtn.addEventListener('click', hideSessionForm);
+    sessionFormCancelBtn.addEventListener('click', closeModal);
   
     renderCourses();
   });

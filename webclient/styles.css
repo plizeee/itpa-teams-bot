@@ -44,6 +44,10 @@ button {
     margin: 5px;
 }
 
+.container {
+    padding: 2rem;
+}
+
 .course {
     display: flex;
     align-items: flex-start; /* Align items to the top */
@@ -75,6 +79,24 @@ button {
     border-radius: 3px;
 }
 
+.command-box-container {
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #e0e0e0;
+    padding: 5px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+}
+
+/* TODO remove this? */
 /* Add Session button */
 .addSessionBtn {
     background-color: #4CAF50;
@@ -90,6 +112,15 @@ button {
     margin: auto;
 }
 
+button.edit-command-btn,
+button.delete-command-btn {
+    background-color: #2196F3;
+    color: white;
+    font-size: 1.5em;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
 
 .deleteBtn, .deleteSessionBtn {
     background-color: #f44336;

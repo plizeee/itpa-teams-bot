@@ -21,10 +21,10 @@
     <div class="container">
         <h1>Commands</h1>
         <div class="command-box-container"> <!-- Add the new command-box-container div -->
-            <button id="add-command-btn">+</button>
             <ul id="command-list">
                 <!-- Commands will be added here dynamically -->
             </ul>
+            <button id="addCourseBtn">+ New Prompt</button>
         </div>
     </div>
     <template id="command-item-template">
@@ -37,12 +37,12 @@
             <div><strong>Model:</strong> <span class="prompt-model-value"></span></div>
             <div><strong>System Prompt:</strong> <span class="command-prompt-value"></span></div>
           </div>
-          <button class="edit-command-btn">Edit</button>
+          <button class="editBtn"></button>
         </li>
       </template>
     <div id="command-modal" class="modal hidden">
         <div class="modal-content">
-            <button id="close-modal-btn">&times;</button>
+            <button class="close">&times;</button>
             <h2>Add/Edit Command</h2>
             <form id="command-form">
                 <label for="prompt-name-input">Name:</label>

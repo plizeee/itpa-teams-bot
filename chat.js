@@ -155,52 +155,64 @@ function getSystemPromptFromMessage(msg){
     return systemPrompt;
 }
 
-function isAuthorized(msg){
-    let profile = SharedFunctions.getProfile(msg);
-    let promptPermission = getPromptPermissionFromMessage(msg);
+function isAuthorized(msg) {
+  let profile = SharedFunctions.getProfile(msg);
+  let promptPermission = getPromptPermissionFromMessage(msg);
+  let model = getModelFromMessage(msg);
 
-    let model = getModelFromMessage(msg);
-    
-    //TODO make permission levels instead of just admin or not
-    let admins = config.admins;
-    let userPermission = admins.includes(profile.id) ? 1 : 0;
+  //TODO make permission levels instead of just admin or not
+  let admins = config.admins;
+  let userPermission = admins.includes(profile.id) ? 1 : 0;
 
-    let isAuthorized = userPermission >= promptPermission;
+  let isAuthorized = userPermission >= promptPermission;
 
-    //rate limit non-admins if they are using gpt-4
-    //if user is not an admin and has permission to use gpt-4
-    //TODO make this a function
-    if(model == "gpt-4" && isAuthorized && userPermission == 0){
-        let timeSinceLastGpt4 = Date.now() - profile.gpt4Timestamps[profile.gpt4Timestamps.length - 1];
-        
-        console.log("timeSinceLastGpt4: " + timeSinceLastGpt4 + " \ngpt4Timestamps.length: " + profile.gpt4Timestamps.length);
+  // Rate limit non-admins if they are using gpt-4 and have permission
+  if (model == "gpt-4" && isAuthorized && userPermission == 0) {
+    isAuthorized = checkRateLimit(profile, msg);
+  }
 
-        if(profile.gpt4Timestamps.length >= GPT4_RATE_LIMIT && timeSinceLastGpt4 < GPT4_RATE_LIMIT_TIME){
-            isAuthorized = false;
-            console.log("User is not authorized to use gpt-4. Rate limit exceeded.");
-            msg.reply("Rate limit exceeded.");
-        }
-        else{
-            profile.gpt4Timestamps.push(Date.now());
+  console.log(
+    "User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
+  return isAuthorized; 
+}
 
-            //remove timestamps that are older than the rate limit time or greater than the rate limit
-            for(let i = 1; i <= profile.gpt4Timestamps.length; i++){
-                if(i > GPT4_RATE_LIMIT){
-                    profile.gpt4Timestamps.shift();
+function checkRateLimit(profile, msg) {
+  let timeSinceLastGpt4 =
+    Date.now() - profile.gpt4Timestamps[profile.gpt4Timestamps.length - 1];
 
-                    i--;
-                    console.log("removed timestamp");
-                }
-            }
+  console.log(
+    "timeSinceLastGpt4: " +
+      timeSinceLastGpt4 +
+      " \ngpt4Timestamps.length: " +
+      profile.gpt4Timestamps.length
+  );
 
-            SharedFunctions.syncProfilesToFile();
-            console.log("profile timestamps: " + profile.gpt4Timestamps);
-        }
+  if (
+    profile.gpt4Timestamps.length >= GPT4_RATE_LIMIT &&
+    timeSinceLastGpt4 < GPT4_RATE_LIMIT_TIME
+  ) {
+    console.log("User is not authorized to use gpt-4. Rate limit exceeded.");
+    msg.reply("Rate limit exceeded.");
+    return false;
+  } else {
+    profile.gpt4Timestamps.push(Date.now());
+
+    // Remove timestamps that are older than the rate limit time or greater than the rate limit
+    for (let i = 1; i <= profile.gpt4Timestamps.length; i++) {
+      if (i > GPT4_RATE_LIMIT) {
+        profile.gpt4Timestamps.shift();
+
+        i--;
+        console.log("removed timestamp");
+      }
     }
 
-    console.log("User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
-    return isAuthorized;//userPermission >= promptPermission;
+    SharedFunctions.syncProfilesToFile();
+    console.log("profile timestamps: " + profile.gpt4Timestamps);
+    return true;
+  }
 }
+
 
 //I altered this to better determine what type of chat causes his response -will
 //should be renamed to like checkChatType
@@ -271,7 +283,7 @@ async function getReplyThread(msg, sysMsg){
         }
     }
 
-    thread.push({"role": "user", "content": profile.name + "(" + msg.author.username + "): " + message});
+    thread.push({"role": "user", "content": profile.name + " (" + msg.author.username + "): " + message});
     thread.unshift({"role": "system", "content": sysMsg});
 
     return thread;

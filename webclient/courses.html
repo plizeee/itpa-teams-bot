@@ -32,7 +32,7 @@
             </div>
         </div>
     </template>
-    <button id="addCourseBtn">+ Add Course</button>
+    <button id="addCourseBtn">+ New Course</button>
       
     <template id="sessionTemplate">
         <div class="session">
@@ -43,11 +43,9 @@
             </div>
         </div>
     </template>    
-    <div id="courseFormContainer" style="display:none;">
-    </div>
     <div id="sessionModal" class="modal">
         <div class="modal-content">
-            <span class="close-session">&times;</span>
+            <button class="close">&times;</button>
             <form id="sessionForm">
                 <label for="sessionDay">Day of the week:</label><br>
                 <select id="sessionDay" name="sessionDay">
@@ -70,7 +68,7 @@
     </div>
     <div id="courseModal" class="modal">
         <div class="modal-content">
-          <span class="close">&times;</span>
+          <button class="close">&times;</button>
           <form id="courseForm">
             <label for="courseName">Course Name:</label><br>
             <input type="text" id="courseName" name="courseName" required><br><br>

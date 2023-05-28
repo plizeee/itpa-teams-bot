@@ -38,11 +38,12 @@ async function savePrompts() {
       console.log('Error reading file:', error);
     });
 
-    const addCommandBtn = document.getElementById('add-command-btn');
+    const addCommandBtn = document.getElementById('addCourseBtn');
     const commandList = document.getElementById('command-list');
     const commandItemTemplate = document.getElementById('command-item-template');
     const commandModal = document.getElementById('command-modal');
-    const closeModalBtn = document.getElementById('close-modal-btn');
+    //const closeBtn = document.getElementById('closeBtn');
+    const closeBtn = document.querySelector('.close');
     const commandForm = document.getElementById('command-form');
     const saveCommandBtn = document.getElementById('save-command-btn');
     const deleteCommandBtn = document.getElementById('delete-command-btn');
@@ -59,7 +60,7 @@ addCommandBtn.addEventListener('click', () => {
     openModal();
 });
 
-closeModalBtn.addEventListener('click', () => {
+closeBtn.addEventListener('click', () => {
     closeModal();
 });
 
@@ -71,6 +72,7 @@ commandForm.addEventListener('submit', (e) => {
 
 // Update the openModal function
 function openModal() {
+    commandModal.style.display = 'block';
     commandForm.reset();
     commandModal.classList.remove('hidden');
 
@@ -84,7 +86,8 @@ function openModal() {
 }
 
 function closeModal() {
-    commandModal.classList.add('hidden');
+    //commandModal.classList.add('hidden');
+    commandModal.style.display = 'none';
 }
 
 // Update the deleteCommandBtn event listener
@@ -153,7 +156,7 @@ function renderCommandList() {
         commandItem.querySelector('.command-prompt-value').innerHTML = command.prompt;
 
 
-        const editCommandBtn = commandItem.querySelector('.edit-command-btn');
+        const editCommandBtn = commandItem.querySelector('.editBtn');
         
         editCommandBtn.addEventListener('click', (e) => {
             e.stopPropagation();
