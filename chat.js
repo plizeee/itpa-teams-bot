@@ -4,11 +4,9 @@ const { Configuration, OpenAIApi } = require("openai");
 const fs = require('fs'); //needed to read/write json files
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
-//const { get } = require("http");
-//const { config } = require("dotenv");
 const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
 const prompts = JSON.parse(fs.readFileSync('./prompts.json')); //creating a snapshot of the contents of prompts.json
-const promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json')); //creating a snapshot of the contents of promptCommands.json
+let promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json')); //creating a snapshot of the contents of promptCommands.json
 let config;
 
 const GPT4_RATE_LIMIT = 10;
@@ -75,6 +73,7 @@ let InstanceData = {
 
 module.exports = {
     checkChatCommand: async function (msg, isMasterBranch,client,config_) {
+        promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json'));
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
@@ -82,14 +81,16 @@ module.exports = {
 
         profileCreation(msg);
         let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
+        console.log("CHAT TYPE: " + chatType);
         if (chatType) {
             found = true;
             switch(chatType){
-                case 1:
-                    chatCommand(msg, getModelFromMessage(msg), isAuthorized(msg), getSystemPromptFromMessage(msg));
+                case 1: 
+                    chatCommand(msg, getModelFromMessage(msg.content), isAuthorized(msg), getSystemPromptFromMessage(msg.content));
                     break;
-                case 2: case 3:
-                    chatCommand(msg); 
+                case 2: case 3: //reply to a message
+                    //we need to check if the root of the reply contains a chat command
+                    checkReplyForChatCommand(msg);
                     break;
                 case 4:
                     console.log("calling threadChatCommand");
@@ -103,6 +104,22 @@ module.exports = {
         return found;
     }
 };
+
+async function checkReplyForChatCommand(msg){
+    let firstMessage = await getReferenceMsg(msg);
+
+    console.log("firstMessage: " + firstMessage);
+
+    if (firstMessage && getPromptCommand(firstMessage)) {
+        console.log("firstMessage check passed");
+        chatCommand(msg, getModelFromMessage(firstMessage), isAuthorized(msg, firstMessage), getSystemPromptFromMessage(firstMessage));
+    }
+    else{
+        console.log("firstMessage check failed");
+        chatCommand(msg);
+    }
+}
+
 async function chatroomCommand(msg){
    threadMessage = await msg.reply("Here You Go");
    threadMessage.startThread({name: "Terry Chatroom", reason:"chatroom command"});
@@ -113,6 +130,7 @@ async function crossReferenceCommand(msg){
 
     const instructions = prompts["Terry"] + " The following message is the message the user is referring to: ";
 
+    //TODO send more typing indicators if the message is still being generated
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
@@ -126,54 +144,65 @@ function getPromptCommands(){
         array.push(promptCommands.commands[i].command);
     }
     console.log("Commands: " + array);
-    //console.log("PromptCommands: " + promptCommands);
     return array;
 }
 
-function getPromptCommand(msg){
-    let message = msg.content.toUpperCase();
+function getPromptCommand(message){
+    message = message.toUpperCase();
     let commands = getPromptCommands();
-    let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " "));
+
+    console.log("message: " + message);
+
+    //get the command from the message and default to null if not found
+    let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " ")) ?? null;
+
+    console.log("Command: " + command);
+
     return command;
 }
 
-function getModelFromMessage(msg){
-    let promptCommand = getPromptCommand(msg);
+function getModelFromMessage(message){
+    let promptCommand = getPromptCommand(message);
+
     let model = promptCommands.commands.find(command => command.command == promptCommand).model;
     return model;
 }
 
-function getPromptPermissionFromMessage(msg){
-    let promptCommand = getPromptCommand(msg);
+function getPromptPermissionFromMessage(message){
+    let promptCommand = getPromptCommand(message);
+
+    if(!promptCommand) return 0;
     let permission = promptCommands.commands.find(command => command.command == promptCommand).permission;
     return permission;
 }
 
-function getSystemPromptFromMessage(msg){
-    let promptCommand = getPromptCommand(msg);
+function getSystemPromptFromMessage(message){
+    let promptCommand = getPromptCommand(message);
+
     let systemPrompt = promptCommands.commands.find(command => command.command == promptCommand).prompt;
     return systemPrompt;
 }
 
-function isAuthorized(msg) {
-  let profile = SharedFunctions.getProfile(msg);
-  let promptPermission = getPromptPermissionFromMessage(msg);
-  let model = getModelFromMessage(msg);
+function isAuthorized(msg, referenceMessage = null) {
+    let message = referenceMessage ? referenceMessage : msg.content; 
+    let profile = SharedFunctions.getProfile(msg);
+    let promptPermission = getPromptPermissionFromMessage(message);
+    let model = getModelFromMessage(message);
 
-  //TODO make permission levels instead of just admin or not
-  let admins = config.admins;
-  let userPermission = admins.includes(profile.id) ? 1 : 0;
+    //TODO make permission levels instead of just admin or not
+    let admins = config.admins;
+    let userPermission = admins.includes(profile.id) ? 1 : 0;
 
-  let isAuthorized = userPermission >= promptPermission;
+    let isAuthorized = userPermission >= promptPermission;
 
-  // Rate limit non-admins if they are using gpt-4 and have permission
-  if (model == "gpt-4" && isAuthorized && userPermission == 0) {
-    isAuthorized = checkRateLimit(profile, msg);
-  }
+    // Rate limit non-admins if they are using gpt-4 and have permission
+    if (model == "gpt-4" && isAuthorized && userPermission == 0) {
+        isAuthorized = checkRateLimit(profile, msg);
+    }
 
-  console.log(
-    "User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
-  return isAuthorized; 
+    console.log(
+        "User Permission: " + userPermission + " Prompt Permission: " + promptPermission);
+    return isAuthorized; 
 }
 
 function checkRateLimit(profile, msg) {
@@ -220,14 +249,14 @@ async function isValidChatRequirements(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
 
     //get all the "command" values from the promptCommands object
-    let command = getPromptCommand(msg);
+    let command = getPromptCommand(message);
     console.log("Command: " + command);
 
     //return message.startsWith("!CHAT ")? 1:
-    return command? 1:
-    (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2:
-    await isReferencingBot(msg)? 3:
-    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false;
+    return command? 1: //if it's a prompt command
+    (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
+    await isReferencingBot(msg) ? 3: //if it's a reply to the bot
+    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false; //if it's a thread
 
 }
 
@@ -271,6 +300,7 @@ async function getReplyThread(msg, sysMsg){
         while(repliedMessageRef){
             let refProfile = SharedFunctions.getProfile(repliedMessageRef);
             let repliedMessage = stripCommand(repliedMessageRef.content);
+
             if(repliedMessageRef.author.bot){
                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
             }
@@ -289,6 +319,22 @@ async function getReplyThread(msg, sysMsg){
     return thread;
 }
 
+async function getReferenceMsg(msg){
+    let firstMessage;
+
+    if(msg.reference){
+        let repliedMessageRef = await msg.fetchReference();
+
+        while(repliedMessageRef){
+            firstMessage = repliedMessageRef.content;
+            repliedMessageRef = await repliedMessageRef.fetchReference()
+            .catch(err => console.log("No reference found"));
+        }
+    }
+
+    return firstMessage;
+}
+
 function stripCommand(message){
     if(message.startsWith("!")){
         message = message.slice(message.indexOf(" ") + 1); //index of " " because commands will always end with that
@@ -296,6 +342,7 @@ function stripCommand(message){
 
     return message;
 }
+
 function syncStats(){
     const filepath = "./stats.json";
     if(!fs.existsSync(filepath)){console.log("Creating Stats File")}
@@ -313,21 +360,6 @@ function syncStats(){
     }
     fs.writeFileSync(filepath,JSON.stringify(stats, space="\r\n"));
 }
-//This will replace whatever is inside profiles.json with the value of the profiles variable
-/*function syncProfilesToFile(){
-    if(isMaster){ //I only want to write to file in master branch
-        fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log("JSON saved to ./profiles.json"); //successful response
-            }
-        });
-    }
-    else{
-        console.log("Dev Mode is currently active. Message not stored in file.");
-    }
-}*/
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
 function chatCommand(msg, model = "gpt-3.5-turbo", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
@@ -576,8 +608,3 @@ function profileCreation(msg){ //generates a profile for users that don't have o
     SharedFunctions.syncProfilesToFile(isMaster); //Saving changes to file
     return;
 }
-
-
-
-//ITPA SERVER ID: 1017047682713387049
-//TEST SERVER ID: 1023927168281104505
