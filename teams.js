@@ -34,7 +34,7 @@ module.exports = {
         courses = JSON.parse(fs.readFileSync('./courses.json'));
         let command = msg.content.toUpperCase(), found = false;
 
-        if(command.startsWith("!TEAMS") || command.startsWith("!T")){
+        if(command === "!T" || command === "!TEAMS" || command.startsWith("!TEAMS ") || command.startsWith("!T ")){
             found = true;
             teamsCommand(msg);
         }
