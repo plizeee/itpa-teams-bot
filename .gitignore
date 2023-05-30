@@ -10,3 +10,4 @@ startWebclient.sh
 courses.json
 node_modules
 stats.json
+*.log
