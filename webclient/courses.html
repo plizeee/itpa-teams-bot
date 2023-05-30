@@ -19,7 +19,11 @@
         <a href="config.html">Config</a>
     </nav>
     
-    <div id="coursesList"></div>
+    <div class="container">
+        <h2>Courses</h2>
+        <div id="coursesList"></div>
+        <button id="addCourseBtn">+ New Course</button>
+    </div>
     <template id="courseTemplate">
         <div class="course">
             <div class="course-info">
@@ -32,7 +36,7 @@
             </div>
         </div>
     </template>
-    <button id="addCourseBtn">+ New Course</button>
+    
       
     <template id="sessionTemplate">
         <div class="session">
@@ -62,7 +66,7 @@
                 <label for="sessionIsOnline">Is the session online?</label>
                 <input type="checkbox" id="sessionIsOnline" name="sessionIsOnline"><br><br>
                 <input type="submit" value="Submit" id="sessionFormSubmitBtn">
-                <button type="button" id="sessionFormCancelBtn">Cancel</button>
+                <button type="button" class="cancel">Cancel</button>
             </form>
         </div>
     </div>
@@ -77,7 +81,7 @@
             <label for="courseLink">Course Link:</label><br>
             <input type="text" id="courseLink" name="courseLink"><br><br>
             <input type="submit" value="Submit" id="courseFormSubmitBtn">
-            <button type="button" id="courseFormCancelBtn">Cancel</button>
+            <button type="button" class="cancel">Cancel</button>
           </form>
         </div>
       </div>

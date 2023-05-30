@@ -50,7 +50,7 @@ let coursesData = {
     const courseCodeInput = document.getElementById('courseCode');
     const courseLinkInput = document.getElementById('courseLink');
     const courseForm = document.getElementById('courseForm');
-    const courseFormCancelBtn = document.getElementById('courseFormCancelBtn');
+    //const courseFormCancelBtn = document.getElementById('cancelBtn');
     const courseModal = document.getElementById('courseModal');
     const courseFormSubmitBtn = document.getElementById('courseFormSubmitBtn');
   
@@ -58,8 +58,9 @@ let coursesData = {
     const sessionModal = document.getElementById('sessionModal');
     const sessionForm = document.getElementById('sessionForm');
     const sessionFormSubmitBtn = document.getElementById('sessionFormSubmitBtn');
-    const sessionFormCancelBtn = document.getElementById('sessionFormCancelBtn');
+    //const sessionFormCancelBtn = document.getElementById('cancelBtn');
     const closeBtns = document.querySelectorAll('.close');
+    const cancelBtns = document.querySelectorAll('.cancel');
   
     const addSessionBtn = document.createElement('button');
     addSessionBtn.classList.add('addSessionBtn');
@@ -82,54 +83,53 @@ let coursesData = {
     }
   
     function renderCourses() {
-        coursesList.innerHTML = '';
-  
-        coursesData.courses.forEach((course, courseIndex) => {
-            const courseEl = courseTemplate.content.cloneNode(true);
-            const courseInfoEl = courseEl.querySelector('.course-info');
-  
-            const courseDetailsEl = courseEl.querySelector('.course-details');
-            courseDetailsEl.innerHTML = `<strong>${course.name} (${course.code})</strong><br>`;
-  
-            course.days.forEach((day, sessionIndex) => {
-                const sessionEl = sessionTemplate.content.cloneNode(true);
-                const sessionInfoEl = sessionEl.querySelector('.session-info');
-                const deleteSessionBtn = sessionEl.querySelector('.deleteSessionBtn');
-                const editSessionBtn = sessionEl.querySelector('.editSessionBtn');
-  
-                editSessionBtn.addEventListener('click', () => {
-                  editingSessionIndex = sessionIndex;
-                  editingSessionCourseIndex = courseIndex;
-                  editSession(courseIndex, sessionIndex);
-              });
-  
-              course.isOnline[sessionIndex] ? sessionInfoEl.innerHTML = `<a href="${course.link}">${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} (Online)</a>` :
-              sessionInfoEl.textContent = `${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
+      coursesList.innerHTML = '';
 
+      coursesData.courses.forEach((course, courseIndex) => {
+        // Create a new course element from the template
+        const courseEl = courseTemplate.content.cloneNode(true);
+        const courseInfoEl = courseEl.querySelector('.course-info');
 
-  
-                deleteSessionBtn.addEventListener('click', () => deleteSession(courseIndex, sessionIndex));
-  
-                courseInfoEl.appendChild(sessionEl);
-            });
-  
-            const sessionsContainer = document.createElement('div');
-            sessionsContainer.appendChild(addSessionBtn.cloneNode(true));
-            sessionsContainer.lastChild.addEventListener('click', () => {
-                editingCourseIndex = courseIndex;
-                editingSessionCourseIndex = courseIndex;
-                showSessionForm();
-            });
-            courseInfoEl.appendChild(sessionsContainer);
-  
-            const editBtn = courseEl.querySelector('.editBtn');
-            const deleteBtn = courseEl.querySelector('.deleteBtn');
-  
-            editBtn.addEventListener('click', () => editCourse(courseIndex));
-            deleteBtn.addEventListener('click', () => deleteCourse(courseIndex));
-  
-            coursesList.appendChild(courseEl);
+        const courseDetailsEl = courseEl.querySelector('.course-details');
+        courseDetailsEl.innerHTML = `<strong>${course.name} (${course.code})</strong><br>`;
+
+        course.days.forEach((day, sessionIndex) => {
+          const sessionEl = sessionTemplate.content.cloneNode(true);
+          const sessionInfoEl = sessionEl.querySelector('.session-info');
+          const deleteSessionBtn = sessionEl.querySelector('.deleteSessionBtn');
+          const editSessionBtn = sessionEl.querySelector('.editSessionBtn');
+
+          editSessionBtn.addEventListener('click', () => {
+            editingSessionIndex = sessionIndex;
+            editingSessionCourseIndex = courseIndex;
+            editSession(courseIndex, sessionIndex);
+          });
+
+          course.isOnline[sessionIndex] ? sessionInfoEl.innerHTML = `<a href="${course.link}">${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} (Online)</a>` :
+          sessionInfoEl.textContent = `${day} ${formatTime(course.startTimes[sessionIndex])} - ${formatTime(course.endTimes[sessionIndex])} ${course.isOnline[sessionIndex] ? '(Online)' : '(In-person)'}`;
+
+          deleteSessionBtn.addEventListener('click', () => deleteSession(courseIndex, sessionIndex));
+
+          courseInfoEl.appendChild(sessionEl);
         });
+
+        const sessionsContainer = document.createElement('div');
+        sessionsContainer.appendChild(addSessionBtn.cloneNode(true));
+        sessionsContainer.lastChild.addEventListener('click', () => {
+          editingCourseIndex = courseIndex;
+          editingSessionCourseIndex = courseIndex;
+          showSessionForm();
+        });
+        courseInfoEl.appendChild(sessionsContainer);
+
+        const editBtn = courseEl.querySelector('.editBtn');
+        const deleteBtn = courseEl.querySelector('.deleteBtn');
+
+        editBtn.addEventListener('click', () => editCourse(courseIndex));
+        deleteBtn.addEventListener('click', () => deleteCourse(courseIndex));
+
+        coursesList.appendChild(courseEl);
+      });
     }
   
     function editSession(courseIndex, sessionIndex) {
@@ -165,15 +165,15 @@ let coursesData = {
       const course = coursesData.courses[editingSessionCourseIndex];
     
       if (editingSessionIndex === null) {
-          course.days.push(newDay);
-          course.startTimes.push(newStartTime);
-          course.endTimes.push(newEndTime);
-          course.isOnline.push(isOnline);
+        course.days.push(newDay);
+        course.startTimes.push(newStartTime);
+        course.endTimes.push(newEndTime);
+        course.isOnline.push(isOnline);
       } else {
-          course.days[editingSessionIndex] = newDay;
-          course.startTimes[editingSessionIndex] = newStartTime;
-          course.endTimes[editingSessionIndex] = newEndTime;
-          course.isOnline[editingSessionIndex] = isOnline;
+        course.days[editingSessionIndex] = newDay;
+        course.startTimes[editingSessionIndex] = newStartTime;
+        course.endTimes[editingSessionIndex] = newEndTime;
+        course.isOnline[editingSessionIndex] = isOnline;
       }
     
       editingSessionIndex = null;
@@ -188,11 +188,11 @@ let coursesData = {
     
   
     function showCourseForm() {
-        courseModal.style.display = 'block';
+      courseModal.style.display = 'block';
     }
   
     function hideCourseForm() {
-        courseModal.style.display = 'none';
+      courseModal.style.display = 'none';
     }
 
     function showSessionForm() {
@@ -218,13 +218,13 @@ let coursesData = {
   
       if (editingCourseIndex === null) {
         const newCourse = {
-            name: courseName,
-            code: courseCode,
-            link: courseLink,
-            days: [],
-            startTimes: [],
-            endTimes: [],
-            isOnline: []
+          name: courseName,
+          code: courseCode,
+          link: courseLink,
+          days: [],
+          startTimes: [],
+          endTimes: [],
+          isOnline: []
         };
   
         coursesData.courses.push(newCourse);
@@ -236,42 +236,42 @@ let coursesData = {
         course.code = courseCode;
         course.link = courseLink;
       }
-        renderCourses();
-        saveCoursesData();
-        //hideCourseForm();
-        closeModal();
-      }
+      renderCourses();
+      saveCoursesData();
+      //hideCourseForm();
+      closeModal();
+    }
   
-      function addCourse(event) {
-        event.preventDefault();
-    
-        const courseName = document.getElementById('courseName').value;
-        if (!courseName) return;
-    
-        const courseCode = document.getElementById('courseCode').value;
-        if (!courseCode) return;
-    
-        const courseLink = document.getElementById('courseLink').value;
-    
-        const newCourse = {
-            name: courseName,
-            code: courseCode,
-            link: courseLink,
-            days: [],
-            startTimes: [],
-            endTimes: [],
-            isOnline: []
-        };
-    
-        coursesData.courses.push(newCourse);
-        editCourse(coursesData.courses.length - 1);
-    
-        // Clear the input fields
-        document.getElementById('courseName').value = '';
-        document.getElementById('courseCode').value = '';
-        document.getElementById('courseLink').value = '';
-    
-        renderCourses();
+    function addCourse(event) {
+      event.preventDefault();
+  
+      const courseName = document.getElementById('courseName').value;
+      if (!courseName) return;
+  
+      const courseCode = document.getElementById('courseCode').value;
+      if (!courseCode) return;
+  
+      const courseLink = document.getElementById('courseLink').value;
+  
+      const newCourse = {
+        name: courseName,
+        code: courseCode,
+        link: courseLink,
+        days: [],
+        startTimes: [],
+        endTimes: [],
+        isOnline: []
+      };
+  
+      coursesData.courses.push(newCourse);
+      editCourse(coursesData.courses.length - 1);
+  
+      // Clear the input fields
+      document.getElementById('courseName').value = '';
+      document.getElementById('courseCode').value = '';
+      document.getElementById('courseLink').value = '';
+  
+      renderCourses();
     }
     
   
@@ -309,17 +309,17 @@ let coursesData = {
     }
   
     function deleteSession(courseIndex, sessionIndex) {
-        const course = coursesData.courses[courseIndex];
-  
-        if (confirm('Are you sure you want to delete this session?')) {
-            course.days.splice(sessionIndex, 1);
-            course.startTimes.splice(sessionIndex, 1);
-            course.endTimes.splice(sessionIndex, 1);
-            course.isOnline.splice(sessionIndex, 1);
-  
-            renderCourses();
-            saveCoursesData();
-        }
+      const course = coursesData.courses[courseIndex];
+
+      if (confirm('Are you sure you want to delete this session?')) {
+        course.days.splice(sessionIndex, 1);
+        course.startTimes.splice(sessionIndex, 1);
+        course.endTimes.splice(sessionIndex, 1);
+        course.isOnline.splice(sessionIndex, 1);
+
+        renderCourses();
+        saveCoursesData();
+      }
     }
   
     addCourseBtn.addEventListener('click', (event) => {
@@ -333,15 +333,17 @@ let coursesData = {
     
     courseForm.addEventListener('submit', submitCourseForm);
   
-    courseFormCancelBtn.addEventListener('click', closeModal);
+    //courseFormCancelBtn.addEventListener('click', closeModal);
   
+    cancelBtns.forEach(btn => btn.addEventListener('click', closeModal));
+
     //closeBtn.addEventListener('click', closeModal);
     closeBtns.forEach(btn => btn.addEventListener('click', closeModal));
   
     courseFormSubmitBtn.addEventListener('click', submitCourseForm);
   
     sessionForm.addEventListener('submit', submitSessionForm);
-    sessionFormCancelBtn.addEventListener('click', closeModal);
+    //sessionFormCancelBtn.addEventListener('click', closeModal);
   
     renderCourses();
   });

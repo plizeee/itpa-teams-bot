@@ -18,39 +18,49 @@
         <a href="courses.html">Schedule</a>
         <a href="config.html">Config</a>
     </nav>
-  <form id="configForm">
-    <div>
-      <label for="devMode">Dev Mode:</label>
-      <input type="checkbox" id="devMode">
+    <div class="container">
+      <h1>Config</h1>
+      <form id="configForm">
+        <div>
+          <label for="devMode">Dev Mode:</label>
+          <input type="checkbox" id="devMode">
+        </div>
+        <div>
+          <label for="isMaster">Is Master:</label>
+          <input type="checkbox" id="isMaster">
+        </div>
+        <div>
+          <label for="instanceId">Instance ID:</label>
+          <input type="number" id="instanceId">
+        </div>
+        <div>
+          <label for="chatrooms">Chatrooms Enabled:</label>
+          <input type="checkbox" id="chatrooms">
+        </div>
+        <div>
+          <label for="chatRoomCooldownsNormal">Chat Room Cooldowns - Normal:</label>
+          <input type="number" id="chatRoomCooldownsNormal">
+        </div>
+        <div>
+          <label for="chatRoomCooldownsNoRespond">Chat Room Cooldowns - No Respond:</label>
+          <input type="number" id="chatRoomCooldownsNoRespond">
+        </div>
+        <div>
+          <label>Admins:</label>
+          <div id="adminList"></div>
+          <input type="text" id="searchUser" placeholder="Search user">
+          <button type="button" id="addAdmin">+</button><br>
+          <ul id="searchResults"></ul><br>
+          <button id="addCourseBtn">Save</button>
+        </div>
+        <template id="adminTemplate">
+          <div class="admin">
+            <button class="removeAdmin admin-btn">-</button>
+            <span class="admin-info"></span>
+          </div>
+      </template>
     </div>
-    <div>
-      <label for="isMaster">Is Master:</label>
-      <input type="checkbox" id="isMaster">
-    </div>
-    <div>
-      <label for="instanceId">Instance ID:</label>
-      <input type="number" id="instanceId">
-    </div>
-    <div>
-      <label for="chatrooms">Chatrooms Enabled:</label>
-      <input type="checkbox" id="chatrooms">
-    </div>
-    <div>
-      <label for="chatRoomCooldownsNormal">Chat Room Cooldowns - Normal:</label>
-      <input type="number" id="chatRoomCooldownsNormal">
-    </div>
-    <div>
-      <label for="chatRoomCooldownsNoRespond">Chat Room Cooldowns - No Respond:</label>
-      <input type="number" id="chatRoomCooldownsNoRespond">
-    </div>
-    <div>
-      <label>Admins:</label>
-      <ul id="adminList"></ul>
-      <input type="text" id="searchUser" placeholder="Search user">
-      <ul id="searchResults"></ul>
-      <button type="button" id="addAdmin">Add</button>
-    </div>
-    <button type="submit">Save Changes</button>
+  
   </form>
   <script src="config.js"></script>
 </body>

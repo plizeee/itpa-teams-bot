@@ -68,6 +68,14 @@ button {
     align-self: center;
 }
 
+.admin-info {
+    width: 80%;
+    padding: 0.5em 0;
+    border-bottom: 1px solid #ddd;
+    /* margin: 0 0; */
+    
+}
+
 .session {
     width: 100%; /* Make the session boxes take up the full width */
     display: flex;
@@ -79,11 +87,27 @@ button {
     border-radius: 3px;
 }
 
-.command-box-container {
+
+/* #configForm {
     background-color: #f0f0f0;
     padding: 10px;
     margin-bottom: 5px;
     border-radius: 5px;
+
+    min-width: fit-content;
+    max-width: 500px;
+    margin: auto;
+} */
+
+.container {
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+
+    min-width: 50%;
+    max-width: 500px;
+    margin: auto;
 }
 
 .command-item {
@@ -94,6 +118,25 @@ button {
     padding: 5px;
     margin-bottom: 5px;
     border-radius: 3px;
+}
+
+#command-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.command-prompt {
+    background-color: rgb(31, 31, 31);
+    border-radius: 5px;
+    padding: 5px;
+    /* margin-bottom: 5px; */
+    margin: auto;
+}
+
+.command-prompt-value {
+    color: rgb(188, 188, 188);
+    font-family: monospace;
+    font-size: 1.2em;
 }
 
 /* TODO remove this? */
@@ -122,13 +165,14 @@ button.delete-command-btn {
     border-radius: 3px;
 }
 
-.deleteBtn, .deleteSessionBtn {
+.deleteBtn, .deleteSessionBtn, .removeAdmin {
     background-color: #f44336;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 3px;
 }
+
 
 .editBtn, .deleteBtn {
     width: 32px; /* Set a fixed width for the buttons */
@@ -143,6 +187,8 @@ button.delete-command-btn {
 }
 
 .editBtn {
+    display: flex;
+    float: right;
     background-color: #2196F3; /* Change the background color to blue */
     color: white;
     border: none;
@@ -162,8 +208,8 @@ button.delete-command-btn {
     display: flex;
     flex-direction: column; /* Add this line to stack the buttons vertically */
 
-    /* Make the buttons vertically centered */
     align-items: center;
+    /* justify-content: flex-start; */
 }
 
 
@@ -217,6 +263,8 @@ button.delete-command-btn {
     line-height: 32px; /* Adjust to center the + sign */
 }
 
+
+
 /* Form label and input styles */
 label {
     display: block;
@@ -250,9 +298,29 @@ button[type="button"] {
     margin: 4px 2px;
 }
 
-button[type="button"] {
+input[type="submit"]:hover,
+button[type="button"]:hover {
+    background-color: #3e8e41;
+}
+
+button[class="cancel"] {
     background-color: #f44336;
 }
+button[class="cancel"]:hover {
+    background-color: #da190b;
+}
+
+/* TODO work on this */
+button[id="addAdmin"]{
+    background-color: #2196F3;
+    width: 1.8em;
+    height: 1.8em;
+    padding: 0 0;
+    font-size: 1em;
+    float: left;
+    margin-top: 0.5em;
+}
+
 
 .editSessionBtn {
     background-color: #2196F3;
@@ -279,9 +347,34 @@ button[type="button"] {
     align-items: center;
 }
 
-.session-btn {
+.session-btn, .admin-btn {
     font-size: 100%;
     width: 24px;
     height: 24px;
     padding: 0 0;
+}
+
+/* searchUser id. text box must save room on the right for the add button  */
+#searchUser {
+    display: flex;
+    max-width: 50%;
+    min-width: 30%;
+    height: 2.3em;
+    float: left;
+    margin: 0 0;
+    margin-top: 0.5em;
+}
+
+li {
+    width: 80%;
+    list-style-type: none;
+    padding: 0.5em 0;
+    border-bottom: 1px solid #ddd;
+    margin: 0 0;
+}
+
+li:hover,
+li:focus {
+    background-color: #ddd;
+
 }
