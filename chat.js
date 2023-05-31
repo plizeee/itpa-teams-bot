@@ -108,14 +108,10 @@ module.exports = {
 async function checkReplyForChatCommand(msg){
     let firstMessage = await getReferenceMsg(msg);
 
-    console.log("firstMessage: " + firstMessage);
-
     if (firstMessage && getPromptCommand(firstMessage)) {
-        console.log("firstMessage check passed");
         chatCommand(msg, getModelFromMessage(firstMessage), isAuthorized(msg, firstMessage), getSystemPromptFromMessage(firstMessage));
     }
     else{
-        console.log("firstMessage check failed");
         chatCommand(msg);
     }
 }
