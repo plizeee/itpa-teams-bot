@@ -5,6 +5,9 @@ require('dotenv').config();
 
 const token = process.env.TOKEN; //secret token
 
+//current date and time
+const date = new Date();
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -99,21 +102,6 @@ function isAdmin(id){
     return false;
 }
 
-//                              ~~ moved to util.js ~~
-/*function util.getProfileById(id){
-    for(let i = 0; i < profiles["users"].length; i++){
-        let profile = profiles["users"][i];
-
-        if(profile.id == id){
-            return profile;
-        }
-    }
-    return null;
-}*/
-/*function syncProfilesToFile(){
-    fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), err => err? console.log(err):console.log("JSON saved to ./profiles.json"));
-}*/
-
 //executes this as soon as it starts
 client.on('ready', () => {
     console.log('main.js is online! instance id: ' + instanceID);
@@ -145,7 +133,7 @@ client.on("messageCreate", async msg => {
     }
 
     if(isAdmin(msg.author.id)){
-        if(adminCommands.checkAdminCommand(msg, isMaster,instanceID,client)){
+        if(adminCommands.checkAdminCommand(msg, isMaster, instanceID, client, date)){
             return;
         }
     }

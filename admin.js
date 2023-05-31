@@ -4,7 +4,7 @@ let config;
 let profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
 
 module.exports = {
-    checkAdminCommand: function (msg, isMaster,INSTANCE, client) {
+    checkAdminCommand: function (msg, isMaster,INSTANCE, client, date) {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
         let prefix = "!" //allows for changing the prefix
@@ -23,6 +23,7 @@ module.exports = {
             case "INSTANCES": InstancesCommand(msg, INSTANCE); break;
             case "MOOD": moodCommand(msg,client); break;
             case "TOGGLE-CHATROOMS": toggleChats(msg,config.chatrooms??false); break;
+            case "UPTIME": uptimeCommand(msg, date); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
@@ -143,6 +144,28 @@ function setAllRepCommand(msg, isMaster) {
             console.log("set all users rep to " + message + " !");
         }
     }
+}
+
+function uptimeCommand(msg, startDate){
+    const currentDate = new Date();
+    const strUptime = formatDateDiff(startDate, currentDate);
+    msg.reply("Uptime: " + strUptime);
+}
+
+function formatDateDiff(date1, date2) {
+    const milliseconds = Math.abs(date2 - date1);
+    const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((milliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
+
+    let formatted = '';
+    if (days > 0) formatted += `${days}d, `;
+    if (hours > 0) formatted += `${hours}h, `;
+    if (minutes > 0) formatted += `${minutes}m, `;
+    formatted += `${seconds}s`;
+
+    return formatted;
 }
 
 //function to return the rep of the user
