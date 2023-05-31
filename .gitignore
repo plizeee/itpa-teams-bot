@@ -11,3 +11,4 @@ courses.json
 node_modules
 stats.json
 *.log
+promptCommands.json
