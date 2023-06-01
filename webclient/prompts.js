@@ -48,8 +48,8 @@ async function savePrompts() {
     const saveCommandBtn = document.getElementById('save-command-btn');
     const deleteCommandBtn = document.getElementById('delete-command-btn');
 
-    const promptNameInput = document.getElementById('prompt-command-input');
-    const promptCommandInput = document.getElementById('prompt-name-input');
+    const promptNameInput = document.getElementById('prompt-name-input');
+    const promptCommandInput = document.getElementById('prompt-command-input');
     const promptDescriptionInput = document.getElementById('prompt-description-input');
     const promptPermissionInput = document.getElementById('prompt-permission-level-input');
     const promptModelInput = document.getElementById('prompt-model-input');
