@@ -1,5 +1,8 @@
 const fs = require("fs");
-const profiles = JSON.parse(fs.readFileSync('./profiles.json'));
+
+const profilesPath = './bot/profiles.json';
+
+const profiles = JSON.parse(fs.readFileSync(profilesPath));
 
 module.exports = {
     getProfile,getProfileById,syncProfilesToFile
@@ -23,9 +26,9 @@ function getProfileById(id){
 }
 function syncProfilesToFile(isMaster){
     if(isMaster){ //I only want to write to file in master branch
-        fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
+        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"), function (err) {
             if (err)console.log(err);
-            else console.log("JSON saved to ./profiles.json");
+            else console.log("JSON saved to " + profilesPath);
         });
     }
     else console.log("Dev Mode is currently active. Profile not synced to file");

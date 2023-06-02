@@ -1,12 +1,16 @@
 const fs = require('fs'); //needed to read/write json files
 const SharedFunctions = require("./util.js");
+
+const profilesPath = './bot/profiles.json';
+const configpath = './bot/config.json';
+
 let config;
-let profiles = JSON.parse(fs.readFileSync('./profiles.json')); //read the profiles file
+let profiles = JSON.parse(fs.readFileSync(profilesPath)); //read the profiles file
 
 module.exports = {
     checkAdminCommand: function (msg, isMaster,INSTANCE, client, date) {
         let command = msg.content.toUpperCase(), found = true;
-        config = JSON.parse(fs.readFileSync('./config.json')); //read the config file
+        config = JSON.parse(fs.readFileSync(configpath)); //read the config file
         let prefix = "!" //allows for changing the prefix
         command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefix
 
@@ -191,11 +195,11 @@ function isAuthorized(isMaster) {
 
 
 function syncConfig(){
-    fs.writeFileSync('./config.json', JSON.stringify(config, null, "\t"), function (err) {
+    fs.writeFileSync(configpath, JSON.stringify(config, null, "\t"), function (err) {
         if (err) {
             console.log(err);
         } else {
-            console.log("JSON saved to ./config.json"); //successful response
+            console.log("JSON saved to " + configpath); //successful response
         }
     });
 }

@@ -35,7 +35,7 @@ const client = new Client({
     }
 });
 
-const profilePath = './profiles.json';
+const profilePath = './bot/profiles.json';
 if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
     console.log(`The file ${profilePath} does not exist, creating a new one`);
     const defaultValue = {
@@ -45,7 +45,7 @@ if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
 }
 
 
-const configPath = './config.json';
+const configPath = './bot/config.json';
 if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     console.log(`The file ${configPath} does not exist, creating a new one`);
     const defaultValue = {

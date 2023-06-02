@@ -171,22 +171,22 @@ app.get('/config.js', allowLocal, (req, res) => {
 });
 
 app.get('/profiles.json', allowLocal, (req, res) => {
-  const profilesPath = path.join(__dirname, '..', 'profiles.json');
+  const profilesPath = path.join(__dirname, '../bot', 'profiles.json');
   res.sendFile(profilesPath);
 });
 
 app.get('/courses.json', allowLocal, (req, res) => {
-  const coursesPath = path.join(__dirname, '..', 'courses.json');
+  const coursesPath = path.join(__dirname, '../bot', 'courses.json');
   res.sendFile(coursesPath);
 });
 
 app.get('/promptCommands.json', allowLocal, (req, res) => {
-  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
+  const promptPath = path.join(__dirname, '../bot', 'promptCommands.json');
   res.sendFile(promptPath);
 });
 
 app.get('/config.json', allowLocal, (req, res) => {
-  const configPath = path.join(__dirname, '..', 'config.json');
+  const configPath = path.join(__dirname, '../bot', 'config.json');
   res.sendFile(configPath);
 });
 
@@ -205,7 +205,7 @@ app.get('/styles.css', allowLocal, (req, res) => {
 
 // app.post
 app.post('/save-courses', (req, res) => {
-  const coursesPath = path.join(__dirname, '..', 'courses.json');
+  const coursesPath = path.join(__dirname, '../bot', 'courses.json');
   const newCoursesData = req.body;
 
   fs.writeFile(coursesPath, JSON.stringify(newCoursesData, null, 2), (err) => {
@@ -219,7 +219,7 @@ app.post('/save-courses', (req, res) => {
 });
 
 app.post('/save-prompts', (req, res) => {
-  const promptPath = path.join(__dirname, '..', 'promptCommands.json');
+  const promptPath = path.join(__dirname, '../bot', 'promptCommands.json');
   const newPromptData = req.body;
 
   fs.writeFile(promptPath, JSON.stringify(newPromptData, null, 2), (err) => {
@@ -233,7 +233,7 @@ app.post('/save-prompts', (req, res) => {
 });
 
 app.post('/save-config', (req, res) => {
-  const configPath = path.join(__dirname, '..', 'config.json');
+  const configPath = path.join(__dirname, '../bot', 'config.json');
   const newConfigData = req.body;
 
   fs.writeFile(configPath, JSON.stringify(newConfigData, null, 2), (err) => {

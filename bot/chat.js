@@ -4,9 +4,16 @@ const { Configuration, OpenAIApi } = require("openai");
 const fs = require('fs'); //needed to read/write json files
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
-const profiles = JSON.parse(fs.readFileSync('./profiles.json')); //creating a snapshot of the contents of profiles.json
-const prompts = JSON.parse(fs.readFileSync('./prompts.json')); //creating a snapshot of the contents of prompts.json
-let promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json')); //creating a snapshot of the contents of promptCommands.json
+
+const profilePath = './bot/profiles.json';
+const configPath = './bot/config.json';
+const promptPath = './bot/prompts.json';
+const promptCommandPath = './bot/promptCommands.json';
+const statPath = './bot/stats.json';
+
+const profiles = JSON.parse(fs.readFileSync(profilePath)); //creating a snapshot of the contents of profiles.json
+const prompts = JSON.parse(fs.readFileSync(promptPath)); //creating a snapshot of the contents of prompts.json
+let promptCommands = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
 let config;
 
 const GPT4_RATE_LIMIT = 10;
@@ -73,7 +80,7 @@ let InstanceData = {
 
 module.exports = {
     checkChatCommand: async function (msg, isMasterBranch,client,config_) {
-        promptCommands = JSON.parse(fs.readFileSync('./promptCommands.json'));
+        promptCommands = JSON.parse(fs.readFileSync(promptCommandPath));
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
@@ -340,8 +347,8 @@ function stripCommand(message){
 }
 
 function syncStats(){
-    const filepath = "./stats.json";
-    if(!fs.existsSync(filepath)){console.log("Creating Stats File")}
+    //const filepath = "./stats.json";
+    if(!fs.existsSync(statPath)){console.log("Creating Stats File")}
     const chatStats = InstanceData.chatTokenStats;
     const chatroomStats = InstanceData.chatroomTokenStats;
     const stats = {
@@ -354,7 +361,7 @@ function syncStats(){
         "avgChatRoomTotalTokens": chatroomStats.TotalAverage(),
         "chatroomTokenRate": chatroomStats.TotalRate()
     }
-    fs.writeFileSync(filepath,JSON.stringify(stats, space="\r\n"));
+    fs.writeFileSync(statPath,JSON.stringify(stats, space="\r\n"));
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'

@@ -25,13 +25,16 @@ let totalMinutes;
 
 let message;
 
+const coursesPath = './bot/courses.json';
+const profilesPath = './bot/profiles.json';
+
 //assigning the json data into these objects
-let courses = JSON.parse(fs.readFileSync('./courses.json'));
-const profiles = JSON.parse(fs.readFileSync('./profiles.json'));
+let courses = JSON.parse(fs.readFileSync(coursesPath));
+const profiles = JSON.parse(fs.readFileSync(profilesPath));
 
 module.exports = {
     checkTeamsCommand: function (msg) {
-        courses = JSON.parse(fs.readFileSync('./courses.json'));
+        courses = JSON.parse(fs.readFileSync(coursesPath));
         let command = msg.content.toUpperCase(), found = false;
 
         if(command === "!T" || command === "!TEAMS" || command.startsWith("!TEAMS ") || command.startsWith("!T ")){
@@ -350,11 +353,11 @@ function addRep(id, numRep){
     profiles["users"].forEach(profile => {
         if (profile.id == id) {
             profile.rep += numRep;
-            fs.writeFileSync('./profiles.json', JSON.stringify(profiles, null, "\t"), function (err) {
+            fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"), function (err) {
                 if (err) {
                     console.log(err);
                 } else {
-                    console.log("JSON saved to ./profiles.json");
+                    console.log("JSON saved to " + profilesPath);
                 }
             });
             console.log("Rep is now: " + profile.rep);
