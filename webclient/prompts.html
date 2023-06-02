@@ -30,7 +30,7 @@
     <template id="command-item-template">
         
         <li class="command-item">
-            
+            <button class="editBtn"></button>
           <div class="command-name">
               <div><strong>Name:</strong> <span class="prompt-name-value"></span></div>
               <div><strong>Command:</strong> <span class="prompt-command-value"></span></div>
@@ -42,7 +42,7 @@
                     <span class="command-prompt-value"></span></div>
                 </div>
           </div>
-          <button class="editBtn"></button>
+          
         </li>
       </template>
     <div id="command-modal" class="modal hidden">
@@ -64,8 +64,8 @@
                     <option value="gpt-4">gpt-4</option>
                 </select>
                 <label for="command-prompt-input">System Prompt:</label>
-                <textarea id="command-prompt-input" rows="4"></textarea>
-                <button type="submit" id="save-command-btn">Save</button>
+                <textarea id="command-prompt-input" rows="6"></textarea><br/>
+                <input type="submit" value="Save" id="save-command-btn">
                 <button id="delete-command-btn" class="hidden">🗑️</button>
             </form>
         </div>
