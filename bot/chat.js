@@ -1,7 +1,11 @@
 // Import the openai package
 const { Configuration, OpenAIApi } = require("openai");
+// const { MessageAttachment } = require('discord.js');
+const Discord = require('discord.js');
 
 const fs = require('fs'); //needed to read/write json files
+const https = require('https');
+
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
 
@@ -18,6 +22,10 @@ let config;
 
 const GPT4_RATE_LIMIT = 10;
 const GPT4_RATE_LIMIT_TIME = 60*60*1000; //1 hour
+const DEFAULT_CHARACTER_LIMIT = 4000;
+const GPT4_CHARACTER_LIMIT = 8000;
+
+
 require('dotenv').config();
 
 const configuration = new Configuration({
@@ -86,6 +94,16 @@ module.exports = {
         isMaster = isMasterBranch;
         config =  config_; //read the config file
 
+        //TODO user message should be above the file content, but if we reach the token limit, we should prioritize cutting out the bottom of the file content
+        //since we accept txt files as input, we need to check if the message is a file
+        let fileContent = await getFileString(msg);
+
+        // msgContent = await addFileToMsg(msg, fileContent);
+        // msg.content = msgContent;
+        msg.content = await addFileToMsg(msg, fileContent);
+        console.log("msg.content: " + msg.content);
+
+
         profileCreation(msg);
         let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
         console.log("CHAT TYPE: " + chatType);
@@ -111,6 +129,56 @@ module.exports = {
         return found;
     }
 };
+
+function getFileString(msg){
+    return new Promise((resolve, reject) => {
+        if (msg.attachments.size > 0) {
+            let attachment = msg.attachments.first();
+
+            // check if the attachment is a .txt file
+            if (attachment.name.endsWith('.txt')) {
+                https.get(attachment.url, (res) => {
+                    let data = '';
+
+                    // A chunk of data has been received.
+                    res.on('data', (chunk) => {
+                        data += chunk;
+                    });
+
+                    // The whole response has been received.
+                    res.on('end', () => {
+                        resolve(data);
+                    });
+                }).on('error', (err) => {
+                    reject("Error: " + err.message);
+                });
+            }
+        } else {
+            resolve(null);
+        }
+    });
+}
+
+async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo"){
+    let output = msg.content;
+
+    characterLimit = "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
+    //console.log("fileContent: " + fileContent);
+    if (fileContent) {
+        if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
+        else output = fileContent;
+    }
+    else console.log("no file content");
+    
+    let truncateWarningMessage = "\n\n**Message was too long and was truncated**```";
+    let maxMessageLength = characterLimit - truncateWarningMessage.length;
+    if(output.length > maxMessageLength) {
+        output = output.substring(0, maxMessageLength);
+        output += truncateWarningMessage;
+    }
+    
+    return output;//.trim(); //trim the message to remove any extra whitespace
+}
 
 async function checkReplyForChatCommand(msg){
     let firstMessage = await getReferenceMsg(msg);
@@ -153,8 +221,6 @@ function getPromptCommands(){
 function getPromptCommand(message){
     message = message.toUpperCase();
     let commands = getPromptCommands();
-
-    console.log("message: " + message);
 
     //get the command from the message and default to null if not found
     let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " ")) ?? null;
@@ -292,17 +358,25 @@ async function isReferencingBot(msg){
 //function that returns a thread from a chain of messages
 async function getReplyThread(msg, sysMsg){
 
-    let message = stripCommand(msg.content);
-    let profile = SharedFunctions.getProfile(msg);
+    let message = stripCommand(msg.content); 
+    let profile = SharedFunctions.getProfile(msg); 
 
     let thread = [];
 
     if(msg.reference){
-        let repliedMessageRef = await msg.fetchReference();
+        let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
+
+        // let fileContent = await getFileString(repliedMessageRef);
+        // repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
+        // console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
         
-        while(repliedMessageRef){
+        while(repliedMessageRef){ //while there is a message replied to
+            let fileContent = await getFileString(repliedMessageRef);
+            repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
+            console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
+
             let refProfile = SharedFunctions.getProfile(repliedMessageRef);
-            let repliedMessage = stripCommand(repliedMessageRef.content);
+            let repliedMessage = stripCommand(repliedMessageRef.content.toString());
 
             if(repliedMessageRef.author.bot){
                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
@@ -471,15 +545,20 @@ function stripNameFromResponse(response){
 
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model}){
+    //TODO include txt file content in replies
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
+    let maxTokens = model == "gpt-4" ? 4000 : 2000;
 
     const completion = await openai.createChatCompletion({
         model: model,
         messages: fullPrompt,
-        max_tokens: 2000,
+        max_tokens: maxTokens, //TODO make this a config option
         //TODO look into adding 'stream' so you can see a response as it's being generated
+    })
+    .catch(error => { //catch error 400 for bad request
+        console.log(error);
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
@@ -505,13 +584,68 @@ async function sendPrompt({msg, instructions, model}){
 
     //discord has a 4000 character limit, so we need to cut the response if it's too long
     if(replyMessage.length > 2000){
-        replyMessage = replyMessage.slice(0, 2000);
+        //replyMessage = replyMessage.slice(0, 2000);
+        sendTextFile(msg, replyMessage);
+    }
+    else{
+        //TODO rework this later 
+        syncStats();
+        generateReactions(msg, replyMessage);
+    }
+    console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
+    
+    
+}
+
+async function sendTextFile(msg, replyMessage){
+    let filename = "reply.txt"; //TODO maybe do something with this
+    //create a .txt file and send it as an attachment
+
+    replyMessage = formatText(replyMessage, 60);
+
+    const attachment = new Discord.AttachmentBuilder(Buffer.from(replyMessage), filename, {contentType: 'text/plain'});
+    attachment.name = 'reply.txt';
+    await msg.reply({ files: [attachment] });
+}
+
+function formatText(input, maxLineLength) {
+    var words = input.split(' ');
+    var lines = [];
+    var currentLine = '';
+
+    words.forEach(function (word) {
+        // If the current word would make the line too long
+        if ((currentLine + word).length >= maxLineLength) {
+            // If the word itself is too long
+            if (word.length > maxLineLength) {
+                // If there is already text on the current line
+                if (currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                // Split the word across lines
+                while (word.length > 0) {
+                    lines.push(word.substring(0, maxLineLength));
+                    word = word.substring(maxLineLength);
+                }
+            } else {
+                lines.push(currentLine.trim());
+                currentLine = word;
+            }
+        } else {
+            currentLine += ' ' + word;
+        }
+    });
+
+    // Push the last line into the lines array
+    if (currentLine.length > 0) {
+        lines.push(currentLine.trim());
     }
 
-    console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    syncStats();
-    generateReactions(msg, replyMessage);
+    // console.log("FORMATTEXT START: " + lines.join('\n') );
+    return lines.join('\n');
 }
+
 
 async function generateReactions(msg, replyMessage){
     const message = await msg.reply(replyMessage);
