@@ -117,6 +117,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   form.chatrooms.checked = config.chatrooms;
   form.chatRoomCooldownsNormal.value = config.chatRoomCooldowns.normal;
   form.chatRoomCooldownsNoRespond.value = config.chatRoomCooldowns.noRespond;
+  form.gpt4ReqLimit.value = config.gpt4ReqLimit
+  form.gpt4ReqCooldown.value = config.gpt4ReqCooldown;
 
   displayAdmins();
 
@@ -150,6 +152,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     config.chatrooms = form.chatrooms.checked;
     config.chatRoomCooldowns.normal = Number(form.chatRoomCooldownsNormal.value);
     config.chatRoomCooldowns.noRespond = Number(form.chatRoomCooldownsNoRespond.value);
+    config.gpt4ReqLimit = Number(form.gpt4ReqLimit.value);
+    config.gpt4ReqCooldown = Number(form.gpt4ReqCooldown.value);
 
     // Save the updated config.json here (e.g., send it to a server or save it locally)
     console.log(config);

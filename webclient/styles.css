@@ -391,3 +391,9 @@ li:focus {
     background-color: #ddd;
 
 }
+
+input[id="gpt4ReqLimit"], input[id="gpt4ReqCooldown"] {
+    width: 4em;
+    text-align: right;
+    direction: rtl;
+}

@@ -20,8 +20,8 @@ const prompts = JSON.parse(fs.readFileSync(promptPath)); //creating a snapshot o
 let promptCommands = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
 let config;
 
-const GPT4_RATE_LIMIT = 10;
-const GPT4_RATE_LIMIT_TIME = 60*60*1000; //1 hour
+let GPT4_REQUEST_LIMIT;// = 10;
+let GPT4_REQUEST_COOLDOWN;// = 60*60000; //1 hour
 const DEFAULT_CHARACTER_LIMIT = 4000;
 const GPT4_CHARACTER_LIMIT = 8000;
 
@@ -93,13 +93,13 @@ module.exports = {
         date = new Date();
         isMaster = isMasterBranch;
         config =  config_; //read the config file
+        GPT4_REQUEST_LIMIT = config.gpt4ReqLimit;
+        GPT4_REQUEST_COOLDOWN = config.gpt4ReqCooldown * 60000; //convert minutes to milliseconds
 
         //TODO user message should be above the file content, but if we reach the token limit, we should prioritize cutting out the bottom of the file content
         //since we accept txt files as input, we need to check if the message is a file
         let fileContent = await getFileString(msg);
 
-        // msgContent = await addFileToMsg(msg, fileContent);
-        // msg.content = msgContent;
         msg.content = await addFileToMsg(msg, fileContent);
         console.log("msg.content: " + msg.content);
 
@@ -177,7 +177,7 @@ async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo"){
         output += truncateWarningMessage;
     }
     
-    return output;//.trim(); //trim the message to remove any extra whitespace
+    return output;
 }
 
 async function checkReplyForChatCommand(msg){
@@ -275,40 +275,32 @@ function isAuthorized(msg, referenceMessage = null) {
 }
 
 function checkRateLimit(profile, msg) {
-  let timeSinceLastGpt4 =
-    Date.now() - profile.gpt4Timestamps[profile.gpt4Timestamps.length - 1];
+    let timeSinceLastGpt4 = Date.now() - profile.gpt4Timestamps[profile.gpt4Timestamps.length - 1];
 
-  console.log(
-    "timeSinceLastGpt4: " +
-      timeSinceLastGpt4 +
-      " \ngpt4Timestamps.length: " +
-      profile.gpt4Timestamps.length
-  );
+    console.log("timeSinceLastGpt4: " + timeSinceLastGpt4 + " \ngpt4Timestamps.length: " + profile.gpt4Timestamps.length);
 
-  if (
-    profile.gpt4Timestamps.length >= GPT4_RATE_LIMIT &&
-    timeSinceLastGpt4 < GPT4_RATE_LIMIT_TIME
-  ) {
-    console.log("User is not authorized to use gpt-4. Rate limit exceeded.");
-    msg.reply("Rate limit exceeded.");
-    return false;
-  } else {
-    profile.gpt4Timestamps.push(Date.now());
+    if (profile.gpt4Timestamps.length >= GPT4_REQUEST_LIMIT && timeSinceLastGpt4 < GPT4_REQUEST_COOLDOWN) {
+        console.log("User is not authorized to use gpt-4. Rate limit exceeded.");
+        msg.reply("Rate limit exceeded.");
+        return false;
+    } 
+    else {
+        profile.gpt4Timestamps.push(Date.now());
 
-    // Remove timestamps that are older than the rate limit time or greater than the rate limit
-    for (let i = 1; i <= profile.gpt4Timestamps.length; i++) {
-      if (i > GPT4_RATE_LIMIT) {
-        profile.gpt4Timestamps.shift();
+        // Remove timestamps that are older than the rate limit time or greater than the rate limit
+        for (let i = 1; i <= profile.gpt4Timestamps.length; i++) {
+            if (i > GPT4_REQUEST_LIMIT) {
+                profile.gpt4Timestamps.shift();
 
-        i--;
-        console.log("removed timestamp");
-      }
+                i--;
+                console.log("removed timestamp");
+            }
+        }
+
+        SharedFunctions.syncProfilesToFile();
+        console.log("profile timestamps: " + profile.gpt4Timestamps);
+        return true;
     }
-
-    SharedFunctions.syncProfilesToFile();
-    console.log("profile timestamps: " + profile.gpt4Timestamps);
-    return true;
-  }
 }
 
 
@@ -321,7 +313,6 @@ async function isValidChatRequirements(msg,client,chatrooms){
     let command = getPromptCommand(message);
     console.log("Command: " + command);
 
-    //return message.startsWith("!CHAT ")? 1:
     return command? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
@@ -366,10 +357,6 @@ async function getReplyThread(msg, sysMsg){
     if(msg.reference){
         let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
 
-        // let fileContent = await getFileString(repliedMessageRef);
-        // repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
-        // console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
-        
         while(repliedMessageRef){ //while there is a message replied to
             let fileContent = await getFileString(repliedMessageRef);
             repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
@@ -582,9 +569,8 @@ async function sendPrompt({msg, instructions, model}){
     let uncut_reply_length = replyMessage.length;
     InstanceData.chatTokenStats.storeData(prompt_tokens,completion_tokens);
 
-    //discord has a 4000 character limit, so we need to cut the response if it's too long
+    //discord has a 2000 character limit, so we need to cut the response if it's too long
     if(replyMessage.length > 2000){
-        //replyMessage = replyMessage.slice(0, 2000);
         sendTextFile(msg, replyMessage);
     }
     else{
