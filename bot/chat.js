@@ -1,6 +1,5 @@
 // Import the openai package
 const { Configuration, OpenAIApi } = require("openai");
-// const { MessageAttachment } = require('discord.js');
 const Discord = require('discord.js');
 
 const fs = require('fs'); //needed to read/write json files
@@ -20,8 +19,8 @@ const prompts = JSON.parse(fs.readFileSync(promptPath)); //creating a snapshot o
 let promptCommands = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
 let config;
 
-let GPT4_REQUEST_LIMIT;// = 10;
-let GPT4_REQUEST_COOLDOWN;// = 60*60000; //1 hour
+let GPT4_REQUEST_LIMIT;
+let GPT4_REQUEST_COOLDOWN;
 const DEFAULT_CHARACTER_LIMIT = 4000;
 const GPT4_CHARACTER_LIMIT = 8000;
 
@@ -162,8 +161,7 @@ function getFileString(msg){
 async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo"){
     let output = msg.content;
 
-    characterLimit = "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
-    //console.log("fileContent: " + fileContent);
+    characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
     if (fileContent) {
         if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
         else output = fileContent;
