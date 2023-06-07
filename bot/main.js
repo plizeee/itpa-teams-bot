@@ -79,6 +79,7 @@ client.events = new Collection();
 const teamsCommands = require('./teams.js');
 const chatCommands = require('./chat.js');
 const adminCommands = require('./admin.js');
+const secretCommands = require('./gptSecrets.js');
 const SharedFunctions = require("./util.js");
 
 //ensures that authorized users can use dev mode
@@ -139,12 +140,20 @@ client.on("messageCreate", async msg => {
     }
 
     if (isAuthorized) {
+        
         if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
+            console.log("teams command found");
             return;
         }
-        else if (chatCommands.checkChatCommand(msg, isMaster,client, config)) {
+        else if(await secretCommands.checkSecretCommand(msg, isMaster)) {
+            console.log("secret command found");
             return;
         }
+        else if (await chatCommands.checkChatCommand(msg, isMaster,client, config)) {
+            console.log("chat command found");
+            return;
+        }
+        
     }
 });
 

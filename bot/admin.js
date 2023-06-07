@@ -3,14 +3,17 @@ const SharedFunctions = require("./util.js");
 
 const profilesPath = './bot/profiles.json';
 const configpath = './bot/config.json';
+const gptSecretsPath = './bot/gptSecrets.json';
 
 let config;
 let profiles = JSON.parse(fs.readFileSync(profilesPath)); //read the profiles file
+let gptSecrets; //read the gptSecrets file
 
 module.exports = {
     checkAdminCommand: function (msg, isMaster,INSTANCE, client, date) {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync(configpath)); //read the config file
+        gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath)); //read the gptSecrets file
         let prefix = "!" //allows for changing the prefix
         command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefix
 
@@ -28,12 +31,27 @@ module.exports = {
             case "MOOD": moodCommand(msg,client); break;
             case "TOGGLE-CHATROOMS": toggleChats(msg,config.chatrooms??false); break;
             case "UPTIME": uptimeCommand(msg, date); break;
+            case "CLEARLEADERBOARD": clearLeaderboardCommand(msg); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
         return found;
     }
 };
+
+function clearLeaderboardCommand(msg){
+    message = stripCommand(msg.content);
+    let level = gptSecrets.levels.find(level => level.level == message); //find the level object that matches the message
+    console.log("level.level: " + level.level);
+    if(level){
+        console.log("leaderboard before: " + level.leaderboard);
+        level.leaderboard = [];
+        console.log("leaderboard cleared: " + level.leaderboard);
+        SharedFunctions.syncLeaderboardToFile(true, gptSecrets);
+        msg.reply(`Leaderboard for level ${level.level} cleared.`);
+    }
+}
+
 //this should take the current value from the config and flip it
 function toggleChats(msg, currentVal){config.chatrooms = !currentVal; syncConfig(); msg.reply(`chatrooms set to: ${config.chatrooms}`)}
 function moodCommand(msg, client){

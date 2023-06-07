@@ -1,6 +1,6 @@
 # Teams Bot
 
-A discord bot made for my itpa class, which is both a tool to retrieve online class meeting links, as well as an ai assistant, using OpenAI
+A discord bot made for my itpa class, which is both a tool to retrieve online class meeting links, as well as an ai assistant, using OpenAI.
 
 This project isn't meant to be used by anyone else, but if you want to, you can. It's mostly a personal project that I use as an excuse to apply what I learned in class, as well as whatever I'm interested in at the time. The code certainly won't win me any awards, but I hope it demonstrates my ability to learn and apply new concepts.
 

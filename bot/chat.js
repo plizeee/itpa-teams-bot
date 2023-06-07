@@ -311,6 +311,16 @@ async function isValidChatRequirements(msg,client,chatrooms){
     let command = getPromptCommand(message);
     console.log("Command: " + command);
 
+    //TODO this is super confusing to work with, so I'm just going to temporarily make a manual check to see the user is replying to a bot that has a lock
+    // let isBotRef = await isReferencingBot(msg);
+    // if(isBotRef){
+    //     let msgRef = await msg.fetchReference();
+    //     if(msgRef.content.startsWith("🔒")){
+    //         return false;
+    //     }
+    // }
+    
+
     return command? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
@@ -337,7 +347,7 @@ async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
     if(msg.reference){
         let repliedMessage = await msg.fetchReference();
-
+        console.log("!!!!!REPLIEDMESSAGE: " + repliedMessage.content + "!!!!!!!!!!");
         return repliedMessage.author.bot;
     }
     return false;
