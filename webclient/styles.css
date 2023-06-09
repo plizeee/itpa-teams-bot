@@ -1,5 +1,131 @@
 /* Shared styles on all pages */
 
+/* Experimental styles start*/
+
+  #container {
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+    background-color: black;
+    /* box-shadow: -2px -2px 5px white,2px -2px 5px white; */
+  }
+  #container > nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+    /* padding: 10px; */
+  }
+
+  #container > nav > ul {
+      display: flex;
+    justify-content: center;
+    align-items: center;
+    list-style-type: none;
+    padding: 0;
+    /* margin: 1em 0 1em 0;  */
+    margin: 0;
+  }
+  
+  #container > nav > ul > li {
+    display: block;
+    text-align: center;
+    padding: 1em;
+    color: white;
+    border-bottom: none;
+    width: 5em;
+  } 
+  #container > nav > ul > li > a {
+      text-decoration: none;
+    color: white;
+    
+  }
+  #container > nav > ul > li:hover {
+    /* border-bottom: 2px solid white; */
+    background-color: #0088ff;
+  }
+  #container > nav > ul > .dropdown:hover {
+    border-bottom:none;
+  }
+  #container > nav > ul > .dropdown:hover > .dd
+  {
+    display:block;
+    align-items: center;
+    justify-items: center;
+    margin-top: 1em;
+    
+    /* align the dd horizontally with its nav bar */
+    margin-left: -1em;
+    width: 7em;
+
+    /* align-self: center; */
+  }
+  .dropdown:hover > a .fa-caret-down {
+    display:none;
+  }
+  a {
+    text-decoration:none;
+    /* border-bottom: 1px solid black; */
+  }
+
+  .dropdownItem {
+    padding: 1em;
+    align-items: center;
+    justify-items: center;
+    border-bottom: 1px solid black;
+  }
+
+
+  #container > nav > ul > li > div {
+    position:absolute;
+    /* padding: 0 10px; */
+    padding-bottom: 0;
+    
+    background-color:black;
+    display:none;
+    background-color:aliceblue;
+    box-shadow: 0px 0px 5px black;
+    min-width:100px;
+  }
+  
+  #container > nav > ul > li > div > ul {
+    padding:0;
+    list-style:none;
+  }
+  #u_a_c {
+    position:relative;
+    width:100%;
+  /*   background-color:red; */
+  }
+
+  /* arrow for the dropdown */
+  #up_arrow {
+    position:relative;
+    width:20px;
+    height:20px;
+    left:42%;
+    top:-10px;
+    background-color:aliceblue;
+    /* background-color:grey; */
+    transform:rotate(45deg);
+  }
+
+  
+  #container > nav > ul > li> div > ul > li:hover {
+    background-color:rgba(0,0,0,0.2);
+  }
+
+  /* dropdown text */
+  #container > nav > ul > li > div > ul > li > a {
+    
+        padding : 5px;
+        color:black;
+        text-align: center;
+        display:block;
+        /* border-bottom: 1px solid black; */
+  }
+
+/* Experimental styles end */
 
 body {
     font-family: 'Roboto', sans-serif;
@@ -9,13 +135,13 @@ body {
 }
 
 header {
-    background-color: #333;
+    background-color: #1c1b1b;
     color: white;
     text-align: center;
     padding: 1rem;
 }
 
-nav {
+/* nav {
     display: flex;
     justify-content: center;
     background-color: #f4f4f4;
@@ -33,7 +159,7 @@ nav a {
 
 nav a:hover {
     background-color: #ddd;
-}
+} */
 
 main {
     text-align: center;
@@ -378,13 +504,13 @@ button[id="addAdmin"]{
     margin-top: 0.5em;
 }
 
-li {
+/* li {
     width: 80%;
     list-style-type: none;
     padding: 0.5em 0;
     border-bottom: 1px solid #ddd;
     margin: 0 0;
-}
+} */
 
 li:hover,
 li:focus {
