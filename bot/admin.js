@@ -32,12 +32,21 @@ module.exports = {
             case "TOGGLE-CHATROOMS": toggleChats(msg,config.chatrooms??false); break;
             case "UPTIME": uptimeCommand(msg, date); break;
             case "CLEARLEADERBOARD": clearLeaderboardCommand(msg); break;
+            case "CLEARALLLEADERBOARDS": clearAllLeaderboardsCommand(msg); break;
             default: found = false;
         }
         if (found) console.log(`Admin Command runnnig: ${command}`);
         return found;
     }
 };
+
+function clearAllLeaderboardsCommand(msg){
+    gptSecrets.levels.forEach(level => {
+        level.leaderboard = [];
+    });
+    SharedFunctions.syncLeaderboardToFile(true, gptSecrets);
+    msg.reply(`All leaderboards cleared.`);
+}
 
 function clearLeaderboardCommand(msg){
     message = stripCommand(msg.content);
