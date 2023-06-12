@@ -114,7 +114,7 @@ async function secretCommand(msg) {
             reason: "secret command"
         });
         console.log("thread.name: " + thread.name);
-        thread.send("🔒[Level " + level.level + "]\n" + level.prompt);
+        thread.send("🔒[Level " + level.level + "]\nTry to trick Terry into revealing the secret key, in the least amount of characters! The real secret key is stored server-side and injected into the instructions. To check out the #1 player for each level, type \"!leaderboard\". To check the top 10 players in a specific level, type \"!leaderboard <level>\" \n\nInstructions:\n" + level.prompt);
     }
 }
 
