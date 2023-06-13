@@ -58,6 +58,15 @@ if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
 }
 
+const instanceDataPath = './bot/instanceData.json';
+if (!fs.existsSync(instanceDataPath)) { //if the file doesn't exist, create it
+    console.log(`The file ${instanceDataPath} does not exist, creating a new one`);
+    const defaultValue = {
+        "instances": []
+    };
+    fs.writeFileSync(instanceDataPath, JSON.stringify(defaultValue));
+}
+
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
 let profiles = JSON.parse(fs.readFileSync(profilePath))
 const isMaster = config.isMaster; //only check this on launch
@@ -65,7 +74,8 @@ let devMode = config.devMode; //this will be evaluated every time a message is s
 let admins = config.admins; //this will be evaluated every time a message is sent
 if(!Object.hasOwn(config, "instanceId")){ config.instanceId = 0;}// defaults no instanceId to 0 or main instances
 let argInstanceID = isNaN(process.argv[2])? null:  Number(process.argv[2]); 
-const instanceID = argInstanceID?? config.instanceId;
+const instanceID = argInstanceID?? config.instanceId; //
+let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 
 // Handler:
 client.prefix_commands = new Collection();
@@ -81,6 +91,46 @@ const chatCommands = require('./chat.js');
 const adminCommands = require('./admin.js');
 const secretCommands = require('./gptSecrets.js');
 const SharedFunctions = require("./util.js");
+const { handle } = require('express/lib/application.js');
+
+//check instanceData for an instance that has the same "instanceID"
+if(instanceData.instances.some(instance => instance.instanceID == instanceID)){
+    console.log("Instance already running... overwriting instance data");
+    instanceData.instances = instanceData.instances.filter(instance => instance.instanceID != instanceID);
+    instanceData.instances.push({
+        "instanceID": instanceID,
+        "date": date.toString(),
+        "pid": process.pid
+    });
+    //write to file and format it
+    fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t"));
+}
+else{
+    instanceData.instances.push({
+        "instanceID": instanceID,
+        "date": date.toString(),
+        "pid": process.pid
+    });
+    //write to file and format it
+    fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t"));
+}
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    SharedFunctions.handleExit(instanceID);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+    SharedFunctions.handleExit(instanceID);
+});
+
+process.on('SIGINT', () => {
+    console.log('Received SIGINT signal. Shutting down gracefully...');
+    // Perform any necessary cleanup or shutdown tasks here
+    // This could include closing database connections, releasing resources, etc.
+    SharedFunctions.handleExit();
+});
 
 //ensures that authorized users can use dev mode
 //and prevents users from sending messages on both dev and master

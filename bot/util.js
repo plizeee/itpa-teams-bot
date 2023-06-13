@@ -2,12 +2,14 @@ const fs = require("fs");
 
 const profilesPath = './bot/profiles.json';
 const gptSecretsPath = './bot/gptSecrets.json';
+const instanceDataPath = './bot/instanceData.json';
 
 const profiles = JSON.parse(fs.readFileSync(profilesPath));
 const gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath));
+const instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 
 module.exports = {
-    getProfile,getProfileById,syncProfilesToFile,syncLeaderboardToFile
+    getProfile,getProfileById,syncProfilesToFile,syncLeaderboardToFile,handleExit
 }
 
 function getProfile(msg){
@@ -44,4 +46,11 @@ function syncLeaderboardToFile(isMaster, val = gptSecrets){
         });
     }
     else console.log("Dev Mode is currently active. Leaderboard not synced to file");
+}
+
+function handleExit(instanceID){
+    console.log("Shutting down instance " + instanceID);
+    instanceData.instances.splice(instanceData.instances.indexOf(instanceID), 1); //remove instance from list
+    fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t")); //write to file
+    process.exit(0);
 }

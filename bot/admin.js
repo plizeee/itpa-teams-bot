@@ -25,7 +25,7 @@ module.exports = {
             case "SETREP": setRepCommand(msg, isMaster); break;
             case "SETALLREP": setAllRepCommand(msg, isMaster); break;
             case "REP": repCommand(msg, isMaster); break;
-            case "KILL": process.exit(); break;
+            case "KILL": SharedFunctions.handleExit(INSTANCE); break;
             case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
             case "INSTANCES": InstancesCommand(msg, INSTANCE); break;
             case "MOOD": moodCommand(msg,client); break;

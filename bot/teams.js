@@ -5,7 +5,7 @@ const fs = require('fs'); //needed to read/write json files
 const DEBUG_MODE = false; //enables debug mode, which will override default variables to the below consts, unless set to "default"
 const DEBUG_DAY_NUM = "default";
 const DEBUG_HOURS = 9;
-const DEBUG_MINUTES = 00;
+const DEBUG_MINUTES = 0;
 const DEBUG_RICKROLL_CHANCE = 0.05;
 
 const MIN_RICKROLL_MINUTES_BEFORE_CLASS = 2; //Don't send bad url if they need to join right away
