@@ -291,7 +291,7 @@ button.delete-command-btn {
     border-radius: 3px;
 }
 
-.deleteBtn, .deleteSessionBtn, .removeAdmin {
+.deleteBtn, .deleteSessionBtn, .removeAdmin{
     background-color: #f44336;
     color: white;
     border: none;
@@ -522,4 +522,42 @@ input[id="gpt4ReqLimit"], input[id="gpt4ReqCooldown"] {
     width: 4em;
     text-align: right;
     direction: rtl;
+}
+
+#instance-list {
+    width: 100%;
+    margin: 0 0;
+    padding: 1em;
+    list-style-type: none;
+    text-align: left;
+    border: 2px solid #989898;
+    border-radius: 5px;
+}
+
+#instance-list li {
+    padding: 0.5em 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.killInstanceBtn{
+    background-color: #f44336;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+    float: right;
+    width: 1em;
+    height: 1em;
+    font-size: 1.5em;
+    margin: 0.5em;
+}
+
+.killInstanceBtnText{
+    display: flex;
+    padding: 0;
+    margin: 0;
+    font-size: 1em;
+    justify-content: center;
+    align-items: center;
+    height: 50%;
 }

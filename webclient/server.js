@@ -12,6 +12,8 @@ require('dotenv').config();
 const os = require('os');
 const networkInterfaces = os.networkInterfaces();
 
+const SharedFunctions = require(path.join(__dirname, '../bot', 'util.js'));
+
 console.log(networkInterfaces);
 
 //get local ip address
@@ -146,6 +148,10 @@ app.get('/index.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/instances.js', allowLocal, (req, res) => {
+  res.sendFile(path.join(__dirname, 'instances.js'));
+});
+
 app.get('/courses.html', allowLocal, (req, res) => {
   res.sendFile(path.join(__dirname, 'courses.html'));
 });
@@ -188,6 +194,11 @@ app.get('/promptCommands.json', allowLocal, (req, res) => {
 app.get('/config.json', allowLocal, (req, res) => {
   const configPath = path.join(__dirname, '../bot', 'config.json');
   res.sendFile(configPath);
+});
+
+app.get('/instanceData.json', allowLocal, (req, res) => {
+  const instanceDataPath = path.join(__dirname, '../bot', 'instanceData.json');
+  res.sendFile(instanceDataPath);
 });
 
 app.get('/private', allowLocal, (req, res) => {
@@ -244,6 +255,20 @@ app.post('/save-config', (req, res) => {
       res.status(200).send('File updated successfully');
     }
   });
+});
+
+app.delete('/kill-instance', (req, res) => {
+  //const instanceDataPath = path.join(__dirname, '../bot', 'instanceData.json');
+  const instanceID = req.body.instanceID;
+  const pid = req.body.pid;
+
+  console.log('Killing instance:', instanceID, pid);
+
+  SharedFunctions.handleExit(instanceID, pid);
+
+  res.status(200).send('Instance killed successfully');
+
+
 });
 
 app.listen(port, '0.0.0.0', () => {

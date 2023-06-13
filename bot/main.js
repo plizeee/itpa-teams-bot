@@ -102,10 +102,19 @@ if(instanceData.instances.some(instance => instance.instanceID == instanceID)){
         "date": date.toString(),
         "pid": process.pid
     });
+
+    //sort the instances by instanceID
+    instanceData.instances.sort((a, b) => (a.instanceID > b.instanceID) ? 1 : -1);
+
     //write to file and format it
     fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t"));
 }
 else{
+    console.log("instances: ", instanceData.instances);
+    //sort the instances by instanceID
+    instanceData.instances.sort((a, b) => (a.instanceID > b.instanceID) ? 1 : -1);
+    console.log("instances: ", instanceData.instances);
+
     instanceData.instances.push({
         "instanceID": instanceID,
         "date": date.toString(),
@@ -114,6 +123,8 @@ else{
     //write to file and format it
     fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t"));
 }
+
+
 
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);

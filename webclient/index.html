@@ -42,6 +42,24 @@
     <main>
         <h2>Welcome to the Dashboard!</h2>
         <p>Use the navigation menu to access the different sections of the website.</p>
+        <div class="container">
+          <h1>Instances</h1>
+          <div class="instance-box-container">
+              <ul id="instance-list">
+                  <!-- Commands will be added here dynamically -->
+              </ul>
+          </div>
+        </div>
+        <template id="instance-template">
+          <li class="instance-item">
+            <button class="killInstanceBtn"><div class="killInstanceBtnText">-</div></button>
+              <div><strong>Instance ID:</strong> <span class="instance-id-value"></span></div>
+              <div><strong>Uptime:</strong> <span class="instance-time-value">test</span></div>
+              <div><strong>Process ID:</strong> <span class="instance-pid-value">test</span></div>
+              
+          </li>
+        </template>
     </main>
+    <script src="instances.js"></script>
 </body>
 </html>
