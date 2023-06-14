@@ -10,7 +10,13 @@ const gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath));
 let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 
 module.exports = {
-    getProfile,getProfileById,syncProfilesToFile,syncLeaderboardToFile,handleExit
+    getProfile,
+    getProfileById,
+    syncProfilesToFile,
+    syncLeaderboardToFile,
+    handleExit,
+    getProcessStatus,
+    isProcessStored
 }
 
 function getProfile(msg){
@@ -50,14 +56,19 @@ function syncLeaderboardToFile(isMaster, val = gptSecrets){
 }
 
 function handleExit(instanceID){
+    console.log("Handling exit...");
     instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
     let instance = instanceData.instances.find(instance => instance.instanceID === instanceID);
     if (instance) {
         let pid = instance.pid;
         if(!pid){
-            console.log("Shutting down instance " + instanceID);
-            instanceData.instances.splice(instanceData.instances.indexOf(instanceID), 1); //remove instance from list
-            fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t")); //write to file
+            let instanceIndex = instanceData.instances.findIndex(instance => instance.instanceID === instanceID);
+            if (instanceIndex !== -1) {
+                // Remove instance from list
+                instanceData.instances.splice(instanceIndex, 1);
+            }
+    
+            fs.writeFileSync(instanceDataPath, JSON.stringify(instanceData, null, "\t")); //
             process.exit(0);
         }
         else{
@@ -65,7 +76,7 @@ function handleExit(instanceID){
             exec(`kill ${pid}`, (error, stdout, stderr) => {
                 if (error) {
                   console.error(`Error while trying to kill process: ${error.message}`);
-                  return;
+                  //return;
                 }
               
                 let instanceIndex = instanceData.instances.findIndex(instance => instance.instanceID === instanceID);
@@ -80,4 +91,33 @@ function handleExit(instanceID){
             });
         }
     }
+}
+
+function getProcessStatus(pid) {
+    return new Promise((resolve, reject) => {
+        //const command = process.platform === 'win32' ? `tasklist /FI "PID eq ${pid}"` : `ps -p ${pid}`;
+
+        if(isProcessStored(pid)){
+            const command = `ps -p ${pid}`;
+            exec(command, (error, stdout, stderr) => {
+            if (error) {
+                resolve(false);
+                return;
+            }
+
+            console.log(stdout);
+            resolve(stdout.toLowerCase().includes(pid.toString()));
+            });
+        }
+        else{
+            resolve(false);
+        }
+    });
+}
+
+function isProcessStored(pid){
+    instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
+    let instance = instanceData.instances.find(instance => instance.pid === pid);
+    console.log("isProcessStored returned: ", instance);
+    return instance ? true : false;
 }

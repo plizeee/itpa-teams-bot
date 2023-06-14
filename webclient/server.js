@@ -198,8 +198,50 @@ app.get('/config.json', allowLocal, (req, res) => {
 
 app.get('/instanceData.json', allowLocal, (req, res) => {
   const instanceDataPath = path.join(__dirname, '../bot', 'instanceData.json');
-  res.sendFile(instanceDataPath);
+
+  fs.readFile(instanceDataPath, 'utf8', (err, data) => {
+    if (err) {
+      res.status(500).send('Error reading file');
+      console.error(err);
+      return;
+    }
+
+    let instanceData;
+    try {
+      instanceData = JSON.parse(data);
+      if (!instanceData || !instanceData.instances || !Array.isArray(instanceData.instances)) {
+        console.error('Invalid data format');
+        throw new Error('Invalid data format');
+      }
+    } catch (parseError) {
+      res.status(500).send('Error parsing file');
+      console.error(parseError);
+      return;
+    }
+
+    // Ensure all promises are resolved before filtering
+    const processStatusPromises = instanceData.instances.map(instance => SharedFunctions.getProcessStatus(instance.pid));
+
+    Promise.all(processStatusPromises).then((statusResults) => {
+      const filteredInstanceData = {
+        instances: instanceData.instances.filter((instance, index) => statusResults[index])
+      };
+      console.log(filteredInstanceData);
+
+      fs.writeFile(instanceDataPath, JSON.stringify(filteredInstanceData, null, '\t'), writeError => {
+        if (writeError) {
+          res.status(500).send('Error writing to file');
+          console.error(writeError);
+          return;
+        }
+        console.log('Instance data file updated');
+        
+        res.sendFile(instanceDataPath);
+      });
+    });
+  });
 });
+
 
 app.get('/private', allowLocal, (req, res) => {
   res.send('This is a private page. You have been authenticated!');
@@ -258,17 +300,18 @@ app.post('/save-config', (req, res) => {
 });
 
 app.delete('/kill-instance', (req, res) => {
-  //const instanceDataPath = path.join(__dirname, '../bot', 'instanceData.json');
   const instanceID = req.body.instanceID;
   const pid = req.body.pid;
 
+  //for security, we should only accept killing instances that exist in the instanceData.json file
+  if(!SharedFunctions.isProcessStored(pid)){
+    res.status(500).send("Process isn't stored in instanceData.json. Killing process failed.");
+    return;
+  }
+
   console.log('Killing instance:', instanceID, pid);
-
-  SharedFunctions.handleExit(instanceID, pid);
-
+  SharedFunctions.handleExit(instanceID);
   res.status(200).send('Instance killed successfully');
-
-
 });
 
 app.listen(port, '0.0.0.0', () => {

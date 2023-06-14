@@ -136,11 +136,13 @@ process.on('unhandledRejection', (reason, promise) => {
     SharedFunctions.handleExit(instanceID);
 });
 
+//This doesn't seem to trigger when I close the bot in the terminal with ctrl+c
+//This worked in the previous commit, but I'm not sure why it doesn't work now
 process.on('SIGINT', () => {
     console.log('Received SIGINT signal. Shutting down gracefully...');
     // Perform any necessary cleanup or shutdown tasks here
     // This could include closing database connections, releasing resources, etc.
-    SharedFunctions.handleExit();
+    SharedFunctions.handleExit(instanceID);
 });
 
 //ensures that authorized users can use dev mode

@@ -5,11 +5,11 @@ let instanceData = {
 let instanceList;
 let instanceItemTemplate;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     instanceList = document.getElementById('instance-list');
     instanceItemTemplate = document.getElementById('instance-template');
 
-    fetchData();
+    await fetchData();
 });
 
 function renderInstanceList() {
@@ -34,16 +34,16 @@ function renderInstanceList() {
 }
 
 async function fetchData() {
-    try {
-        const response = await fetch(`/instanceData.json?_=${new Date().getTime()}`);
-        const data = await response.json();
-
+    fetch(`/instanceData.json?_=${new Date().getTime()}`)
+    .then(response => response.json())
+    .then(data => {
         console.log(data);
-        instanceData.instances = data.instances;
+        instanceData = data;
         renderInstanceList();
-    } catch (error) {
-        console.log('Error reading file:', error);
-    }
+    })
+    .catch(error => {
+      console.log('Error reading file:', error);
+    });
 }
 
 function timeSince(dateString) {

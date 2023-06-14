@@ -23,6 +23,7 @@ let GPT4_REQUEST_LIMIT;
 let GPT4_REQUEST_COOLDOWN;
 const DEFAULT_CHARACTER_LIMIT = 4000;
 const GPT4_CHARACTER_LIMIT = 8000;
+const GPT_TURBO_16k_CHARACTER_LIMIT = 16000;
 
 
 require('dotenv').config();
@@ -158,10 +159,22 @@ function getFileString(msg){
     });
 }
 
-async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo"){
+async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
     let output = msg.content;
 
-    characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
+    //characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
+
+    switch(model){
+        case "gpt-4":
+            characterLimit = GPT4_CHARACTER_LIMIT;
+            break;
+        case "gpt-3.5-turbo-16k-0613":
+            characterLimit = GPT_TURBO_16k_CHARACTER_LIMIT;
+            break;
+        default:
+            characterLimit = DEFAULT_CHARACTER_LIMIT;
+    }
+
     if (fileContent) {
         if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
         else output = fileContent;
@@ -434,7 +447,7 @@ function syncStats(){
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg, model = "gpt-3.5-turbo", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
+function chatCommand(msg, model = "gpt-3.5-turbo-16k-0613", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
 
     if(!isUserAuthorized){
         return;
@@ -544,7 +557,22 @@ async function sendPrompt({msg, instructions, model}){
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
-    let maxTokens = model == "gpt-4" ? 4000 : 2000;
+    // let maxTokens = model == "gpt-4" ? 4000 : 2000;
+
+    switch(model){
+        case "gpt-4":
+            maxTokens = 4000;
+            break;
+        case "gpt-3.5-turbo":
+            maxTokens = 2000;
+            break;
+        case "gpt-3.5-turbo-16k-0613":
+            maxTokens = 8000;
+            break;
+        default:
+            maxTokens = 2000;
+            break;
+    }
 
     const completion = await openai.createChatCompletion({
         model: model,
