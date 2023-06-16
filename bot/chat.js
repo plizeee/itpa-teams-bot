@@ -558,21 +558,12 @@ async function sendPrompt({msg, instructions, model}){
     let fullPrompt = await getReplyThread(msg, instructions);
 
     console.log(fullPrompt);
-    // let maxTokens = model == "gpt-4" ? 4000 : 2000;
+    let maxTokens;
 
     switch(model){
-        case "gpt-4":
-            maxTokens = 4000;
-            break;
-        case "gpt-3.5-turbo":
-            maxTokens = 2000;
-            break;
-        case "gpt-3.5-turbo-16k-0613":
-            maxTokens = 8000;
-            break;
-        default:
-            maxTokens = 2000;
-            break;
+        case "gpt-4": maxTokens = 4000; break;
+        case "gpt-3.5-turbo-16k-0613": maxTokens = 8000; break;
+        default: maxTokens = 2000; break;
     }
 
     const completion = await openai.createChatCompletion({

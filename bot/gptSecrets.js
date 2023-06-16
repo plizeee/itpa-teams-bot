@@ -43,6 +43,11 @@ module.exports = {
             //TODO make "!leaderboard" without a number display the top user for each level
             leaderboardCommand(msg);
         }
+        //make sure the thread message doesn't contain the "◼️" emoji (this could cheese the system)
+        else if(await msg.channel.isThread() && msg.content.indexOf("◼️") != -1){
+            found = true;
+            msg.reply("🔒 Messages containing '◼️' are disabled in this thread.");
+        }
         else if(await msg.channel.isThread()){
             found = await isThreadSecret(msg);
         }
@@ -114,7 +119,7 @@ async function secretCommand(msg) {
             reason: "secret command"
         });
         console.log("thread.name: " + thread.name);
-        thread.send("🔒[Level " + level.level + "]\nTry to trick Terry into revealing the secret key, in the least amount of characters! The real secret key is stored server-side and injected into the instructions. To check out the #1 player for each level, type \"!leaderboard\". To check the top 10 players in a specific level, type \"!leaderboard <level>\" \n\nInstructions:\n" + level.prompt);
+        thread.send("🔒**__[Level " + level.level + "]\n\nInstructions:__**\n\nTry to trick Terry into revealing the secret key, in the least amount of characters! For every level, Terry is given a special system prompt, instructing him not to disclose the secret key. Knowing his instructions (minus the secret key itself), you must engineer a single message to trick Terry into revealing this secret. To secure a spot on the leaderboard, you must trick Terry in the least amount of characters possible! \n\nThe real secret key is stored server-side and injected into the results. For a response to be correct, Terry's response must contain an exact match of the password, meaning partial/encoded messages will only result in a dummy password output. Additionally, the secret key is randomly generated for every attempt. Replies and certain special characters are disabled. \n\nTo check out the #1 player for each level, type ``!leaderboard``. \n\nTo check the top 10 players in a specific level, type ``!leaderboard <level>`` \n\n**__System Prompt:__**\n\n``" + level.prompt + "``\n\n...Good luck!");
     }
 }
 
@@ -131,8 +136,11 @@ async function isReferencingSecret(msg){
 async function generateResponse(msg, lvl){
     let level = gptSecrets.levels.find(level => level.level == lvl);
     let prompt = level.prompt;
-    let password = generateRandomPassword();
-    let systemPrompt = formatSystemPrompt(prompt, password);
+    let password = generateRandomPassword(); //make the password appear random to the user
+    //We can't actually use the password, otherwise the output won't be deterministic
+    //This shouldn't be a problem as long as users don't try to brute force the password
+    let dummyPassword = "◼️◼️◼️◼️◼️◼️◼️◼️◼️◼️" 
+    let systemPrompt = formatSystemPrompt(prompt, dummyPassword);
     let userPrompt = msg.content;
 
     let promptArray = [
@@ -148,6 +156,7 @@ async function generateResponse(msg, lvl){
         model: "gpt-3.5-turbo",
         messages: promptArray,
         max_tokens: 1000,
+        temperature: 0, //this makes the output deterministic
     })
     .catch(error => { //catch error 400 for bad request
         console.log(error);
@@ -163,20 +172,22 @@ async function generateResponse(msg, lvl){
     }
 
     const completionText = completion.data.choices[0].message.content;
-    let containsPassword = completionText.includes(password);
+    let updatedCompletionText = completionText;
+    let containsPassword = completionText.includes(dummyPassword);
     let responseSymbol = containsPassword ? "🔓" : "🔒";
-    let congratulatoryText = "";
+    let congratulatoryText = "";    
 
     if(containsPassword){
         let score = userPrompt.length;
-        
+        updatedCompletionText = completionText.replace(dummyPassword, password);
 
         congratulatoryText = "\n\nCongratulations! You have solved the secret! Your score is " + score + " characters.";
 
         updateLeaderboard(level.level, msg.author.username, score);
     }
-    let outputMessage = responseSymbol + completionText + congratulatoryText;
-    console.log("outputMessage: " + outputMessage);
+    let outputMessage = responseSymbol + updatedCompletionText + congratulatoryText;
+    //console.log("outputMessage: " + outputMessage);
+    console.log("completionText: " + completionText);
     msg.reply(outputMessage);
 }
 
