@@ -210,7 +210,8 @@ async function chatroomCommand(msg){
 async function crossReferenceCommand(msg){
     console.log("CROSS REFERENCE MESSAGE COMMAND");
 
-    const instructions = prompts["Terry"] + " The following message is the message the user is referring to: ";
+    //const instructions = prompts["Terry"] + " The following message is the message the user is referring to: ";
+    const instructions = promptCommands.commands.find(command => command.name == "Terry").prompt + " The following message is the message the user is referring to: ";
 
     //TODO send more typing indicators if the message is still being generated
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
@@ -447,7 +448,7 @@ function syncStats(){
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg, model = "gpt-3.5-turbo-16k-0613", isUserAuthorized = true, systemPrompt = prompts["Terry"]){
+function chatCommand(msg, model = "gpt-3.5-turbo-16k-0613", isUserAuthorized = true, systemPrompt = promptCommands.commands.find(command => command.name == "Terry").prompt){
 
     if(!isUserAuthorized){
         return;
