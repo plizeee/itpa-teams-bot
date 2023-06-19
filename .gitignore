@@ -13,3 +13,4 @@ stats.json
 *.log
 promptCommands.json
 instanceData.json
+gptSecrets.json
