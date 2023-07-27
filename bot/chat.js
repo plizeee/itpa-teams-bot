@@ -194,7 +194,7 @@ async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
 async function checkReplyForChatCommand(msg){
     let firstMessage = await getReferenceMsg(msg);
 
-    if (firstMessage && getPromptCommand(firstMessage)) {
+    if (firstMessage && getTrigger(firstMessage)) {
         chatCommand(msg, isAuthorized(msg, firstMessage), getTrigger(firstMessage));
     }
     else{
@@ -230,48 +230,15 @@ function getPromptCommands(){
     return array;
 }
 
-let getTrigger = message => triggers.commands.find(promptCommand => message.toUpperCase().startsWith("!" + promptCommand.command.toUpperCase() + " ")) ?? null;
-// a lot of these getters could be removed or refactored using the get trigger function
-function getPromptCommand(message){
-    message = message.toUpperCase();
-    let commands = getPromptCommands();
-
-    //get the command from the message and default to null if not found
-    let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " ")) ?? null;
-
-    console.log("Command: " + command);
-
-    return command;
-}
-function getModelFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    let model = triggers.commands.find(command => command.command == promptCommand).model;
-    return model;
-}
-let getModelFromCommand = command => triggers.commands.find(promptCommand => promptCommand.command == command).model;
-
-function getPromptPermissionFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    if(!promptCommand) return 0;
-    let permission = triggers.commands.find(command => command.command == promptCommand).permission;
-    return permission;
-}
-
-function getSystemPromptFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    let systemPrompt = triggers.commands.find(command => command.command == promptCommand).prompt;
-    return systemPrompt;
-}
-let getSystemPromptFromCommand = command => triggers.commands.find(promptCommand => promptCommand.command == command).prompt;
+let getTrigger = message => triggers.commands.find(promptCommand => {
+    console.log(message, promptCommand, message.split(" ")[0].toUpperCase() == promptCommand.command.toUpperCase());
+    return message.split(" ")[0].toUpperCase() == "!" + promptCommand.command.toUpperCase()
+}) ?? null;
 
 function isAuthorized(msg, referenceMessage = null) {
     let message = referenceMessage ? referenceMessage : msg.content; 
     let profile = SharedFunctions.getProfile(msg);
-    let promptPermission = getPromptPermissionFromMessage(message);
-    let model = getModelFromMessage(message);
+    let {model, permission: promptPermission} = getTrigger(message);
 
     //TODO make permission levels instead of just admin or not
     let admins = config.admins;
@@ -321,11 +288,9 @@ function checkRateLimit(profile, msg) {
 //now returns an object including the command
 async function getChatType(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
-
-    //get all the "command" values from the promptCommands object
     let trigger = getTrigger(message);
     console.log(trigger);
-    console.log("Command: " + trigger.command);
+    console.log("Command: " + trigger?.command?? "NOT FOUND");
 
     //TODO this is super confusing to work with, so I'm just going to temporarily make a manual check to see the user is replying to a bot that has a lock
     // let isBotRef = await isReferencingBot(msg);
