@@ -230,6 +230,8 @@ function getPromptCommands(){
     return array;
 }
 
+let getTrigger = message => triggers.commands.find(promptCommand => message.toUpperCase().startsWith("!" + promptCommand.command.toUpperCase() + " ")) ?? null;
+// a lot of these getters could be removed or refactored using the get trigger function
 function getPromptCommand(message){
     message = message.toUpperCase();
     let commands = getPromptCommands();
@@ -241,8 +243,6 @@ function getPromptCommand(message){
 
     return command;
 }
-let getTrigger = message => triggers.commands.find(promptCommand => message.startsWith("!" + promptCommand.command.toUpperCase() + " ")) ?? null;
-
 function getModelFromMessage(message){
     let promptCommand = getPromptCommand(message);
 
@@ -324,6 +324,7 @@ async function getChatType(msg,client,chatrooms){
 
     //get all the "command" values from the promptCommands object
     let trigger = getTrigger(message);
+    console.log(trigger);
     console.log("Command: " + trigger.command);
 
     //TODO this is super confusing to work with, so I'm just going to temporarily make a manual check to see the user is replying to a bot that has a lock
@@ -371,7 +372,7 @@ async function isReferencingBot(msg){
 
 // Maybe we should rename this type of thread to chain, to distungiush from discord threads. -will
 //function that returns a thread from a chain of messages
-async function getReplyThread(msg, sysMsg){
+async function getReplyChain(msg, sysMsg){
 
     let message = stripCommand(msg.content); 
     let profile = SharedFunctions.getProfile(msg); 
@@ -520,7 +521,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     
-    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, 
+    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, - will to himself 
     let replyPattern = /\[reply(?:to): (?<replyTo>\d{17,20}|n(?:ul{0,2})?)\]/im;
     let statusPattern = /\[status: (?<status>.*)\]/im;
     let replyMatches = rawReply.match(replyPattern);
@@ -557,7 +558,7 @@ function stripNameFromResponse(response){
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model}){
     //TODO include txt file content in replies
-    let fullPrompt = await getReplyThread(msg, instructions);
+    let fullPrompt = await getReplyChain(msg, instructions);
 
     console.log(fullPrompt);
     let maxTokens;
