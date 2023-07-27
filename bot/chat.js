@@ -230,10 +230,7 @@ function getPromptCommands(){
     return array;
 }
 
-let getTrigger = message => triggers.commands.find(promptCommand => {
-    console.log(message, promptCommand, message.split(" ")[0].toUpperCase() == promptCommand.command.toUpperCase());
-    return message.split(" ")[0].toUpperCase() == "!" + promptCommand.command.toUpperCase()
-}) ?? null;
+let getTrigger = message => triggers.commands.find(promptCommand => message.split(" ")[0].toUpperCase() == "!" + promptCommand.command.toUpperCase()) ?? null;
 
 function isAuthorized(msg, referenceMessage = null) {
     let message = referenceMessage ? referenceMessage : msg.content; 
