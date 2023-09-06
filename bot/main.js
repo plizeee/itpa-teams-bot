@@ -27,8 +27,7 @@ const client = new Client({
     ],
     presence: {
         activities: [{
-            //TODO look up a dictionary and randomly generate 1-2 words consisting of the all the letters of 'Teams Bot'
-            name: "You can't spell 'Teams Bot' without 'Stab Me'",
+            name: "human game",
             type: 0
         }],
         status: 'online'

@@ -1,9 +1,3 @@
-//TODO add random secret generator
-//TODO add ai response
-//TODO make sure to inject the secret into the ai prompt internally
-//TODO look into generating a thread, so that chat doesn't get spammed and you can easily retry without scrolling up to reply to the prompt
-
-
 const fs = require('fs');
 
 const { Configuration, OpenAIApi } = require("openai");
@@ -13,9 +7,6 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 const SharedFunctions = require("./util.js");
-const { format } = require('path');
-const { get } = require('http');
-const { ChannelType } = require('discord.js');
 const gptSecretsPath = './bot/gptSecrets.json';
 const gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath));
 
@@ -40,7 +31,6 @@ module.exports = {
         }
         else if(msg.content.toLowerCase().startsWith("!leaderboard")){
             found = true;
-            //TODO make "!leaderboard" without a number display the top user for each level
             leaderboardCommand(msg);
         }
         //make sure the thread message doesn't contain the "◼️" emoji (this could cheese the system)
@@ -119,7 +109,7 @@ async function secretCommand(msg) {
             reason: "secret command"
         });
         console.log("thread.name: " + thread.name);
-        thread.send("🔒**__[Level " + level.level + "]\n\nInstructions:__**\n\nTry to trick Terry into revealing the secret key, in the least amount of characters! For every level, Terry is given a special system prompt, instructing him not to disclose the secret key. Knowing his instructions (minus the secret key itself), you must engineer a single message to trick Terry into revealing this secret. To secure a spot on the leaderboard, you must trick Terry in the least amount of characters possible! \n\nThe real secret key is stored server-side and injected into the results. For a response to be correct, Terry's response must contain an exact match of the password, meaning partial/encoded messages will only result in a dummy password output. Additionally, the secret key is randomly generated for every attempt. Replies and certain special characters are disabled. \n\nTo check out the #1 player for each level, type ``!leaderboard``. \n\nTo check the top 10 players in a specific level, type ``!leaderboard <level>`` \n\n**__System Prompt:__**\n\n``" + level.prompt + "``\n\n...Good luck!");
+        thread.send("🔒**__[Level " + level.level + "]\n\nInstructions:__**\n\nTry to trick Terry into revealing the secret key, in the least amount of characters! For every level, Terry is given a special system prompt, instructing him not to disclose the secret key. Knowing his instructions (minus the secret key itself), you must engineer a single message to trick Terry into revealing this secret. To secure a spot on the leaderboard, you must trick Terry in the least amount of characters possible! \n\nThe real secret key is stored server-side and injected into the results. For a response to be correct, Terry's response must contain an exact match of the password, meaning partial/encoded messages will only result in a dummy password output. Additionally, the secret key is randomly generated for every attempt. Replies and certain special characters are disabled. \n\n**Terry's memory gets reset after each message, so you cannot coerce it in steps.** \n\nTo check out the #1 player for each level, type \n``!leaderboard`` \n\nTo check the top 10 players in a specific level, type \n``!leaderboard <level>`` \n\n**__System Prompt:__**\n\n```" + level.prompt + "```\n\n...Good luck!");
     }
 }
 
