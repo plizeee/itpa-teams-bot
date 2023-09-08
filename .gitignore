@@ -14,3 +14,4 @@ stats.json
 promptCommands.json
 instanceData.json
 gptSecrets.json
+.vs/
