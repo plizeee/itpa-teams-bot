@@ -16,7 +16,7 @@ const statPath = './bot/stats.json';
 
 const profiles = JSON.parse(fs.readFileSync(profilePath)); //creating a snapshot of the contents of profiles.json
 const prompts = JSON.parse(fs.readFileSync(promptPath)); //creating a snapshot of the contents of prompts.json
-let promptCommands = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
+let triggers = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
 let config;
 
 let GPT4_REQUEST_LIMIT;
@@ -88,7 +88,7 @@ let InstanceData = {
 
 module.exports = {
     checkChatCommand: async function (msg, isMasterBranch,client,config_) {
-        promptCommands = JSON.parse(fs.readFileSync(promptCommandPath));
+        triggers = JSON.parse(fs.readFileSync(promptCommandPath));
         let found = false;
         date = new Date();
         isMaster = isMasterBranch;
@@ -105,13 +105,13 @@ module.exports = {
 
 
         profileCreation(msg);
-        let chatType = await isValidChatRequirements(msg,client,config.chatrooms)
-        console.log("CHAT TYPE: " + chatType);
-        if (chatType) {
+        let chatType = await getChatType(msg,client,config.chatrooms)
+        console.log("CHAT TYPE: " + chatType.Type);
+        if (chatType.Type) {
             found = true;
-            switch(chatType){
+            switch(chatType.Type){
                 case 1: 
-                    chatCommand(msg, getModelFromMessage(msg.content), isAuthorized(msg), getSystemPromptFromMessage(msg.content));
+                    chatCommand(msg, isAuthorized(msg), chatType.Trigger);
                     break;
                 case 2: case 3: //reply to a message
                     //we need to check if the root of the reply contains a chat command
@@ -194,8 +194,8 @@ async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
 async function checkReplyForChatCommand(msg){
     let firstMessage = await getReferenceMsg(msg);
 
-    if (firstMessage && getPromptCommand(firstMessage)) {
-        chatCommand(msg, getModelFromMessage(firstMessage), isAuthorized(msg, firstMessage), getSystemPromptFromMessage(firstMessage));
+    if (firstMessage && getTrigger(firstMessage)) {
+        chatCommand(msg, isAuthorized(msg, firstMessage), getTrigger(firstMessage));
     }
     else{
         chatCommand(msg);
@@ -211,7 +211,7 @@ async function crossReferenceCommand(msg){
     console.log("CROSS REFERENCE MESSAGE COMMAND");
 
     //const instructions = prompts["Terry"] + " The following message is the message the user is referring to: ";
-    const instructions = promptCommands.commands.find(command => command.name == "Terry").prompt + " The following message is the message the user is referring to: ";
+    const instructions = triggers.commands.find(command => command.name == "Terry").prompt + " The following message is the message the user is referring to: ";
 
     //TODO send more typing indicators if the message is still being generated
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
@@ -223,52 +223,19 @@ async function crossReferenceCommand(msg){
 
 function getPromptCommands(){
     let array = [];
-    for (let i = 0; i < promptCommands.commands.length; i++) {
-        array.push(promptCommands.commands[i].command);
+    for (let i = 0; i < triggers.commands.length; i++) {
+        array.push(triggers.commands[i].command);
     }
     console.log("Commands: " + array);
     return array;
 }
 
-function getPromptCommand(message){
-    message = message.toUpperCase();
-    let commands = getPromptCommands();
-
-    //get the command from the message and default to null if not found
-    let command = commands.find(command => message.startsWith("!" + command.toUpperCase() + " ")) ?? null;
-
-    console.log("Command: " + command);
-
-    return command;
-}
-
-function getModelFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    let model = promptCommands.commands.find(command => command.command == promptCommand).model;
-    return model;
-}
-
-function getPromptPermissionFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    if(!promptCommand) return 0;
-    let permission = promptCommands.commands.find(command => command.command == promptCommand).permission;
-    return permission;
-}
-
-function getSystemPromptFromMessage(message){
-    let promptCommand = getPromptCommand(message);
-
-    let systemPrompt = promptCommands.commands.find(command => command.command == promptCommand).prompt;
-    return systemPrompt;
-}
+let getTrigger = message => triggers.commands.find(promptCommand => message.split(" ")[0].toUpperCase() == "!" + promptCommand.command.toUpperCase()) ?? null;
 
 function isAuthorized(msg, referenceMessage = null) {
     let message = referenceMessage ? referenceMessage : msg.content; 
     let profile = SharedFunctions.getProfile(msg);
-    let promptPermission = getPromptPermissionFromMessage(message);
-    let model = getModelFromMessage(message);
+    let {model, permission: promptPermission} = getTrigger(message);
 
     //TODO make permission levels instead of just admin or not
     let admins = config.admins;
@@ -315,15 +282,12 @@ function checkRateLimit(profile, msg) {
     }
 }
 
-
-//I altered this to better determine what type of chat causes his response -will
-//should be renamed to like checkChatType
-async function isValidChatRequirements(msg,client,chatrooms){
+//now returns an object including the command
+async function getChatType(msg,client,chatrooms){
     let message = msg.content.toUpperCase();
-
-    //get all the "command" values from the promptCommands object
-    let command = getPromptCommand(message);
-    console.log("Command: " + command);
+    let trigger = getTrigger(message);
+    console.log(trigger);
+    console.log("Command: " + trigger?.command?? "NOT FOUND");
 
     //TODO this is super confusing to work with, so I'm just going to temporarily make a manual check to see the user is replying to a bot that has a lock
     // let isBotRef = await isReferencingBot(msg);
@@ -333,13 +297,14 @@ async function isValidChatRequirements(msg,client,chatrooms){
     //         return false;
     //     }
     // }
-    
 
-    return command? 1: //if it's a prompt command
+    chatType = {Trigger:trigger};
+
+    chatType.Type = trigger? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
     (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false; //if it's a thread
-
+    return chatType;
 }
 
 //checks if it's a thread then checks if starting message author is terry(user) then returns true if so otherwise false;
@@ -369,7 +334,7 @@ async function isReferencingBot(msg){
 
 // Maybe we should rename this type of thread to chain, to distungiush from discord threads. -will
 //function that returns a thread from a chain of messages
-async function getReplyThread(msg, sysMsg){
+async function getReplyChain(msg, sysMsg){
 
     let message = stripCommand(msg.content); 
     let profile = SharedFunctions.getProfile(msg); 
@@ -448,14 +413,14 @@ function syncStats(){
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg, model = "gpt-3.5-turbo-16k-0613", isUserAuthorized = true, systemPrompt = promptCommands.commands.find(command => command.name == "Terry").prompt){
-
+function chatCommand(msg,isUserAuthorized = true,promptCommand={model:"gpt-3.5-turbo-16k-0613",prompt:triggers.commands.find(command => command.name == "Terry").prompt}){
+    const {model,prompt} = promptCommand;
     if(!isUserAuthorized){
         return;
     }
 
     console.log("Model: " + model);
-    const instructions = systemPrompt + ". The date is " + date + ".";
+    const instructions = prompt + ". The date is " + date + ".";
 
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
@@ -518,7 +483,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     
-    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, 
+    let responsePattern = /\[(?:do)?respond: (?<doRespond>f(?:alse)?|t(?:rue)?|n(?:ul{0,2})?)\]/im; // this is overcomplicated... just check if it's false or null, - will to himself 
     let replyPattern = /\[reply(?:to): (?<replyTo>\d{17,20}|n(?:ul{0,2})?)\]/im;
     let statusPattern = /\[status: (?<status>.*)\]/im;
     let replyMatches = rawReply.match(replyPattern);
@@ -555,7 +520,7 @@ function stripNameFromResponse(response){
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model}){
     //TODO include txt file content in replies
-    let fullPrompt = await getReplyThread(msg, instructions);
+    let fullPrompt = await getReplyChain(msg, instructions);
 
     console.log(fullPrompt);
     let maxTokens;
