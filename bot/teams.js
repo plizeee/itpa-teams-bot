@@ -45,6 +45,10 @@ module.exports = {
             found = true;
             helpCommand(msg);
         }
+        else if(command === "!SCHEDULE" || command === "!SCHED" || command === "!CLASS"){
+            found = true;
+            teamsFullScheduleCommand(msg);
+        }
         else if(command == "YOU PASS THE LINK"){
             found = true;
             youPassTheLinkCommand(msg);
@@ -72,8 +76,6 @@ module.exports = {
         return found;
     }
 };
-
-
 
 function teamsCommand(msg){
     let message = msg.content.toUpperCase();
@@ -113,37 +115,101 @@ function teamsCommand(msg){
     }
 }
 
+//function that converts time from 6 characters to 7 characters
+//example: 8:30am -> 08:30am
+function convertTime(time){
+    let strTime = time.toString();
+    if(strTime.length == 6){
+        strTime = "0" + strTime;
+    }
+    return strTime;
+}
+
 function teamsFullScheduleCommand(msg){
     //this is kinda like teamsDayScheduleCommand but it's for the whole week
-    let replyMessage = "__**FULL SCHEDULE**__";
-
+    let replyMessage = " ";
+    let embed = new EmbedBuilder()
+    embed.setTitle("Week Schedule");
+    
     for(let i = 0; i < 7; i++){
+        let courseMessage = " ";
         let day = dayNumToDay(i);
-
-        //only list days that have classes
-        if(courses["courses"].some(course => course.days.includes(day))){
-            replyMessage += "\n\n__" + day.toUpperCase() + "__";
-        }
-
+        
+        let dayCourses = [];
         courses["courses"].forEach(course => {
             if(course.days.includes(day)){
                 let startTime = course.startTimes[course.days.indexOf(day)];
                 let endTime = course.endTimes[course.days.indexOf(day)];
+                let strStartTime = convertTime(formatTime(startTime));
+                let strEndTime = convertTime(formatTime(endTime));
+                let courseName = course.name;
 
-                let strStartTime = formatTime(startTime);
-                let strEndTime = formatTime(endTime);
-
-                replyMessage += "\n" + " [" + course.code + "] " + course.name + " [" + strStartTime + " - " + strEndTime + "]";
-
+                // first check if the course is online
+                // if it is, add the link to the message
                 if(course.isOnline[course.days.indexOf(day)]){
-                    replyMessage += " - **Online**";
+                    courseName = "[" + courseName + "](" + course.link + ")";
                 }
+
+                dayCourses.push({
+                    startTime: startTime,
+                    endTime: endTime,
+                    strStartTime: strStartTime,
+                    strEndTime: strEndTime,
+                    courseName: courseName
+                });
             }
         });
-    }
 
-    msg.reply(replyMessage);
+        // Sort the courses by start time
+        dayCourses.sort((a, b) => a.startTime - b.startTime);
+
+        // Get current time in the same format as startTime and endTime
+        let currentTime = getCurrentTimeInSameFormat();
+        let currentDayNum = new Date().getDay();
+
+        // Find the current or next class index
+        let currentClassIndex = dayCourses.findIndex(course => course.startTime <= currentTime && course.endTime > currentTime);
+        let nextClassIndex = dayCourses.findIndex(course => course.startTime > currentTime);
+
+        console.log("course.startTimes: " + dayCourses.map(course => course.startTime));
+        console.log("currentClassIndex: " + currentClassIndex, "nextClassIndex: " + nextClassIndex, "currentTime: " + currentTime, "dayCourses: " + dayCourses, "day: " + day);
+
+        // Build the course message
+        dayCourses.forEach((course, index) => {
+            // Add "> " if the course is the current or next class
+            let prefix = "";
+            let suffix = "";
+            // console.log(currentDayNum + " " + i);
+            if (currentDayNum == i) {
+                if (index == currentClassIndex) {
+                    prefix = "> **";
+                    suffix = " __(NOW)__**";
+                }
+                else if (index == nextClassIndex) {
+                    prefix = "> **";
+                    suffix = " __(SOON)__**";
+                }
+            }
+            
+            courseMessage += "\n" + prefix + course.strStartTime + " - " + course.strEndTime + " | " + course.courseName + suffix;
+        });
+
+        //only add the day to the embed if there are classes on that day
+        if(courseMessage != " "){
+            embed.addFields({name: day, value: courseMessage});
+        }
+    }
+    embed.setDescription(replyMessage);
+    msg.reply({embeds: [embed]});
 }
+
+function getCurrentTimeInSameFormat() {
+    let now = new Date();
+    console.log("getHours: " + now.getHours(), "getMinutes: " + now.getMinutes(), "sameFormat: " + now.getHours().toString() + now.getMinutes().toString());
+    return now.getHours().toString() + now.getMinutes().toString();
+}
+
+
 
 function teamsListCommand(msg){
     let replyMessage = "__**CLASS LIST**__";
@@ -170,6 +236,8 @@ function teamsGetLinkCommand(msg, course){
     }
     catch (err){
         msg.reply("No link found.");
+        console.log(err)
+
     }
 }
 
