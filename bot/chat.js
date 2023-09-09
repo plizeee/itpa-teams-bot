@@ -7,6 +7,7 @@ const https = require('https');
 
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
+const GPTFunctionsModule = require("./functions.js");
 
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
@@ -298,12 +299,14 @@ async function getChatType(msg,client,chatrooms){
     //     }
     // }
 
-    chatType = {Trigger:trigger};
-
+    chatType = {Trigger:trigger}; //creating a chatType object with the intial property of Trigger
+    
+    //ternary operator block to asign chatType type property 
     chatType.Type = trigger? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
     (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false; //if it's a thread
+    
     return chatType;
 }
 
@@ -413,20 +416,20 @@ function syncStats(){
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg,isUserAuthorized = true,promptCommand={model:"gpt-3.5-turbo-16k-0613",prompt:triggers.commands.find(command => command.name == "Terry").prompt}){
-    const {model,prompt} = promptCommand;
+function chatCommand(msg,isUserAuthorized = true,trigger={model:"gpt-3.5-turbo-16k-0613",prompt:triggers.commands.find(command => command.name == "Terry").prompt}){
+    const {model,prompt} = trigger;
     if(!isUserAuthorized){
         return;
     }
 
     console.log("Model: " + model);
     const instructions = prompt + ". The date is " + date + ".";
-
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
         model: model,
+        functions: GPTFunctionsModule.GetFunctions(trigger)
     });
 }
 async function getThreadMessages(thread, maxNumOfMsgs){
@@ -518,10 +521,9 @@ function stripNameFromResponse(response){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function sendPrompt({msg, instructions, model}){
+async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
     let fullPrompt = await getReplyChain(msg, instructions);
-
     console.log(fullPrompt);
     let maxTokens;
 
@@ -535,6 +537,7 @@ async function sendPrompt({msg, instructions, model}){
         model: model,
         messages: fullPrompt,
         max_tokens: maxTokens, //TODO make this a config option
+        functions: functions,
         //TODO look into adding 'stream' so you can see a response as it's being generated
     })
     .catch(error => { //catch error 400 for bad request
@@ -550,29 +553,36 @@ async function sendPrompt({msg, instructions, model}){
         msg.reply("Something went wrong. Please try again later.");
         return;
     }
-
-    const rawReply = completion.data.choices[0].message.content;   //storing the unmodified output of the ai generated response
-
-    let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified 
-
-    console.log("rawReply: " + rawReply);
-
-    let prompt_tokens = completion.data.usage.prompt_tokens;
-    let completion_tokens = completion.data.usage.completion_tokens;
-    let uncut_reply_length = replyMessage.length;
-    InstanceData.chatTokenStats.storeData(prompt_tokens,completion_tokens);
-
-    //discord has a 2000 character limit, so we need to cut the response if it's too long
-    if(replyMessage.length > 2000){
-        sendTextFile(msg, replyMessage);
+    let completionMessage = completion.data.choices[0]
+    if(completionMessage.function_call){
+        // implement function calling methods
+        const functionArgs = JSON.parse(completionMessage.function_call.arguments);
+        GPTFunctionsModule.CallFunction(completionMessage.function_call.name,functionArgs);
     }
+    //might be a good idea to turn reply into seperate method
     else{
-        //TODO rework this later 
-        syncStats();
-        generateReactions(msg, replyMessage);
+        const rawReply = completionMessage.content;   //storing the unmodified output of the ai generated response
+
+        let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified 
+
+        console.log("rawReply: " + rawReply);
+
+        let prompt_tokens = completion.data.usage.prompt_tokens;
+        let completion_tokens = completion.data.usage.completion_tokens;
+        let uncut_reply_length = replyMessage.length;
+        InstanceData.chatTokenStats.storeData(prompt_tokens,completion_tokens);
+
+        //discord has a 2000 character limit, so we need to cut the response if it's too long
+        if(replyMessage.length > 2000){
+            sendTextFile(msg, replyMessage);
+        }
+        else{
+            //TODO rework this later 
+            syncStats();
+            generateReactions(msg, replyMessage);
+        }
+        console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     }
-    console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    
     
 }
 

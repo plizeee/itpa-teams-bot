@@ -1,40 +1,15 @@
-const SharedFunctions = require("./util.js");
+//this file is for gpt function related methods
 
+const ProfileFunctions = require("./functions/ProfileFunctions.js").functions;
+const Functions = ProfileFunctions // use .concat() to combine other function groups so that all are present
 module.exports = {
-    functions,
+    GetTriggerFunctions, CallFunction
 }
 
-let functions =  {
-    "getProfile":{
-        metadata:{
-            "name": "getProfiles",
-            "description": "Gets users profile",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "names":{
-                        "type": "string",
-                        "description": "list of names to include in search"
-                    },
-                    "ids": {
-                        "type": "int",
-                        "description": "list of ids to include in search"
-                    }, 
-                    "maxrep":{
-                        "type": "int",
-                        "description": "limits to profiles with rep <= maxrep"
-                    },
-                    "minrep":{
-                        "type": "int",
-                        "description": "limits to profiles with rep >= minrep"
-                    }
-                },
-                "required": []
-            }
-        },
-        function: (names=[], ids=[], maxrep=null, minrep=null) => {
-            let full = SharedFunctions.filterProfiles(names, ids, maxrep, minrep);
-            return full.map(profile =>{return{name:profile.name,id:profile.id,rep:profile.rep}});
-        }
-    }
+function GetTriggerFunctions(trigger) {
+    if(trigger.hasOwnProperty("functions")) return Object.entries(Functions).filter(KeyVal => trigger.functions.includes(KeyVal[0])).map((KeyVal => KeyVal[1]));
+    else return [];
+}
+function CallFunction(funcName, funcArgs){
+    return Functions[funcName].function(funcArgs);
 }
