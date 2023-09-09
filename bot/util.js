@@ -16,7 +16,8 @@ module.exports = {
     syncLeaderboardToFile,
     handleExit,
     getProcessStatus,
-    isProcessStored
+    isProcessStored,
+    filterProfiles
 }
 
 function getProfile(msg){
@@ -34,6 +35,24 @@ function getProfileById(id){
         }
     }
     return null;
+}
+function getProfileByName(name){
+    for(let profile of profiles["users"]){
+        if(profile.name == name){
+            return profile;
+        }
+    }
+    return null;
+}
+//should return a list array
+function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
+    return profiles.users.filter(profile =>{
+        let result = ids.length>0?ids.includes(profile.id):true; //
+        result ||= names.length>0?names.includes(profile.name):true; //
+        result &&= maxrep?profile.rep <= maxrep:true;
+        result &&= minrep?profile.rep >= minrep:true;
+        return result;
+    })
 }
 function syncProfilesToFile(isMaster){
     if(isMaster){ //I only want to write to file in master branch
