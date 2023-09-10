@@ -54,12 +54,10 @@ function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
         return result;
     })
 }
-function syncProfilesToFile(isMaster){
+function syncProfilesToFile(isMaster, overrideProfiles){
     if(isMaster){ //I only want to write to file in master branch
-        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"), function (err) {
-            if (err)console.log(err);
-            else console.log("JSON saved to " + profilesPath);
-        });
+        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"));
+        console.log("JSON saved to " + profilesPath);
     }
     else console.log("Dev Mode is currently active. Profile not synced to file");
 }
