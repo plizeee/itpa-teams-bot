@@ -48,7 +48,7 @@ function getProfileByName(name){
 function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
     return profiles.users.filter(profile =>{
         let result = ids.length?ids.includes(profile.id):true; //
-        result &&= names.length?names.includes(profile.name):true; //
+        result &&= names.length?names.includes(profile.name.toLowerCase()):true; //
         result &&= maxrep?profile.rep <= maxrep:true;
         result &&= minrep?profile.rep >= minrep:true;
         return result;

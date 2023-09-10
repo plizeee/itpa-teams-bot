@@ -15,6 +15,5 @@ function GetTriggerFunctions(trigger) {
     else return [];
 }
 function CallFunction(funcName, funcArgs){
-    console.log(`function called: ${funcName} (${funcArgs})`);
     return JSON.stringify(Functions[funcName].function(funcArgs));
 }

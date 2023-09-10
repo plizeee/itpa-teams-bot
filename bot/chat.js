@@ -427,8 +427,6 @@ function chatCommand(msg,isUserAuthorized = true,trigger={model:"gpt-3.5-turbo-1
     if(!isUserAuthorized){
         return;
     }
-
-    console.log("Model: " + model);
     const instructions = prompt + ". The date is " + date + ".";
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
@@ -527,9 +525,12 @@ function stripNameFromResponse(response){
 }
 async function resolveFunctionCall(completion,messages,functions){
     let completionMessage = completion.choices[0].message
-    let functionName = completionMessage.function_call.name
-    const functionArgs = JSON.parse(completionMessage.function_call.arguments);
+    const functionName = completionMessage.function_call.name
+    let functionArgs = completionMessage.function_call.arguments;
+    console.log(`function called: ${functionName} (${functionArgs})`);
+    functionArgs = JSON.parse(functionArgs);
     let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
+    console.log(`func response: ${functionResponse}`);
     messages.push(completionMessage);  // extend conversation with assistant's reply
     messages.push({
         "role": "function",

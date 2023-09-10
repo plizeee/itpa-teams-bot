@@ -10,13 +10,20 @@ const functions =  {
                 "type": "object",
                 "properties": {
                     "names":{
-                        "type": "string",
-                        "description": "list of names to include in search"
+                        "type": "array",
+                        "description": "list of lowercase names to include in search",
+                        "items": {
+                            "type": "string"
+                        }
+
                     },
                     "ids": {
-                        "type": "integer",
-                        "description": "list of ids to include in search"
-                    }, 
+                        "type": "array",
+                        "description": "list of ids to include in search",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
                     "maxrep":{
                         "type": "integer",
                         "description": "limits return to profiles with rep <= maxrep"
