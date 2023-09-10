@@ -1,10 +1,7 @@
-const SharedMethods = require("./util.js");
+const SharedMethods = require("../util.js");
 
-module.exports = {
-    functions,
-}
 
-let functions =  {
+const functions =  {
     "getProfiles":{
         metadata:{
             "name": "getProfiles",
@@ -17,24 +14,27 @@ let functions =  {
                         "description": "list of names to include in search"
                     },
                     "ids": {
-                        "type": "int",
+                        "type": "integer",
                         "description": "list of ids to include in search"
                     }, 
                     "maxrep":{
-                        "type": "int",
+                        "type": "integer",
                         "description": "limits return to profiles with rep <= maxrep"
                     },
                     "minrep":{
-                        "type": "int",
+                        "type": "integer",
                         "description": "limits return to profiles with rep >= minrep"
                     }
-                },
-                "required": []
+                }
             }
         },
         function: ({names=[], ids=[], maxrep=null, minrep=null}) => {
-            let full = SharedFunctions.filterProfiles(names, ids, maxrep, minrep);
+            let full = SharedMethods.filterProfiles(names, ids, maxrep, minrep);
             return full.map(profile =>{return{name:profile.name,id:profile.id,rep:profile.rep}});
         }
     }
+}
+
+module.exports = {
+    functions
 }

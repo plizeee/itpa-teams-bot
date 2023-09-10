@@ -47,8 +47,8 @@ function getProfileByName(name){
 //should return a list array
 function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
     return profiles.users.filter(profile =>{
-        let result = ids.length>0?ids.includes(profile.id):true; //
-        result ||= names.length>0?names.includes(profile.name):true; //
+        let result = ids.length?ids.includes(profile.id):true; //
+        result &&= names.length?names.includes(profile.name):true; //
         result &&= maxrep?profile.rep <= maxrep:true;
         result &&= minrep?profile.rep >= minrep:true;
         return result;
@@ -95,6 +95,7 @@ function handleExit(instanceID){
             exec(`kill ${pid}`, (error, stdout, stderr) => {
                 if (error) {
                   console.error(`Error while trying to kill process: ${error.message}`);
+                  process.exit(0);
                   //return;
                 }
               

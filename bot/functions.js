@@ -7,9 +7,14 @@ module.exports = {
 }
 
 function GetTriggerFunctions(trigger) {
-    if(trigger.hasOwnProperty("functions")) return Object.entries(Functions).filter(KeyVal => trigger.functions.includes(KeyVal[0])).map((KeyVal => KeyVal[1]));
+    if(trigger.hasOwnProperty("functions")) {
+        let functions = [...Object.entries(Functions).filter(KeyVal => trigger.functions.includes(KeyVal[0]))]
+        let funcmeta = functions.map(([key, value]) => value).map(({metadata}) => metadata);
+        return funcmeta
+    }
     else return [];
 }
 function CallFunction(funcName, funcArgs){
-    return Functions[funcName].function(funcArgs);
+    console.log(`function called: ${funcName} (${funcArgs})`);
+    return JSON.stringify(Functions[funcName].function(funcArgs));
 }
