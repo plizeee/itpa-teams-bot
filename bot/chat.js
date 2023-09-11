@@ -119,7 +119,7 @@ module.exports = {
                     break;
                 case 4:
                     console.log("calling threadChatCommand");
-                    threadChatCommand(msg, config.chatroomMessages??8, config.chatRoomCooldowns);
+                    chatroomChatCommand(msg, config.chatroomMessages??8, config.chatRoomCooldowns);
                     break;
                 default:
                     crossReferenceCommand(msg);
@@ -444,7 +444,7 @@ async function getThreadMessages(thread, maxNumOfMsgs){
     }
     return parsedMessages;
 }
-async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, noResponse: 60, normal: 80}){
+async function chatroomChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, noResponse: 60, normal: 80}){
     cooldowns.solo??= 15;
     cooldowns.noResponse??= 60;
     cooldowns.normal??= 80;
@@ -501,6 +501,7 @@ async function threadChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, no
         console.log("decided to not respond");
     }
     else {
+        if(!replyMessage || replyMessage == " ") replyMessage = InstanceData.status;
         let reply = replyTarget? {content: replyMessage, reply: {messageReference:replyTarget, failIfNotExists: false}} : replyMessage;
         await msg.channel.send(reply);
         InstanceData.CooldownSeconds = (msg.channel.memberCount > 2)? cooldowns.normal:cooldowns.solo;
