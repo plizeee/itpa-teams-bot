@@ -1,5 +1,5 @@
 // Import the openai package
-const { Configuration, OpenAIApi } = require("openai");
+const {OpenAI} = require("openai");
 const Discord = require('discord.js');
 
 const fs = require('fs'); //needed to read/write json files
@@ -7,6 +7,7 @@ const https = require('https');
 
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
+const GPTFunctionsModule = require("./functions.js");
 
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
@@ -28,11 +29,10 @@ const GPT_TURBO_16k_CHARACTER_LIMIT = 16000;
 
 require('dotenv').config();
 
-const configuration = new Configuration({
+
+const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
 });
-
-const openai = new OpenAIApi(configuration);
 
 const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the retry button from the message
 
@@ -82,7 +82,8 @@ let InstanceData = {
     set CooldownSeconds(seconds) {this.Cooldown = (1000*Number(seconds))},
     status: "",
     chatTokenStats: new TokenStatTemplate(),
-    chatroomTokenStats: new TokenStatTemplate()
+    chatroomTokenStats: new TokenStatTemplate(),
+    functionTokenStats: new TokenStatTemplate()
     
 }
 
@@ -298,12 +299,15 @@ async function getChatType(msg,client,chatrooms){
     //     }
     // }
 
-    chatType = {Trigger:trigger};
-
+    chatType = {Trigger:trigger}; //creating a chatType object with the intial property of Trigger
+    
+    //ternary operator block to asign chatType type property 
     chatType.Type = trigger? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
-    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4: false; //if it's a thread
+    (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4:  //if it's a thread
+    false;
+    
     return chatType;
 }
 
@@ -356,7 +360,7 @@ async function getReplyChain(msg, sysMsg){
                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
             }
             else{
-                thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.username + "): " + repliedMessage});
+                thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage});
             }
 
             repliedMessageRef = await repliedMessageRef.fetchReference()
@@ -364,7 +368,7 @@ async function getReplyChain(msg, sysMsg){
         }
     }
 
-    thread.push({"role": "user", "content": profile.name + " (" + msg.author.username + "): " + message});
+    thread.push({"role": "user", "content": profile.name + " (" + msg.author.id + "): " + message});
     thread.unshift({"role": "system", "content": sysMsg});
 
     return thread;
@@ -399,6 +403,7 @@ function syncStats(){
     if(!fs.existsSync(statPath)){console.log("Creating Stats File")}
     const chatStats = InstanceData.chatTokenStats;
     const chatroomStats = InstanceData.chatroomTokenStats;
+    const funcStats = InstanceData.functionTokenStats;
     const stats = {
         "avgChatPromptToken": chatStats.promptTokens.average(),
         "avgChatCompleteToken": chatStats.completionTokens.average(),
@@ -407,26 +412,28 @@ function syncStats(){
         "avgChatRoomPromptToken": chatroomStats.promptTokens.average(),
         "avgChatRoomCompleteToken": chatroomStats.completionTokens.average(),
         "avgChatRoomTotalTokens": chatroomStats.TotalAverage(),
-        "chatroomTokenRate": chatroomStats.TotalRate()
+        "chatroomTokenRate": chatroomStats.TotalRate(),
+        "avgFuncPromptToken": funcStats.promptTokens.average(),
+        "avgFuncCompleteToken": funcStats.completionTokens.average(),
+        "avgFuncTotalTokens": funcStats.TotalAverage(),
+        "funcTokenRate": funcStats.TotalRate()
     }
     fs.writeFileSync(statPath,JSON.stringify(stats, space="\r\n"));
 }
 
 //function used for server messages starting with '!chat' or direct messages that don't start with '!'
-function chatCommand(msg,isUserAuthorized = true,promptCommand={model:"gpt-3.5-turbo-16k-0613",prompt:triggers.commands.find(command => command.name == "Terry").prompt}){
-    const {model,prompt} = promptCommand;
+function chatCommand(msg,isUserAuthorized = true,trigger={model:"gpt-3.5-turbo-16k-0613",prompt:triggers.commands.find(command => command.name == "Terry").prompt}){
+    const {model,prompt} = trigger;
     if(!isUserAuthorized){
         return;
     }
-
-    console.log("Model: " + model);
     const instructions = prompt + ". The date is " + date + ".";
-
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
     sendPrompt({
         msg: msg, 
         instructions: instructions, 
         model: model,
+        functions: GPTFunctionsModule.GetTriggerFunctions(trigger)
     });
 }
 async function getThreadMessages(thread, maxNumOfMsgs){
@@ -469,13 +476,13 @@ async function chatroomChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, 
         msg.reply("Something went wrong. Please try again later.");
         return;
     }
-    const rawReply = completion.data.choices[0].message.content; 
+    const rawReply = completion.choices[0].message.content; 
     
     console.log("rawReply: " + rawReply);
 
     let replyMessage = stripNameFromResponse(rawReply);
-    let prompt_tokens = completion.data.usage.prompt_tokens;
-    let completion_tokens = completion.data.usage.completion_tokens;
+    let prompt_tokens = completion.usage.prompt_tokens;
+    let completion_tokens = completion.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
     InstanceData.chatroomTokenStats.storeData(prompt_tokens,completion_tokens);
     //discord has a 4000 character limit, so we need to cut the response if it's too long
@@ -517,13 +524,33 @@ function stripNameFromResponse(response){
     }
     return response;
 }
+async function resolveFunctionCall(completion,messages,functions){
+    let completionMessage = completion.choices[0].message
+    const functionName = completionMessage.function_call.name
+    let functionArgs = completionMessage.function_call.arguments;
+    console.log(`function called: ${functionName} (${functionArgs})`);
+    functionArgs = JSON.parse(functionArgs);
+    let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
+    console.log(`func response: ${functionResponse}`);
+    messages.push(completionMessage);  // extend conversation with assistant's reply
+    messages.push({
+        "role": "function",
+        "name": functionName,
+        "content": functionResponse,
+    });
+    let request = {
+        model: completion.model,
+        messages: messages
+    }
+    if(functions.length) request.functions = functions;
+    const secondResponse = await openai.chat.completions.create(request);  // get a new response from GPT where it can see the function response
+    return secondResponse;
+}
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function sendPrompt({msg, instructions, model}){
+async function  sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
     let fullPrompt = await getReplyChain(msg, instructions);
-
-    console.log(fullPrompt);
     let maxTokens;
 
     switch(model){
@@ -531,13 +558,15 @@ async function sendPrompt({msg, instructions, model}){
         case "gpt-3.5-turbo-16k-0613": maxTokens = 8000; break;
         default: maxTokens = 2000; break;
     }
-
-    const completion = await openai.createChatCompletion({
+    let request = {
         model: model,
         messages: fullPrompt,
-        max_tokens: maxTokens, //TODO make this a config option
+        max_tokens: maxTokens //TODO make this a config option
         //TODO look into adding 'stream' so you can see a response as it's being generated
-    })
+    }
+    if(functions.length) request.functions = functions;
+    console.log(request);
+    let completion = await openai.chat.completions.create(request)
     .catch(error => { //catch error 400 for bad request
         console.log(error);
     })
@@ -551,15 +580,23 @@ async function sendPrompt({msg, instructions, model}){
         msg.reply("Something went wrong. Please try again later.");
         return;
     }
-
-    const rawReply = completion.data.choices[0].message.content;   //storing the unmodified output of the ai generated response
+    let completionMessage = completion.choices[0].message
+    while(completionMessage.function_call){
+        let prompt_tokens = completion.usage.prompt_tokens;
+        let completion_tokens = completion.usage.completion_tokens;
+        InstanceData.functionTokenStats.storeData(prompt_tokens,completion_tokens);
+        completion = await resolveFunctionCall(completion, fullPrompt, functions);
+        completionMessage = completion.choices[0].message;
+    }
+    //might be a good idea to turn reply into seperate method
+    const rawReply = completionMessage.content;   //storing the unmodified output of the ai generated response
 
     let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified 
 
     console.log("rawReply: " + rawReply);
 
-    let prompt_tokens = completion.data.usage.prompt_tokens;
-    let completion_tokens = completion.data.usage.completion_tokens;
+    let prompt_tokens = completion.usage.prompt_tokens;
+    let completion_tokens = completion.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
     InstanceData.chatTokenStats.storeData(prompt_tokens,completion_tokens);
 
@@ -573,7 +610,6 @@ async function sendPrompt({msg, instructions, model}){
         generateReactions(msg, replyMessage);
     }
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
-    
     
 }
 

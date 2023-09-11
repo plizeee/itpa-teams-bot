@@ -16,7 +16,8 @@ module.exports = {
     syncLeaderboardToFile,
     handleExit,
     getProcessStatus,
-    isProcessStored
+    isProcessStored,
+    filterProfiles
 }
 
 function getProfile(msg){
@@ -35,12 +36,28 @@ function getProfileById(id){
     }
     return null;
 }
-function syncProfilesToFile(isMaster){
+function getProfileByName(name){
+    for(let profile of profiles["users"]){
+        if(profile.name == name){
+            return profile;
+        }
+    }
+    return null;
+}
+//should return a list array
+function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
+    return profiles.users.filter(profile =>{
+        let result = ids.length?ids.includes(profile.id):true; //
+        result &&= names.length?names.includes(profile.name.toLowerCase()):true; //
+        result &&= maxrep?profile.rep <= maxrep:true;
+        result &&= minrep?profile.rep >= minrep:true;
+        return result;
+    })
+}
+function syncProfilesToFile(isMaster, overrideProfiles){
     if(isMaster){ //I only want to write to file in master branch
-        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"), function (err) {
-            if (err)console.log(err);
-            else console.log("JSON saved to " + profilesPath);
-        });
+        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"));
+        console.log("JSON saved to " + profilesPath);
     }
     else console.log("Dev Mode is currently active. Profile not synced to file");
 }
@@ -76,6 +93,7 @@ function handleExit(instanceID){
             exec(`kill ${pid}`, (error, stdout, stderr) => {
                 if (error) {
                   console.error(`Error while trying to kill process: ${error.message}`);
+                  process.exit(0);
                   //return;
                 }
               

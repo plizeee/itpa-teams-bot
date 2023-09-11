@@ -1,10 +1,9 @@
 const fs = require('fs');
 
-const { Configuration, OpenAIApi } = require("openai");
-const configuration = new Configuration({
+const {OpenAI} = require("openai");
+const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
 });
-const openai = new OpenAIApi(configuration);
 
 const SharedFunctions = require("./util.js");
 const gptSecretsPath = './bot/gptSecrets.json';
