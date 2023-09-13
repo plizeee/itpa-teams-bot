@@ -5,6 +5,17 @@ let activeCommandIndex = null;
 let promptCommands = {
     commands: []
 };
+//TODO check if gpt version supports functions disable if it doesn't
+$(document).ready(function() {
+    let select2Props = {ajax:{url: '/functions-grouped', dataType: 'json',}}
+    select2Props.ajax.data = function (params) {
+        var query = {search: params.term}
+        if(isEditMode) query.selected = promptCommands.commands[activeCommandIndex].functions;
+        return query;
+    }
+    $('#function-select').select2(select2Props); 
+});
+
 
 async function savePrompts() {
     try {
@@ -54,6 +65,7 @@ async function savePrompts() {
     const promptPermissionInput = document.getElementById('prompt-permission-level-input');
     const promptModelInput = document.getElementById('prompt-model-input');
     const commandPromptInput = document.getElementById('command-prompt-input');
+    const promptFunctionSelect = $("#function-select");
 
 addCommandBtn.addEventListener('click', () => {
     isEditMode = false;
@@ -111,7 +123,6 @@ function deleteCommand() {
     commandForm.reset(); 
 }
 
-
 function saveCommand() {
     const promptName = document.getElementById('prompt-name-input').value;
     const promptCommand = document.getElementById('prompt-command-input').value;
@@ -119,12 +130,13 @@ function saveCommand() {
     const promptPermission = document.getElementById('prompt-permission-level-input').value;
     const promptModel = document.getElementById('prompt-model-input').value;
     const commandPrompt = document.getElementById('command-prompt-input').value;
-
+    const functions = $("#function-select").select2('data').map(obj => obj.text);
+    let data = { name: promptName, command: promptCommand, description: promptDescription, permission: promptPermission, model: promptModel, prompt: commandPrompt,functions:functions };
     if (isEditMode) {
-        updateCommand(activeCommandIndex, { name: promptName, command: promptCommand, description: promptDescription, permission: promptPermission, model: promptModel, prompt: commandPrompt });
+        updateCommand(activeCommandIndex, data);
     } else {
         //addCommand({ title: commandTitle, name: commandName, description: commandDescription, permissionLevel: commandPermissionLevel, commandModel: commandModel, prompt: commandPrompt });
-        addCommand({ name: promptName, command: promptCommand, description: promptDescription, permission: promptPermission, model: promptModel, prompt: commandPrompt });
+        addCommand(data);
     }
 
     renderCommandList();

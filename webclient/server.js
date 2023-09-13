@@ -13,7 +13,7 @@ const os = require('os');
 const networkInterfaces = os.networkInterfaces();
 
 const SharedFunctions = require(path.join(__dirname, '../bot', 'util.js'));
-
+const GPTFunctions = require(path.join(__dirname, '../bot', 'functions.js'));
 console.log(networkInterfaces);
 
 //get local ip address
@@ -84,6 +84,12 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.json());
+
+app.get("/functions-grouped", (req,res)=>{
+  let data = {results:GPTFunctions.GroupedFunctionNames(req.query.q)};
+  console.log(req.query);
+  res.send(JSON.stringify(data));
+})
 
 // GitHub OAuth routes
 app.get('/auth/github', (req, res, next) => {

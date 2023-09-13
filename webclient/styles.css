@@ -2,6 +2,13 @@
 
 /* Experimental styles start*/
 
+#functions-select{
+    width:100%;
+}
+.select2-selection__choice__display {
+    padding-left: 0.5em !important;
+}
+
   #container {
     width: 100%;
     margin: 0 auto;
@@ -166,7 +173,7 @@ main {
     padding: 2rem;
 }
 
-button {
+button:not(.select2-selection__choice__remove) {
     margin: 5px;
 }
 
@@ -422,7 +429,7 @@ select {
 }
 
 input[type="submit"],
-button[type="button"] {
+button[type="button"]:not(.select2-selection__choice__remove) {
     width: auto;
     background-color: #4CAF50;
     color: white;
