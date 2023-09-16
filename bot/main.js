@@ -165,6 +165,8 @@ function isAdmin(id){
     return false;
 }
 
+
+
 //executes this as soon as it starts
 client.on('ready', () => {
     console.log('main.js is online! instance id: ' + instanceID);
@@ -173,11 +175,12 @@ client.on('ready', () => {
 //executes every time someone sends a message
 client.on("messageCreate", async msg => {
     config = JSON.parse(fs.readFileSync(configPath)) //read the config file
-    profiles = JSON.parse(fs.readFileSync(profilePath)) 
+    profiles = JSON.parse(fs.readFileSync(profilePath))
     devMode = config.devMode; //this will be evaluated every time a message is sent
     admins = config.admins; //this will be evaluated every time a message is sent
     const isAuthorized = isUserAuthorized(msg);
-    let profile = SharedFunctions.getProfileById(msg.author.id);
+    let profile = SharedFunctions.getProfile(msg); //changed this from getProfileById because we need the username if the profile doesn't exist
+
     if (msg.system || msg.author.bot) return;
     // checking if the user is part of the current instance
     // bypassing admin check if it's instance command. not a great solution... could just 

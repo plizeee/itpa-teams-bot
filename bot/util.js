@@ -5,11 +5,16 @@ const profilesPath = './bot/profiles.json';
 const gptSecretsPath = './bot/gptSecrets.json';
 const instanceDataPath = './bot/instanceData.json';
 const coursesPath = './bot/courses.json';
+const configPath = './bot/config.json';
 
 const profiles = JSON.parse(fs.readFileSync(profilesPath));
 const gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath));
 let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 const courses = JSON.parse(fs.readFileSync(coursesPath));
+const config = JSON.parse(fs.readFileSync(configPath));
+
+const isMaster = config.isMaster; //only check this on launch
+
 
 module.exports = {
     getProfile,
@@ -29,16 +34,53 @@ function getProfile(msg){
             return profile;
         }
     }
+
+    if(isNewProfile(msg.author.id)){
+        createProfile(msg);
+        return getProfile(msg);
+    }
+
     return null;
 }
+
 function getProfileById(id){
     for(let profile of profiles["users"]){
         if(profile.id == id){
             return profile;
         }
     }
+    
     return null;
 }
+
+function isNewProfile(id){
+    for(let i = 0; i < profiles.users.length; i++){
+        if(id == profiles.users[i].id){
+            return false;
+        }
+    }
+    return true;
+}
+
+function createProfile(msg){
+    //create a new profile
+    profiles.users.push({
+        "id": parseInt(msg.author.id),
+        "name": msg.author.username,
+        "rep": 0,
+        "teams": [{
+            "linkMessages": [],
+            "lateMessages": [],
+            "earlyMessages": []
+        }],
+        "timestamps": [],
+        "instanceId": 0,
+        "gpt4Timestamps": []
+    });
+
+    syncProfilesToFile(isMaster);
+}
+
 function getProfileByName(name){
     for(let profile of profiles["users"]){
         if(profile.name == name){
