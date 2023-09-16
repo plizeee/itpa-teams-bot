@@ -4,10 +4,12 @@ const { exec } = require('child_process');
 const profilesPath = './bot/profiles.json';
 const gptSecretsPath = './bot/gptSecrets.json';
 const instanceDataPath = './bot/instanceData.json';
+const coursesPath = './bot/courses.json';
 
 const profiles = JSON.parse(fs.readFileSync(profilesPath));
 const gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath));
 let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
+const courses = JSON.parse(fs.readFileSync(coursesPath));
 
 module.exports = {
     getProfile,
@@ -17,7 +19,8 @@ module.exports = {
     handleExit,
     getProcessStatus,
     isProcessStored,
-    filterProfiles
+    filterProfiles,
+    filterCourses,
 }
 
 function getProfile(msg){
@@ -54,6 +57,21 @@ function filterProfiles(names=[], ids=[], maxrep=null, minrep=null){
         return result;
     })
 }
+
+function filterCourses(names=[], code=[], days=[], startTimes=[], endTimes=[], isOnline=false, link=""){
+    return courses.courses.filter(course =>{
+        let result = names.length ? names.includes(course.name.toLowerCase()) : true;
+        result &&= code.length ? code.includes(course.code.toLowerCase()) : true;
+        result &&= days.length ? days.some(day => course.days.map(d => d.toLowerCase()).includes(day.toLowerCase())) : true;
+        result &&= startTimes.length ? startTimes.includes(course.startTimes) : true;
+        result &&= endTimes.length ? endTimes.includes(course.endTimes) : true;
+        result &&= isOnline ? course.isOnline === isOnline : true;
+        result &&= link ? course.link === link : true;
+        return result;
+    })
+}
+
+
 function syncProfilesToFile(isMaster, overrideProfiles){
     if(isMaster){ //I only want to write to file in master branch
         fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"));

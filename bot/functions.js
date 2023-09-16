@@ -1,8 +1,10 @@
 //this file is for gpt function related methods
 
 const ProfileFunctions = require("./functions/ProfileFunctions.js").functions;
-const AllFunctions = {...ProfileFunctions};// use , and spread ... to combine function lists
-const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions)};// this is for the website selector the key is what the functions will be grouped under.
+const CourseFunctions = require("./functions/CourseFunctions.js").functions;
+
+const AllFunctions = {...ProfileFunctions, ...CourseFunctions};// use , and spread ... to combine function lists
+const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions), "Course Functions":Object.keys(CourseFunctions)};// this is for the website selector the key is what the functions will be grouped under.
 
 function GetTriggerFunctions(trigger) {
     if(trigger.hasOwnProperty("functions")) {
