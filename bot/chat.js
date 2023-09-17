@@ -15,6 +15,7 @@ const promptPath = './bot/prompts.json';
 const promptCommandPath = './bot/promptCommands.json';
 const statPath = './bot/stats.json';
 
+
 const profiles = JSON.parse(fs.readFileSync(profilePath)); //creating a snapshot of the contents of profiles.json
 const prompts = JSON.parse(fs.readFileSync(promptPath)); //creating a snapshot of the contents of prompts.json
 let triggers = JSON.parse(fs.readFileSync(promptCommandPath)); //creating a snapshot of the contents of promptCommands.json
@@ -92,7 +93,7 @@ module.exports = {
         triggers = JSON.parse(fs.readFileSync(promptCommandPath));
         let found = false;
         date = new Date();
-        isMaster = isMasterBranch;
+        isMaster = isMasterBranch; //why the rename? just rename the argument
         config =  config_; //read the config file
         GPT4_REQUEST_LIMIT = config.gpt4ReqLimit;
         GPT4_REQUEST_COOLDOWN = config.gpt4ReqCooldown * 60000; //convert minutes to milliseconds
@@ -307,7 +308,7 @@ async function getChatType(msg,client,chatrooms){
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
     (chatrooms && !msg.reference && await isTerryThread(msg,client.user) && isOffChatCooldown(msg, InstanceData.Cooldown))? 4:  //if it's a thread
     false;
-    
+
     return chatType;
 }
 

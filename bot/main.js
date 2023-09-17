@@ -90,6 +90,7 @@ const chatCommands = require('./chat.js');
 const adminCommands = require('./admin.js');
 const secretCommands = require('./gptSecrets.js');
 const SharedFunctions = require("./util.js");
+const UserCommands = require("./UserCommands.js");
 const { handle } = require('express/lib/application.js');
 
 //check instanceData for an instance that has the same "instanceID"
@@ -216,6 +217,10 @@ client.on("messageCreate", async msg => {
         }
         else if (await chatCommands.checkChatCommand(msg, isMaster,client, config)) {
             console.log("chat command found");
+            return;
+        }
+        else if (await UserCommands.checkUserCommand(msg)){
+            console.log("user command found");
             return;
         }
         
