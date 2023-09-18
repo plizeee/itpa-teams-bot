@@ -103,8 +103,7 @@ module.exports = {
         let fileContent = await getFileString(msg);
 
         msg.content = await addFileToMsg(msg, fileContent);
-        console.log("msg.content: " + msg.content);
-
+        // console.log("msg.content: " + msg.content);
 
         profileCreation(msg);
         let chatType = await getChatType(msg,client,config.chatrooms)
@@ -138,7 +137,7 @@ function getFileString(msg){
             let attachment = msg.attachments.first();
 
             // check if the attachment is a .txt file
-            if (attachment.name.endsWith('.txt')) {
+            if (attachment.name.endsWith('.txt') || attachment.name.endsWith('.log')) {
                 https.get(attachment.url, (res) => {
                     let data = '';
 
@@ -166,6 +165,7 @@ async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
 
     //characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
 
+    let characterLimit;
     switch(model){
         case "gpt-4":
             characterLimit = GPT4_CHARACTER_LIMIT;
@@ -185,6 +185,9 @@ async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
     
     let truncateWarningMessage = "\n\n**Message was too long and was truncated**```";
     let maxMessageLength = characterLimit - truncateWarningMessage.length;
+
+    console.log("output.length: " + output.length + " maxMessageLength: " + maxMessageLength);
+
     if(output.length > maxMessageLength) {
         output = output.substring(0, maxMessageLength);
         output += truncateWarningMessage;
@@ -331,7 +334,7 @@ async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
     if(msg.reference){
         let repliedMessage = await msg.fetchReference();
-        console.log("!!!!!REPLIEDMESSAGE: " + repliedMessage.content + "!!!!!!!!!!");
+        // console.log("!!!!!REPLIEDMESSAGE: " + repliedMessage.content + "!!!!!!!!!!");
         return repliedMessage.author.bot;
     }
     return false;
@@ -603,6 +606,7 @@ async function  sendPrompt({msg, instructions, model, functions}){
 
     //discord has a 2000 character limit, so we need to cut the response if it's too long
     if(replyMessage.length > 2000){
+        console.log("Text was too long, sending as a file");
         sendTextFile(msg, replyMessage);
     }
     else{
@@ -614,6 +618,8 @@ async function  sendPrompt({msg, instructions, model, functions}){
     
 }
 
+
+//TODO fix issue causing word wrapping to wrap at weird lengths
 async function sendTextFile(msg, replyMessage){
     let filename = "reply.txt"; //TODO maybe do something with this
     //create a .txt file and send it as an attachment

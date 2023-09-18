@@ -10,46 +10,46 @@ const functions =  {
                 "properties": {
                     "names":{
                         "type": "array",
-                        "description": "list of class names to include in search",
+                        "description": "List of class names to include in search",
                         "items": {
                             "type": "string"
                         }
                     },
                     "code":{
                         "type": "array",
-                        "description": "list of class codes to include in search",
+                        "description": "List of class codes to include in search",
                         "items": {
                             "type": "string"
                         }
                     },
                     "days":{
                         "type": "array",
-                        "description": "list of days of the week to include in search",
+                        "description": "List of days of the week to include in search",
                         "items": {
                             "type": "string"
                         }
                     },  
                     "startTimes":{
                         "type": "array",
-                        "description": "list of start times to include in search",
+                        "description": "List of start times to include in search. Times share the same index as their respective day of the week in the days array",
                         "items": {
                             "type": "integer"
                         }
                     },
                     "endTimes":{
                         "type": "array",
-                        "description": "list of end times to include in search",
+                        "description": "List of end times to include in search. Times share the same index as their respective day of the week in the days array",
                         "items": {
                             "type": "integer"
                         }
                     },
                     "isOnline":{
                         "type": "boolean",
-                        "description": "whether or not to include online classes"
+                        "description": "List of classes that are online. Defaults to false (in-person). Some classes are online some days and in-person others."
                     },
                     "link":{
                         "type": "string",
-                        "description": "link to Microsot Teams meeting"
+                        "description": "Link to Microsot Teams meeting. Some classes are online some days and in-person others."
                     },
                 }
             }
