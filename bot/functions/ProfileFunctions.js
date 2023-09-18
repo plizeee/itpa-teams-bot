@@ -37,7 +37,11 @@ const functions =  {
         },
         function: ({names=[], ids=[], maxrep=null, minrep=null}) => {
             let full = SharedMethods.filterProfiles(names, ids, maxrep, minrep);
-            return full.map(profile =>{return{name:profile.name,id:profile.id,rep:profile.rep}});
+            return full.map(profile =>{
+                let obj = {name:profile.name,id:profile.id,rep:profile.rep};
+                if (profile.hasOwnProperty('note')) obj.noteAboutUser = profile.note;
+                return obj;
+            });
         }
     },
     "changeRep":{
