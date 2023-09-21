@@ -8,6 +8,7 @@ const https = require('https');
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
 const GPTFunctionsModule = require("./functions.js");
+const {FunctionResult} = require("./functionResultClass.js")
 
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
@@ -528,13 +529,22 @@ function stripNameFromResponse(response){
     }
     return response;
 }
-async function resolveFunctionCall(completion,messages,functions){
+async function resolveFunctionCall(completion,messages,functions=[]){
     let completionMessage = completion.choices[0].message
     const functionName = completionMessage.function_call.name
     let functionArgs = completionMessage.function_call.arguments;
     console.log(`function called: ${functionName} (${functionArgs})`);
     functionArgs = JSON.parse(functionArgs);
     let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
+    if(functionResponse instanceof FunctionResult) {
+        if(functionResponse.overide) functions = functionResponse.comboFunctions;
+        else{
+            functions = functions.filter(func=>!functionResponse.disableFunctions.includes(func.name));
+            functions.push(...GPTFunctionsModule.GetFunctionsMetadata(functionResponse.comboFunctions));
+        }
+        functionResponse = JSON.stringify(functionResponse.returnValue);
+    }
+    else {functionResponse = JSON.stringify(functionResponse);}
     console.log(`func response: ${functionResponse}`);
     messages.push(completionMessage);  // extend conversation with assistant's reply
     messages.push({

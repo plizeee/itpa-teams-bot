@@ -1,5 +1,5 @@
 const SharedMethods = require("../util.js");
-
+const {FunctionResult} = require("../functionResultClass.js");
 
 const functions =  {
     "getProfiles":{
@@ -40,7 +40,7 @@ const functions =  {
             return full.map(profile =>{
                 let obj = {name:profile.name,id:profile.id,rep:profile.rep};
                 if (profile.hasOwnProperty('note')) obj.noteAboutUser = profile.note;
-                return obj;
+                return new FunctionResult({returnValue:obj,comboFunctions:["editNote"],override:false});
             });
         }
     },
@@ -66,7 +66,7 @@ const functions =  {
                     },
                     "value":{
                         "type": "integer",
-                        "description": "the value to change the rep by"
+                        "description": "the value to change the rep by, + and - allowed"
                     }
                 },
                 "required": ["ids","mode","value"]

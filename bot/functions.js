@@ -7,15 +7,21 @@ const AllFunctions = {...ProfileFunctions, ...CourseFunctions};// use , and spre
 const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions), "Course Functions":Object.keys(CourseFunctions)};// this is for the website selector the key is what the functions will be grouped under.
 
 function GetTriggerFunctions(trigger) {
-    if(trigger.hasOwnProperty("functions")) {
-        let functions = [...Object.entries(AllFunctions).filter(KeyVal => trigger.functions.includes(KeyVal[0]))]
-        let funcmeta = functions.map(([key, value]) => value).map(({metadata}) => metadata);
-        return funcmeta
-    }
+    if(trigger.hasOwnProperty("functions")) {return GetFunctionsMetadata(trigger.functions);}
     else return [];
 }
+/**
+ * a function that retievse the metadata about GPTfunctions
+ * @param {string[]} list a list of function names
+ * @returns a list of objects containing metadata of function for use when making a request to GPT
+ */
+function GetFunctionsMetadata(list = []){
+    let functions = [...Object.entries(AllFunctions).filter(KeyVal => list.includes(KeyVal[0]))]
+    let funcmeta = functions.map(([key, value]) => value).map(({metadata}) => metadata);
+    return funcmeta
+}
 function CallFunction(funcName, funcArgs){
-    return JSON.stringify(AllFunctions[funcName].function(funcArgs));
+    return  AllFunctions[funcName].function(funcArgs);
 }
 let AllFunctionNames = () => Object.keys(AllFunctions);
 
@@ -36,5 +42,5 @@ function GroupedFunctionNames(filter,selected=[]) {
 }
 
 module.exports = {
-    GetTriggerFunctions, CallFunction, AllFunctionNames, GroupedFunctionNames
+    GetTriggerFunctions, CallFunction, AllFunctionNames, GroupedFunctionNames,GetFunctionsMetadata
 }
