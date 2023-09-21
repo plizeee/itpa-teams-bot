@@ -433,7 +433,7 @@ function chatCommand(msg,isUserAuthorized = true,trigger={model:"gpt-3.5-turbo-1
     }
     const instructions = prompt + ". The date is " + date + ".";
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
-    sendPrompt({
+   sendPrompt({
         msg: msg, 
         instructions: instructions, 
         model: model,
@@ -534,7 +534,7 @@ async function resolveFunctionCall(completion,messages,functions){
     let functionArgs = completionMessage.function_call.arguments;
     console.log(`function called: ${functionName} (${functionArgs})`);
     functionArgs = JSON.parse(functionArgs);
-    let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
+    let functionResponse = await GPTFunctionsModule.CallFunction(functionName,functionArgs);
     console.log(`func response: ${functionResponse}`);
     messages.push(completionMessage);  // extend conversation with assistant's reply
     messages.push({
@@ -552,7 +552,7 @@ async function resolveFunctionCall(completion,messages,functions){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function  sendPrompt({msg, instructions, model, functions}){
+async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
     let fullPrompt = await getReplyChain(msg, instructions);
     let maxTokens;
