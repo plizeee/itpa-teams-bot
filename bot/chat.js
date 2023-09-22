@@ -341,7 +341,6 @@ async function isReferencingBot(msg){
     return false;
 }
 
-// Maybe we should rename this type of thread to chain, to distungiush from discord threads. -will
 //function that returns a thread from a chain of messages
 async function getReplyChain(msg, sysMsg){
 
@@ -537,6 +536,7 @@ async function resolveFunctionCall(completion,messages,functions=[]){
     functionArgs = JSON.parse(functionArgs);
     let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
     if(functionResponse instanceof FunctionResult) {
+        console.log("function is complex return");
         if(functionResponse.overide) functions = functionResponse.comboFunctions;
         else{
             functions = functions.filter(func=>!functionResponse.disableFunctions.includes(func.name));

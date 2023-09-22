@@ -114,13 +114,14 @@ function filterCourses(names=[], code=[], days=[], startTimes=[], endTimes=[], i
 }
 
 
-function syncProfilesToFile(isMaster){
+function syncProfilesToFile(){
     if(isMaster){ //I only want to write to file in master branch
         fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, "\t"));
         console.log("JSON saved to " + profilesPath);
         return true;
     }
     else console.log("Dev Mode is currently active. Profile not synced to file");
+    return false;
 }
 
 function syncLeaderboardToFile(isMaster, val = gptSecrets){

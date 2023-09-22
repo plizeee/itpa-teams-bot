@@ -37,11 +37,15 @@ const functions =  {
         },
         function: ({names=[], ids=[], maxrep=null, minrep=null}) => {
             let full = SharedMethods.filterProfiles(names, ids, maxrep, minrep);
-            return full.map(profile =>{
+            if (full.length == 1){
+                let profile = full[0]
                 let obj = {name:profile.name,id:profile.id,rep:profile.rep};
+                let comboFunctions = []
                 if (profile.hasOwnProperty('note')) obj.noteAboutUser = profile.note;
-                return new FunctionResult({returnValue:obj,comboFunctions:["editNote"],override:false});
-            });
+                if (profile.editableNote??false) comboFunctions.push("editNote");
+                return new FunctionResult({returnValue:obj,comboFunctions:comboFunctions,override:false});
+            }
+            else return full.map(profile =>{return {name:profile.name,id:profile.id,rep:profile.rep};});
         }
     },
     "changeRep":{
@@ -81,7 +85,46 @@ const functions =  {
             console.log(full);
             return full.map(profile =>{return{name:profile.name,id:profile.id,rep:profile.rep}});
         }
-    }
+    },
+    "editNote":{
+        metadata:{
+            "name": "editNote",
+            "description": "edits the user's profile note, keep the note to under 500 characters total",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "description": "list of ids to make the change to",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "value":{
+                        "type": "string",
+                        "description": "the note about the user you would like to add or override with"
+                    },
+                    "override":{
+                        "type": "boolean",
+                        "description": "will completely replace the user's note"
+                    }
+                }
+            }
+        },
+        function: ({ids=[],value="",override=false}) => {
+            let full = SharedMethods.filterProfiles(undefined, ids);
+            let returnMessage = "";
+            let changeMade = false;
+            if(value.length>500) {value = value.slice(0,500); returnMessage = "Value Trimmed, ";}
+            if(override) full.forEach(profile => {profile.note = value; changeMade = true; return profile});
+            else full.forEach(profile => {
+                if((profile.note?.length + value.length) > 500) returnMessage = "Addition(value) to long, ";
+                else {profile.note += value; changeMade = true;}  
+            });
+            returnMessage += changeMade&&SharedMethods.syncProfilesToFile()? "Edited Note Succesfully": "Failed to save changes";
+            return returnMessage;
+        }
+    },
 }
 
 module.exports = {

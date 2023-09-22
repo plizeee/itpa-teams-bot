@@ -3,7 +3,7 @@
 const ProfileFunctions = require("./functions/ProfileFunctions.js").functions;
 const CourseFunctions = require("./functions/CourseFunctions.js").functions;
 
-const AllFunctions = {...ProfileFunctions, ...CourseFunctions};// use , and spread ... to combine function lists
+const AllFunctions = {...ProfileFunctions, ...CourseFunctions};// use , and spread ... to combine function lists 
 const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions), "Course Functions":Object.keys(CourseFunctions)};// this is for the website selector the key is what the functions will be grouped under.
 
 function GetTriggerFunctions(trigger) {
@@ -21,7 +21,7 @@ function GetFunctionsMetadata(list = []){
     return funcmeta
 }
 function CallFunction(funcName, funcArgs){
-    return  AllFunctions[funcName].function(funcArgs);
+    return AllFunctions[funcName].function(funcArgs);
 }
 let AllFunctionNames = () => Object.keys(AllFunctions);
 
