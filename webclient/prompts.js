@@ -11,9 +11,19 @@ $(document).ready(function() {
     select2Props.ajax.data = function (params) {
         var query = {search: params.term}
         if(isEditMode) query.selected = promptCommands.commands[activeCommandIndex].functions;
+        console.log(query);
         return query;
     }
-    $('#function-select').select2(select2Props); 
+    $('#function-select').select2(select2Props);
+    
+    // $.ajax({
+    //     type: 'GET',
+    //     url: '/functions-selected'
+    // }).then(function (data) {
+    //     // create the option and append to Select2
+    //     var option = new Option(data.full_name, data.id, true, true);
+    //     funcselect.append(option).trigger('change');      
+    // });
 });
 
 
@@ -92,6 +102,18 @@ function openModal() {
     if (isEditMode) {
         deleteCommandBtn.classList.remove('hidden');
         deleteCommandBtn.setAttribute('data-index', activeCommandIndex);
+        let funcselect = $("#function-select");
+        funcselect.val(null).trigger('change');
+        promptCommands.commands[activeCommandIndex].functions?.forEach(func =>{
+            if (funcselect.find("option[value='" + func + "']").length) {
+                funcselect.val(func).trigger('change');
+            } else { 
+                // Create a DOM Option and pre-select by default
+                var newOption = new Option(func, func, true, true);
+                // Append it to the select
+                funcselect.append(newOption).trigger('change');
+            }
+        })
     } else {
         deleteCommandBtn.classList.add('hidden');
     }

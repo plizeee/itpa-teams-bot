@@ -27,12 +27,11 @@ let AllFunctionNames = () => Object.keys(AllFunctions);
 
 function GroupedFunctionNames(filter,selected=[]) {
     let arr = []
-    let id = 1
     for (const group of Object.entries(GroupedFunctions)) {
         arr.push({text:group[0], children:group[1].reduce(function(filtered, func) {
             if (func.startsWith(filter) ||!filter) {
                 isSelected = selected?.includes(func)??false;
-                let someNewValue = { id: id++, text:func, selected:isSelected};
+                let someNewValue = { id: func, text:func, selected:isSelected};
                 filtered.push(someNewValue);
             }
             return filtered;
