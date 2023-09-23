@@ -70,8 +70,9 @@ if (!fs.existsSync(instanceDataPath)) { //if the file doesn't exist, create it
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
 let profiles = JSON.parse(fs.readFileSync(profilePath))
 
+const masterInstanceId = config.masterInstanceId || 0;
 // const isMaster = config.isMaster; //only check this on launch
-const isMaster = config.instanceId == config.masterInstanceId; //only check this on launch
+const isMaster = config.instanceId == masterInstanceId; //only check this on launch
 
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
