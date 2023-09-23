@@ -1,62 +1,58 @@
-const puppeteer = require('puppeteer');
-const read = require('node-readability');
-
 //TODO figure out whehter node-readability is necessary
 //or if it's possible to get the same quality of results with just puppeteer
 
+const puppeteer = require('puppeteer');
+const read = require('node-readability');
+const fs = require('fs'); //needed to read/write json files
+
+//read config.json
+const config = JSON.parse(fs.readFileSync('./bot/config.json'));
+
+//default to undefined if chromiumPath doesn't exist in config.json
+const chromiumPath = config.chromiumPath || undefined;
 
 //Get the first page of google search results for a query
 //returns an array of objects with title and url
 //TODO add description (possibly from meta tag)
 async function getSearchResults(query) {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto('https://www.google.com/search?q=' + query);
+  console.log("Getting search results for query...")
+  // const browser = await puppeteer.launch();
+  try {
+    const browser = await launchPuppeteer();
+    console.log("puppeteer launched");
+    const page = await browser.newPage();
+    console.log("new page created");
+    await page.goto('https://www.google.com/search?q=' + query);
+    console.log("page loaded");
 
-  const links = await page.evaluate(() => {
-    const results = [];
-    for (const block of document.querySelectorAll('div.g')) {
-      const titleElement = block.querySelector('h3');
-      const urlElement = block.querySelector('a');
-      if (titleElement && urlElement) {
-        results.push({
-          title: titleElement.innerText,
-          url: urlElement.href
-        });
+    console.log("Getting links from search results...")
+    const links = await page.evaluate(() => {
+      const results = [];
+      for (const block of document.querySelectorAll('div.g')) {
+        const titleElement = block.querySelector('h3');
+        const urlElement = block.querySelector('a');
+        if (titleElement && urlElement) {
+          results.push({
+            title: titleElement.innerText,
+            url: urlElement.href
+          });
+        }
       }
-    }
 
-    return results;
-  });
+      console.log("Search results: ", results);
+      return results;
+    });
 
-  // for debugging, print getWebpageContents for the first result
-  // const content = await getWebpageContents(links[0].url);
-  // console.log(content);
+    // for debugging, print getWebpageContents for the first result
+    // const content = await getWebpageContents(links[0].url);
+    // console.log(content);
 
-  await browser.close();
-  return links;
+    await browser.close();
+    return links;
+  } catch (error) {
+    console.error("Puppeteer Error:", error);
+  }
 }
-
-//Old implementation of getWebpageContents
-//This used puppeteer to get the contents of a webpage,
-//but it didn't filter out the ads and other junk
-// async function getWebpageContents(url) {
-//   const browser = await puppeteer.launch();
-//   const page = await browser.newPage();
-//   await page.goto(url);
-
-//   const content = await page.evaluate(() => {
-//     let data = {};
-//     data.title = document.querySelector('title') ? document.querySelector('title').innerText : 'No Title';
-//     data.headings = [...document.querySelectorAll('h1, h2, h3')].map(el => el.innerText);
-//     data.paragraphs = [...document.querySelectorAll('p')].map(el => el.innerText);
-
-//     return data;
-//   });
-
-//   await browser.close();
-//   return content;
-// }
 
 //Get the contents of a webpage from a url
 //we get the html, then make it readable, then extract the title and content
@@ -93,19 +89,31 @@ async function getReadableContentFromHtml(html) {
 //so we use puppeteer to get the html instead and feed it to node-readability
 async function getHtmlFromUrl(url) {
   console.log("Getting html from url...")
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto(url);
-  const html = await page.evaluate(() => document.body.innerHTML);
-  await browser.close();
-  return html;
+  try {
+    const browser = await launchPuppeteer();
+    const page = await browser.newPage();
+    await page.goto(url);
+    const html = await page.evaluate(() => document.body.innerHTML);
+    await browser.close();
+    return html;
+  } catch (error) {
+    console.error("Puppeteer Error:", error);
+  }
 }
 
-// Usage:
-// getWebpageContents('https://www.example.com').then(console.log).catch(console.error);
-
-// Usage:
-// getSearchResults('where am i').then(console.log).catch(console.error);
+//this function exists because puppeteer's default chromium path doesn't work on linux (should work on mac and windows)
+//so we can specify a chromium path in config.json
+async function launchPuppeteer() {
+  if(chromiumPath) { //if chromiumPath is defined in config.json
+    return await puppeteer.launch({
+      executablePath: chromiumPath,
+      headless: true
+    });
+  }
+  else { //if chromiumPath is not defined in config.json
+    return await puppeteer.launch();
+  }
+}
 
 module.exports = {
   getSearchResults,
