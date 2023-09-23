@@ -4,7 +4,8 @@ A discord bot made for my itpa class, which is both a tool to retrieve online cl
 
 This project isn't meant to be used by anyone else, but if you want to, you can. It's mostly a personal project that I use as an excuse to apply what I learned in class, as well as whatever I'm interested in at the time. The code certainly won't win me any awards, but I hope it demonstrates my ability to learn and apply new concepts.
 
-Shoutouts to Will for helping and collaborating with me on this project, as well as Ben, who scrutinized my code and... well, scrutinized my code.
+Massive thanks to the following people for helping me with this project:
+-lilmrmagoo for actively contributing to the project, optmizing the code, improving code readability, implementing scalability solutions and disucssing ideas with me
 
 ## Getting Started
 
@@ -27,3 +28,8 @@ An OpenAI API key, which you can get by creating an account at https://beta.open
 Node.js, which you can get at https://nodejs.org/en/
 
 ### Installing
+
+
+### Troubleshooting
+
+If puppeteer is throwing errors (likely if you're running linux), you may need to specify your chromium path in the config.json file. You can find your chromium path by running `whereis chromium-browser` in your terminal on linux. Add "chromiumPath": "your chromium path here" to the config.json file. For example, on my linux machine, I would add "chromiumPath": "/usr/bin/chromium-browser" to the config.json file. Make sure to add a comma after the line before it, or else it will throw an error.
