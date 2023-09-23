@@ -9,6 +9,7 @@ const filesToCreate = [
             isMaster: true,
             admins: [],
             instanceId: 0,
+            masterInstanceId: 0,
             chatrooms: true,
             chatRoomCooldowns: {
                 normal: 100,

@@ -27,7 +27,7 @@ const client = new Client({
     ],
     presence: {
         activities: [{
-            name: "human game",
+            name: "pending mensmi...",
             type: 0
         }],
         status: 'online'
@@ -35,27 +35,28 @@ const client = new Client({
 });
 
 const profilePath = './bot/profiles.json';
-if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
-    console.log(`The file ${profilePath} does not exist, creating a new one`);
-    const defaultValue = {
-        "users": []
-    };
-    fs.writeFileSync(profilePath, JSON.stringify(defaultValue));
-}
+// if (!fs.existsSync(profilePath)) { //if the file doesn't exist, create it
+//     console.log(`The file ${profilePath} does not exist, creating a new one`);
+//     const defaultValue = {
+//         "users": []
+//     };
+//     fs.writeFileSync(profilePath, JSON.stringify(defaultValue));
+// }
 
 
 const configPath = './bot/config.json';
-if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
-    console.log(`The file ${configPath} does not exist, creating a new one`);
-    const defaultValue = {
-        "devMode": false,
-        "isMaster": true,
-        "admins": [],
-        "instanceId": 0, // defualts to 0
-        "chatrooms": true
-    };
-    fs.writeFileSync(configPath, JSON.stringify(defaultValue));
-}
+// if (!fs.existsSync(configPath)) { //if the file doesn't exist, create it
+//     console.log(`The file ${configPath} does not exist, creating a new one`);
+//     const defaultValue = {
+//         "devMode": false,
+//         "isMaster": true,
+//         "admins": [],
+//         "instanceId": 0, // defualts to 0
+//         "masterInstanceId": 0,
+//         "chatrooms": true
+//     };
+//     fs.writeFileSync(configPath, JSON.stringify(defaultValue));
+// }
 
 const instanceDataPath = './bot/instanceData.json';
 if (!fs.existsSync(instanceDataPath)) { //if the file doesn't exist, create it
@@ -68,7 +69,10 @@ if (!fs.existsSync(instanceDataPath)) { //if the file doesn't exist, create it
 
 let config = JSON.parse(fs.readFileSync(configPath)); //read the config file
 let profiles = JSON.parse(fs.readFileSync(profilePath))
-const isMaster = config.isMaster; //only check this on launch
+
+// const isMaster = config.isMaster; //only check this on launch
+const isMaster = config.instanceId == config.masterInstanceId; //only check this on launch
+
 let devMode = config.devMode; //this will be evaluated every time a message is sent
 let admins = config.admins; //this will be evaluated every time a message is sent
 if(!Object.hasOwn(config, "instanceId")){ config.instanceId = 0;}// defaults no instanceId to 0 or main instances
