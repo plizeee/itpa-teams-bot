@@ -5,8 +5,8 @@ const filesToCreate = [
     { 
         path: './bot/config.json', 
         content: JSON.stringify({
-            devMode: false,
-            isMaster: true,
+            // devMode: false,
+            // isMaster: true,
             admins: [],
             instance_id: 0,
             master_instance_id: 0,
