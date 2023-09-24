@@ -88,8 +88,15 @@ app.use(bodyParser.json());
 app.get("/functions-grouped", (req,res)=>{
   let data = {results:GPTFunctions.GroupedFunctionNames(req.query.q)};
   console.log(req.query);
+  console.log(data.results);
   res.send(JSON.stringify(data));
 })
+// app.get("/functions-selected", (req,res)=>{
+//   let data = {results:GPTFunctions.GroupedFunctionNames(req.query.q)};
+//   console.log(req.query);
+//   console.log(data.results);
+//   res.send(JSON.stringify(data));
+// })
 
 // GitHub OAuth routes
 app.get('/auth/github', (req, res, next) => {

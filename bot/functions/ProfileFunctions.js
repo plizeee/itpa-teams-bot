@@ -1,5 +1,5 @@
 const SharedMethods = require("../util.js");
-
+const {FunctionResult} = require("../functionResultClass.js");
 
 const functions =  {
     "getProfiles":{
@@ -37,11 +37,16 @@ const functions =  {
         },
         function: ({names=[], ids=[], maxrep=null, minrep=null}) => {
             let full = SharedMethods.filterProfiles(names, ids, maxrep, minrep);
-            return full.map(profile =>{
+            let comboFunctions = []
+            let editable = false;
+            let mapped = full.map(profile =>{
                 let obj = {name:profile.name,id:profile.id,rep:profile.rep};
                 if (profile.hasOwnProperty('note')) obj.noteAboutUser = profile.note;
+                if (profile.editableNote??false) editable = true;
                 return obj;
             });
+            if(editable) comboFunctions.push("editNote");
+            return new FunctionResult({returnValue:mapped,comboFunctions:comboFunctions,override:false});
         }
     },
     "changeRep":{
@@ -66,7 +71,7 @@ const functions =  {
                     },
                     "value":{
                         "type": "integer",
-                        "description": "the value to change the rep by"
+                        "description": "the value to change the rep by, + and - allowed"
                     }
                 },
                 "required": ["ids","mode","value"]
@@ -81,7 +86,54 @@ const functions =  {
             console.log(full);
             return full.map(profile =>{return{name:profile.name,id:profile.id,rep:profile.rep}});
         }
-    }
+    },
+    "editNote":{
+        metadata:{
+            "name": "editNote",
+            "description": "edits the user's profile note, keep the note to under 500 characters total, override to make edits or when the length is too long",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "description": "list of ids to make the change to",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "value":{
+                        "type": "string",
+                        "description": "the note about the user you would like to add or override with"
+                    },
+                    "override":{
+                        "type": "boolean",
+                        "description": "will override the note, use to remove or make changes to what's stored"
+                    }
+                }
+            }
+        },
+        function: ({ids=[],value="",override=false}) => {
+            let full = SharedMethods.filterProfiles(undefined, ids);
+            let returnMessage = "";
+            
+            let numTooLong = 0;
+            let numEdited = 0;
+            let numNonEditable = 0;
+            if(value.length>500) {value = value.slice(0,500); returnMessage = "Value Trimmed, ";}
+            if(override) full.forEach(profile => {if(profile.editableNote == false) numNonEditable++; else {profile.note = value; numEdited++}});
+            else full.forEach(profile => {
+                if(profile.editableNote == false) numNonEditable++; 
+                else if((profile.note?.length + value.length) > 500) numTooLong++;
+                else {profile.note += value; numEdited++;}  
+            });
+            if (numTooLong) returnMessage += `Addition(value) to long for ${numTooLong} profiles `;
+            if(numNonEditable) returnMessage += `${numNonEditable} profiles do not support editing notes.`
+            returnMessage += numEdited&&SharedMethods.syncProfilesToFile()? `Edited ${numEdited} Notes Succesfully`: "Failed to save changes";
+            
+            return returnMessage;
+            
+        }
+    },
 }
 
 module.exports = {

@@ -24,15 +24,16 @@ module.exports = {
 }
 
 async function notesCommand(msg) {
+    let profile = SharedFunctions.getProfile(msg);
+    let options = [];
+    if(profile.editableNote){ options.push({ label: 'Yes', value: 'Yes', default:true},{ label: 'No', value: 'No'});}
+    else{options.push({ label: 'Yes', value: 'Yes'},{ label: 'No', value: 'No', default:true});}
     const select = new StringSelectMenuBuilder(
         {
             custom_id: 'Note Opt-In/Out Select',
             placeholder: 'No',
             max_values: 1,
-            options: [
-                { label: 'Yes', value: 'Yes' },
-                { label: 'No', value: 'No', default:true}
-            ],
+            options: options
         }
     );
     const EditButton = new ButtonBuilder({	custom_id: 'Edit Note Button', style: ButtonStyle.Primary, label: 'Edit Notes'})
@@ -49,14 +50,12 @@ async function notesCommand(msg) {
         if(i.isStringSelectMenu() && i.customId == "Note Opt-In/Out Select"){
             const selection = i.values[0];
             if(selection == 'Yes'){
-                let profile = SharedFunctions.getProfile(msg);
-                profile.EditableNote = true;
+                profile.editableNote = true;
                 const success = SharedFunctions.syncProfilesToFile(true);
                 if(success)i.reply({content:"choice saved",ephemeral:true});
             }
             else if(selection == 'No'){
-                let profile = SharedFunctions.getProfile(msg);
-                profile.EditableNote = false;
+                profile.editableNote = false;
                 const success = SharedFunctions.syncProfilesToFile(true);
                 if(success)i.reply({content:"choice saved",ephemeral:true});
             }
