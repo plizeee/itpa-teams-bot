@@ -10,6 +10,8 @@ const SharedFunctions = require("./util.js");
 const GPTFunctionsModule = require("./functions.js");
 const {FunctionResult} = require("./functionResultClass.js")
 
+const {TokenStatTemplate} = require("./StatClasses.js");
+
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
 const promptPath = './bot/prompts.json';
@@ -41,43 +43,7 @@ const RETRY_SECONDS_BEFORE_EXPIRE = 120; //# of seconds before we remove the ret
 let date;
 let isMaster;
 
-class StatArray extends Array{
-    sum = () => this.reduce((total, curValue) => total + curValue,0)
-    average = () => this.sum()/this.length;
-    rate(time) {
-        return this.sum()/time
-    }
-}
 
-class TokenStatTemplate {
-    #firstCallDate;
-    #lastCallDate;
-    #calls= 0;
-    #prompt = new StatArray();
-    #completion = new StatArray();
-    get promptTokens() {return this.#prompt}
-    get completionTokens() {return this.#completion}
-    get numOfCalls() {return this.#calls}
-    get lastCallDate() {return this.#lastCallDate}
-    get firstCallDate() {return this.#firstCallDate}
-    TotalAverage() {
-        return (this.#completion.reduce((total, curValue) => total + curValue,0) + this.#prompt.reduce((total, curValue) => total + curValue,0))/this.#calls;    
-    };
-    TotalRate(timefactor = 36000000) {
-        if (!this.#firstCallDate) return null;
-        return (this.#prompt.sum()+this.#completion.sum())/((this.#lastCallDate.getTime()-this.#firstCallDate.getTime())/timefactor);
-    }
-    storeData(promptTokens, completionTokens){
-        let date = new Date()
-        this.#firstCallDate??= date;
-        this.#lastCallDate = date;
-        if (!promptTokens || !completionTokens) console.log("no tokens receieved")
-        else console.log(`tokens stored: ${promptTokens} ${completionTokens}`)
-        this.#prompt.push(promptTokens);
-        this.#completion.push(completionTokens);
-        this.#calls++;
-    }
-}
 let InstanceData = {    
     LastChatSentDate: new Date("2022-01-01"),
     Cooldown:60000,
@@ -433,7 +399,7 @@ function chatCommand(msg,isUserAuthorized = true,trigger={model:"gpt-3.5-turbo-1
     }
     const instructions = prompt + ". The date is " + date + ".";
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
-    sendPrompt({
+   sendPrompt({
         msg: msg, 
         instructions: instructions, 
         model: model,
@@ -562,7 +528,7 @@ async function resolveFunctionCall(completion,messages,functions=[]){
 }
 
 //sends the prompt to the API to generate the AI response and send it to the user
-async function  sendPrompt({msg, instructions, model, functions}){
+async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
     let fullPrompt = await getReplyChain(msg, instructions);
     let maxTokens;

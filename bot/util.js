@@ -13,7 +13,9 @@ let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 const courses = JSON.parse(fs.readFileSync(coursesPath));
 const config = JSON.parse(fs.readFileSync(configPath));
 
-const isMaster = config.isMaster; //only check this on launch
+const masterInstanceId = config.masterInstanceId || 0;
+// const isMaster = config.isMaster; //only check this on launch
+const isMaster = config.instanceId == masterInstanceId; //only check this on launch
 
 
 module.exports = {

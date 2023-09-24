@@ -2,14 +2,17 @@
 
 const ProfileFunctions = require("./functions/ProfileFunctions.js").functions;
 const CourseFunctions = require("./functions/CourseFunctions.js").functions;
+const SearchFunctions = require("./functions/SearchFunctions.js").functions;
 
-const AllFunctions = {...ProfileFunctions, ...CourseFunctions};// use , and spread ... to combine function lists 
-const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions), "Course Functions":Object.keys(CourseFunctions)};// this is for the website selector the key is what the functions will be grouped under.
+
+const AllFunctions = {...ProfileFunctions, ...CourseFunctions, ...SearchFunctions};// use , and spread ... to combine function lists
+const GroupedFunctions = {"Profile Functions":Object.keys(ProfileFunctions), "Course Functions":Object.keys(CourseFunctions), "Search Functions":Object.keys(SearchFunctions)};// this is for the website selector the key is what the functions will be grouped under.
 
 function GetTriggerFunctions(trigger) {
     if(trigger.hasOwnProperty("functions")) {return GetFunctionsMetadata(trigger.functions);}
     else return [];
 }
+
 /**
  * a function that retievse the metadata about GPTfunctions
  * @param {string[]} list a list of function names
@@ -20,8 +23,11 @@ function GetFunctionsMetadata(list = []){
     let funcmeta = functions.map(([key, value]) => value).map(({metadata}) => metadata);
     return funcmeta
 }
-function CallFunction(funcName, funcArgs){
-    return AllFunctions[funcName].function(funcArgs);
+
+async function CallFunction(funcName, funcArgs){
+    let output = await AllFunctions[funcName].function(funcArgs);
+    return output;
+    //return JSON.stringify(AllFunctions[funcName].function(funcArgs));
 }
 let AllFunctionNames = () => Object.keys(AllFunctions);
 
@@ -41,5 +47,9 @@ function GroupedFunctionNames(filter,selected=[]) {
 }
 
 module.exports = {
-    GetTriggerFunctions, CallFunction, AllFunctionNames, GroupedFunctionNames,GetFunctionsMetadata
+    GetTriggerFunctions, 
+    CallFunction, 
+    AllFunctionNames, 
+    GroupedFunctionNames,
+    GetFunctionsMetadata
 }
