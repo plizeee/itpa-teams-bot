@@ -13,9 +13,9 @@ let instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
 const courses = JSON.parse(fs.readFileSync(coursesPath));
 const config = JSON.parse(fs.readFileSync(configPath));
 
-const masterInstanceId = config.masterInstanceId || 0;
+const master_instance_id = config.master_instance_id || 0;
 // const isMaster = config.isMaster; //only check this on launch
-const isMaster = config.instanceId == masterInstanceId; //only check this on launch
+const isMaster = config.instance_id == master_instance_id; //only check this on launch
 
 
 module.exports = {
@@ -76,7 +76,7 @@ function createProfile(msg){
             "earlyMessages": []
         }],
         "timestamps": [],
-        "instanceId": 0,
+        "instance_id": 0,
         "gpt4Timestamps": []
     });
 
@@ -136,14 +136,14 @@ function syncLeaderboardToFile(isMaster, val = gptSecrets){
     else console.log("Dev Mode is currently active. Leaderboard not synced to file");
 }
 
-function handleExit(instanceID){
+function handleExit(instance_id){
     console.log("Handling exit...");
     instanceData = JSON.parse(fs.readFileSync(instanceDataPath));
-    let instance = instanceData.instances.find(instance => instance.instanceID === instanceID);
+    let instance = instanceData.instances.find(instance => instance.instance_id === instance_id);
     if (instance) {
         let pid = instance.pid;
         if(!pid){
-            let instanceIndex = instanceData.instances.findIndex(instance => instance.instanceID === instanceID);
+            let instanceIndex = instanceData.instances.findIndex(instance => instance.instance_id === instance_id);
             if (instanceIndex !== -1) {
                 // Remove instance from list
                 instanceData.instances.splice(instanceIndex, 1);
@@ -161,7 +161,7 @@ function handleExit(instanceID){
                   //return;
                 }
               
-                let instanceIndex = instanceData.instances.findIndex(instance => instance.instanceID === instanceID);
+                let instanceIndex = instanceData.instances.findIndex(instance => instance.instance_id === instance_id);
                 if (instanceIndex !== -1) {
                     // Remove instance from list
                     instanceData.instances.splice(instanceIndex, 1);

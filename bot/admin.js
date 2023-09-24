@@ -10,21 +10,20 @@ let profiles = JSON.parse(fs.readFileSync(profilesPath)); //read the profiles fi
 let gptSecrets; //read the gptSecrets file
 
 module.exports = {
-    checkAdminCommand: function (msg, isMaster,INSTANCE, client, date) {
+    checkAdminCommand: function (msg, master_instance_id,INSTANCE, client, date) {
         let command = msg.content.toUpperCase(), found = true;
         config = JSON.parse(fs.readFileSync(configpath)); //read the config file
         gptSecrets = JSON.parse(fs.readFileSync(gptSecretsPath)); //read the gptSecrets file
         let prefix = "!" //allows for changing the prefix
         command = command.split(" ")[0].slice(prefix.length); //extracts the first word without the prefix
 
-
         switch (command){
-            case "DEV": devCommand(msg, isMaster); break;
-            case "MASTER": masterCommand(msg, isMaster); break;
-            case "BRANCH": branchCommand(msg, isMaster); break;
-            case "SETREP": setRepCommand(msg, isMaster); break;
-            case "SETALLREP": setAllRepCommand(msg, isMaster); break;
-            case "REP": repCommand(msg, isMaster); break;
+            // case "DEV": devCommand(msg, isMaster); break;
+            // case "MASTER": masterCommand(msg, isMaster); break;
+            // case "BRANCH": branchCommand(msg, isMaster); break;
+            case "SETREP": setRepCommand(msg, master_instance_id); break;
+            case "SETALLREP": setAllRepCommand(msg, master_instance_id); break;
+            case "REP": repCommand(msg, master_instance_id); break;
             case "KILL": SharedFunctions.handleExit(INSTANCE); break;
             case "INSTANCE": InstanceCommand(msg, INSTANCE); break;
             case "INSTANCES": InstancesCommand(msg, INSTANCE); break;
@@ -80,7 +79,7 @@ function moodCommand(msg, client){
 }
 
 // a command to set a users instance, allows for testing of terry by multiple users.
-function InstanceCommand(msg,InstanceID){
+function InstanceCommand(msg,instance_id){
     let args = msg.content.split(" ");
     args.shift();
     let profile = SharedFunctions.getProfile(msg);
@@ -92,21 +91,21 @@ function InstanceCommand(msg,InstanceID){
             msg.reply("Invalid instance id, id must be a numebr atm");
             return;
         }
-        profile.instanceId = Number(instance);
+        profile.instance_id = Number(instance);
         SharedFunctions.syncProfilesToFile(true); // should store profile on all active instances 
-        InstanceID === profile.instanceId ? msg.reply(`Your Instance has been set to: ${instance}`) : null;
+        instance_id === profile.instance_id ? msg.reply(`Your Instance has been set to: ${instance}`) : null;
     }
-    else if(InstanceID == profile.instanceId) { // if no arguments are given
-        let log = `Host instance: ${InstanceID}\nClient instance: ${profile.instanceId}`
+    else if(instance_id == profile.instance_id) { // if no arguments are given
+        let log = `Host instance: ${instance_id}\nClient instance: ${profile.instance_id}`
         console.log(config);
         console.log(log);
         msg.reply(log);
     }
 }
 
-function InstancesCommand(msg, InstanceID){
+function InstancesCommand(msg, instance_id){
     let profile = SharedFunctions.getProfile(msg);
-    let log = `Host instance: ${InstanceID}\nClient instance: ${profile.instanceId}`
+    let log = `Host instance: ${instance_id}\nClient instance: ${profile.instance_id}`
     console.log(config);
     console.log(log);
     msg.reply(log);
@@ -120,36 +119,36 @@ function stripCommand(message){
     return message;
 }
 
-function devCommand(msg, isMaster){
-    config.devMode = true;
+// function devCommand(msg, isMaster){
+//     config.devMode = true;
 
-    if(!isMaster){
-        msg.reply("Dev Mode Enabled.");
-        console.log("Dev Mode Enabled.");
-        syncConfig();
-    }
-}
+//     if(!isMaster){
+//         msg.reply("Dev Mode Enabled.");
+//         console.log("Dev Mode Enabled.");
+//         syncConfig();
+//     }
+// }
 
-function masterCommand(msg, isMaster){
-    config.devMode = false;
+// function masterCommand(msg, isMaster){
+//     config.devMode = false;
 
-    if(isMaster){
-        msg.reply("Dev Mode Disabled.");
-        console.log("Dev Mode Disabled.");
-        syncConfig();
-    }
-}
+//     if(isMaster){
+//         msg.reply("Dev Mode Disabled.");
+//         console.log("Dev Mode Disabled.");
+//         syncConfig();
+//     }
+// }
 
-function branchCommand(msg, isMaster){
-    if(isAuthorized(isMaster)){
-        msg.reply("The current branch is " + (config.devMode ? "Dev" : "Master"));
-    }
-}
+// function branchCommand(msg, isMaster){
+//     if(isAuthorized(isMaster)){
+//         msg.reply("The current branch is " + (config.devMode ? "Dev" : "Master"));
+//     }
+// }
 
-function setRepCommand(msg, isMaster){
-    if(isAuthorized(isMaster)){
+function setRepCommand(msg, master_instance_id){
+    //if(isAuthorized(isMaster)){
         let message = stripCommand(msg.content);                           //Filters out the "!SETREP " portion of the command
-        let target = message.slice(0, message.indexOf(" "));    //Isolates the user's name
+        let target = message.slice(0, message.indexOf(" ")).toUpperCase();    //Isolates the user's name
         let repValue = message.slice(message.indexOf(" "));     //Isolates the Rep value we want to set
 
         console.log("message: " + message + " | target: " + target + " | repValue: " + repValue);
@@ -157,24 +156,24 @@ function setRepCommand(msg, isMaster){
             let profile = SharedFunctions.getProfile(msg);
             if(target == profile.name.toUpperCase()){               //removing case-sensitivity from the username}
                 profile.rep = parseInt(repValue);
-                SharedFunctions.syncProfilesToFile(isMaster);
+                SharedFunctions.syncProfilesToFile(profile.instance_id == master_instance_id);
                 console.log("set user "  +  target + "'s rep to " + repValue);
             }
         }
-    }
+    //}
 }
 
-function setAllRepCommand(msg, isMaster) {
-    if(isAuthorized(isMaster)){
+function setAllRepCommand(msg, master_instance_id) {
+    //if(isAuthorized(isMaster)){ 
         let profile = SharedFunctions.getProfile(msg);
         let message = stripCommand(msg.content);      //slicing out the "!setallrep " from the command
         if (!isNaN(message)) {                    //wanna make sure the remaining portion is a number to set rep to
             profile.rep = parseInt(message);      //parsing to int because it was behaving as a string
     
-            SharedFunctions.syncProfilesToFile(isMaster);                   //save changes to file
+            SharedFunctions.syncProfilesToFile(profile.instance_id == master_instance_id); //syncing the profiles to file if the user is on the master instance
             console.log("set all users rep to " + message + " !");
         }
-    }
+    //}
 }
 
 function uptimeCommand(msg, startDate){
@@ -200,13 +199,13 @@ function formatDateDiff(date1, date2) {
 }
 
 //function to return the rep of the user
-function repCommand(msg, isMaster) {
-    if(isAuthorized(isMaster)){
-        let profile = SharedFunctions.getProfile(msg);
+function repCommand(msg, instance_id) {
+    let profile = SharedFunctions.getProfile(msg);
+    //if(profile.instance_id == instance_id){
+        // let profile = SharedFunctions.getProfile(msg);
         msg.reply("Your rep is: " + profile.rep);
-    }
+    //}
 }
-
 
 function isAuthorized(isMaster) {
     if (config.devMode) {

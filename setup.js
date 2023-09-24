@@ -8,8 +8,8 @@ const filesToCreate = [
             devMode: false,
             isMaster: true,
             admins: [],
-            instanceId: 0,
-            masterInstanceId: 0,
+            instance_id: 0,
+            master_instance_id: 0,
             chatrooms: true,
             chatRoomCooldowns: {
                 normal: 100,

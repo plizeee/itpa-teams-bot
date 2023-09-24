@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   form.devMode.checked = config.devMode;
   form.isMaster.checked = config.isMaster;
-  form.instanceId.value = config.instanceId;
+  form.instance_id.value = config.instance_id;
   form.chatrooms.checked = config.chatrooms;
   form.chatRoomCooldownsNormal.value = config.chatRoomCooldowns.normal;
   form.chatRoomCooldownsNoRespond.value = config.chatRoomCooldowns.noRespond;
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     config.devMode = form.devMode.checked;
     config.isMaster = form.isMaster.checked;
-    config.instanceId = Number(form.instanceId.value);
+    config.instance_id = Number(form.instance_id.value);
     config.chatrooms = form.chatrooms.checked;
     config.chatRoomCooldowns.normal = Number(form.chatRoomCooldownsNormal.value);
     config.chatRoomCooldowns.noRespond = Number(form.chatRoomCooldownsNoRespond.value);

@@ -313,7 +313,7 @@ app.post('/save-config', (req, res) => {
 });
 
 app.delete('/kill-instance', (req, res) => {
-  const instanceID = req.body.instanceID;
+  const instance_id = req.body.instance_id;
   const pid = req.body.pid;
 
   //for security, we should only accept killing instances that exist in the instanceData.json file
@@ -322,8 +322,8 @@ app.delete('/kill-instance', (req, res) => {
     return;
   }
 
-  console.log('Killing instance:', instanceID, pid);
-  SharedFunctions.handleExit(instanceID);
+  console.log('Killing instance:', instance_id, pid);
+  SharedFunctions.handleExit(instance_id);
   res.status(200).send('Instance killed successfully');
 });
 

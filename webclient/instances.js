@@ -18,7 +18,7 @@ function renderInstanceList() {
     instanceData.instances.forEach((instance, index) => {
         const instanceItem = instanceItemTemplate.content.cloneNode(true);
 
-        instanceItem.querySelector('.instance-id-value').innerHTML = instance.instanceID;
+        instanceItem.querySelector('.instance-id-value').innerHTML = instance.instance_id;
         let instanceTimeElement = instanceItem.querySelector('.instance-time-value');
         instanceItem.querySelector('.instance-pid-value').innerHTML = instance.pid;
 
@@ -27,7 +27,7 @@ function renderInstanceList() {
         }, 1000);
 
         const killButton = instanceItem.querySelector('.killInstanceBtn');
-        killButton.addEventListener('click', () => killInstance(instance.instanceID, instance.pid));
+        killButton.addEventListener('click', () => killInstance(instance.instance_id, instance.pid));
 
         instanceList.appendChild(instanceItem);
     });
@@ -66,14 +66,14 @@ function timeSince(dateString) {
     return `${hours}:${minutes}:${secondsPast}`;
 }
 
-async function killInstance(instanceID, pid) {
+async function killInstance(instance_id, pid) {
     try {
         const response = await fetch(`/kill-instance`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ instanceID: instanceID, pid: pid }),
+            body: JSON.stringify({ instance_id: instance_id, pid: pid }),
         });
 
         if (!response.ok) {
