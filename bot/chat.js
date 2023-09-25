@@ -500,7 +500,7 @@ async function resolveFunctionCall(completion,messages,functions=[]){
     let functionArgs = completionMessage.function_call.arguments;
     console.log(`function called: ${functionName} (${functionArgs})`);
     functionArgs = JSON.parse(functionArgs);
-    let functionResponse = GPTFunctionsModule.CallFunction(functionName,functionArgs);
+    let functionResponse = await GPTFunctionsModule.CallFunction(functionName,functionArgs);
     if(functionResponse instanceof FunctionResult) {
         console.log("function is complex return");
         if(functionResponse.overide) functions = functionResponse.comboFunctions;
