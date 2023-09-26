@@ -432,7 +432,7 @@ async function chatroomChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, 
     thread.unshift({"role": "user", "content": instructions2, "name": "System"});
     thread.unshift({"role": "system", "content": instructions});
     msg.channel.sendTyping(); //this will display that the bot is typing while waiting for response to generate
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: thread,
         max_tokens: 1200,
