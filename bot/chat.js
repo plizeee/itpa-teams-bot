@@ -2,6 +2,9 @@
 const {OpenAI} = require("openai");
 const Discord = require('discord.js');
 
+// these allow us to count the number of tokens in a string for a given model
+const { get_encoding, encoding_for_model } = require("tiktoken");
+
 const fs = require('fs'); //needed to read/write json files
 const https = require('https');
 
@@ -11,6 +14,8 @@ const GPTFunctionsModule = require("./functions.js");
 const {FunctionResult} = require("./functionResultClass.js")
 
 const {TokenStatTemplate} = require("./StatClasses.js");
+
+const Tokeniser = require("./tokeniser.js");
 
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
@@ -26,9 +31,10 @@ let config;
 
 let GPT4_REQUEST_LIMIT;
 let GPT4_REQUEST_COOLDOWN;
-const DEFAULT_CHARACTER_LIMIT = 4000;
-const GPT4_CHARACTER_LIMIT = 8000;
-const GPT_TURBO_16k_CHARACTER_LIMIT = 16000;
+const DEFAULT_TOKEN_LIMIT = 4000;
+const GPT4_TOKEN_LIMIT = 8000;
+const GPT_TURBO_16k_TOKEN_LIMIT = 16000;
+
 
 
 require('dotenv').config();
@@ -69,6 +75,9 @@ module.exports = {
         //since we accept txt files as input, we need to check if the message is a file
         let fileContent = await getFileString(msg);
 
+        //TODO feed in the appropriate model
+        //the issue is that we need to read the file to determine the model, but we also need the model to trim the file
+        //this shouldn't be an issue for gpt3.5/4, since they use the same encoding
         msg.content = await addFileToMsg(msg, fileContent);
         // console.log("msg.content: " + msg.content);
 
@@ -127,40 +136,40 @@ function getFileString(msg){
     });
 }
 
-async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
+async function addFileToMsg(msg, fileContent){
     let output = msg.content;
 
-    //characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
-
-    let characterLimit;
-    switch(model){
-        case "gpt-4":
-            characterLimit = GPT4_CHARACTER_LIMIT;
-            break;
-        case "gpt-3.5-turbo-16k-0613":
-            characterLimit = GPT_TURBO_16k_CHARACTER_LIMIT;
-            break;
-        default:
-            characterLimit = DEFAULT_CHARACTER_LIMIT;
-    }
+    // let token_limit;
+    // switch(model){
+    //     case "gpt-4":
+    //         token_limit = GPT4_TOKEN_LIMIT;
+    //         break;
+    //     case "gpt-3.5-turbo-16k-0613":
+    //         token_limit = GPT_TURBO_16k_TOKEN_LIMIT;
+    //         break;
+    //     default:
+    //         token_limit = DEFAULT_TOKEN_LIMIT;
+    // }
 
     if (fileContent) {
         if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
         else output = fileContent;
     }
     else console.log("no file content");
-    
-    let truncateWarningMessage = "\n\n**Message was too long and was truncated**```";
-    let maxMessageLength = characterLimit - truncateWarningMessage.length;
 
-    console.log("output.length: " + output.length + " maxMessageLength: " + maxMessageLength);
+    // const tokens = Tokeniser.getTokenCount(output, model);
 
-    if(output.length > maxMessageLength) {
-        output = output.substring(0, maxMessageLength);
-        output += truncateWarningMessage;
-    }
+    // output = Tokeniser.trimEndToMatchTokenLimit(output, token_limit, model);
+
+    // if(tokens > token_limit) {
+    //     // output = output.substring(0, maxMessageLength);
+    //     // output += truncateWarningMessage;
+    //     const truncateWarningMessage = "\n\n**Message truncated due to token limit.**";
+    //     output = Tokeniser.trimStartToMatchTokenLimit(output + truncateWarningMessage, token_limit, model);
+    // }
     
-    return output;
+    // console.log("!!!!!addFileToMsg output: " + output);
+    return await output;
 }
 
 async function checkReplyForChatCommand(msg){
@@ -307,42 +316,119 @@ async function isReferencingBot(msg){
     return false;
 }
 
-//function that returns a thread from a chain of messages
-async function getReplyChain(msg, sysMsg){
+// //function that returns a thread from a chain of messages
+// async function getReplyChain(msg, sysMsg, input_character_limit = 2000){
+
+//     let message = stripCommand(msg.content); 
+//     let profile = SharedFunctions.getProfile(msg); 
+
+//     let thread = [];
+
+//     if(msg.reference){
+//         let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
+
+//         while(repliedMessageRef){ //while there is a message replied to
+//             let fileContent = await getFileString(repliedMessageRef);
+//             repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
+//             console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
+
+//             let refProfile = SharedFunctions.getProfile(repliedMessageRef);
+//             let repliedMessage = stripCommand(repliedMessageRef.content.toString());
+
+//             if(repliedMessageRef.author.bot){
+//                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
+//             }
+//             else{
+//                 thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage});
+//             }
+
+//             repliedMessageRef = await repliedMessageRef.fetchReference()
+//             .catch(err => console.log("No reference found"));
+//         }
+//     }
+
+//     thread.push({"role": "user", "content": profile.name + " (" + msg.author.id + "): " + message});
+//     thread.unshift({"role": "system", "content": sysMsg});
+
+
+//     return thread;
+// }
+
+async function getReplyChain(msg, sysMsg, input_token_limit = 2000, model) {
+    console.log("Entering getReplyChain function...");
 
     let message = stripCommand(msg.content); 
-    let profile = SharedFunctions.getProfile(msg); 
 
-    let thread = [];
+    let replyChain = [];
 
-    if(msg.reference){
-        let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
+    // Add the system message to the start of the reply chain
+    await appendToReplyChain(replyChain, "system", sysMsg, input_token_limit, model);
 
-        while(repliedMessageRef){ //while there is a message replied to
-            let fileContent = await getFileString(repliedMessageRef);
-            repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
-            console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
+    console.log("System message added to reply chain...");
 
-            let refProfile = SharedFunctions.getProfile(repliedMessageRef);
-            let repliedMessage = stripCommand(repliedMessageRef.content.toString());
+    // If the message has a reference (i.e., it's a reply to another message)
+    if (msg.reference) {
+        console.log("Message has a reference. Fetching replied message...");
+        let repliedMessageRef = await msg.fetchReference();
 
-            if(repliedMessageRef.author.bot){
-                thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
-            }
-            else{
-                thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage});
-            }
+        // Temporary array to store the interlaced messages
+        let tempReplyArray = [];
 
-            repliedMessageRef = await repliedMessageRef.fetchReference()
-            .catch(err => console.log("No reference found"));
+        // Loop through the chain of replied messages
+        while (repliedMessageRef) {
+            console.log("Processing replied message...");
+            let chainContent = await getChainContent(repliedMessageRef, model);
+            tempReplyArray.unshift({"role": (repliedMessageRef.author.bot) ? "assistant" : "user", "content": chainContent});
+
+            // Attempt to fetch the next replied message in the chain
+            repliedMessageRef = await fetchRepliedMessage(repliedMessageRef);
         }
+
+        // Merge the temporary array into the main replyChain
+        replyChain = replyChain.concat(tempReplyArray);
     }
 
-    thread.push({"role": "user", "content": profile.name + " (" + msg.author.id + "): " + message});
-    thread.unshift({"role": "system", "content": sysMsg});
+    // Add the user's message to the end of the reply chain
+    await appendToReplyChain(replyChain, "user", message, input_token_limit, model);
 
-    return thread;
+    console.log("Reply chain created. Returning reply chain...");
+    return replyChain;
 }
+
+async function fetchRepliedMessage(repliedMessageRef) {
+    console.log("Fetching next replied message...");
+    console.log("isReference: " + repliedMessageRef.reference)
+    return await repliedMessageRef.fetchReference().catch(err => {
+        console.log("No reference found for replied message. Error:", err.message);
+        return null;
+    });
+}
+
+async function getChainContent(repliedMessageRef, model) {
+    console.log("Getting content for replied message...");
+    
+    let fileContent = await getFileString(repliedMessageRef);
+    repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent);
+    let refProfile = SharedFunctions.getProfile(repliedMessageRef);
+    let repliedMessage = stripCommand(repliedMessageRef.content.toString());
+
+    console.log("Returning content for replied message...");
+    return (repliedMessageRef.author.bot)
+           ? "Terry: " + repliedMessage
+           : refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage;
+}
+
+async function appendToReplyChain(replyChain, role, content, token_limit, model) {
+    console.log(`Appending ${role} content to reply chain...`);
+
+    replyChain.push({"role": role, "content": content});
+
+    console.log("Content appended to reply chain...");
+
+    return replyChain;
+}
+
+
 
 async function getReferenceMsg(msg){
     let firstMessage;
@@ -455,7 +541,7 @@ async function chatroomChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, 
     let completion_tokens = completion.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
     InstanceData.chatroomTokenStats.storeData(prompt_tokens,completion_tokens);
-    //discord has a 4000 character limit, so we need to cut the response if it's too long
+    //discord has a 2000 character limit, so we need to cut the response if it's too long
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
@@ -530,37 +616,59 @@ async function resolveFunctionCall(completion,messages,functions=[]){
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
-    let fullPrompt = await getReplyChain(msg, instructions);
     let maxTokens;
+    let request;
+    let replyChain;
+    let fullPrompt;
 
     switch(model){
         case "gpt-4": maxTokens = 4000; break;
         case "gpt-3.5-turbo-16k-0613": maxTokens = 8000; break;
         default: maxTokens = 2000; break;
     }
-    let request = {
+
+    
+
+    replyChain = await getReplyChain(msg, instructions, maxTokens/2, model);
+    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, maxTokens, model);
+
+    console.log("maxTokens: " + maxTokens);
+    console.log("replyChain: " + replyChain);
+    console.log("fullPrompt: " + fullPrompt);
+    // console.log("fullPrompt tokens: " + Tokeniser.getTokenCount(fullPrompt, model));
+    console.log("fullPrompt tokens: " + Tokeniser.numTokensFromMessages(fullPrompt, model));
+
+    request = {
         model: model,
         messages: fullPrompt,
         max_tokens: maxTokens //TODO make this a config option
         //TODO look into adding 'stream' so you can see a response as it's being generated
     }
+
     if(functions.length) request.functions = functions;
     console.log(request);
+
     let completion = await openai.chat.completions.create(request)
     .catch(error => { //catch error 400 for bad request
         console.log(error);
+        if(error.code == 'context_length_exceeded'){
+            msg.reply("Your message is too long. Please try again.");
+            
+        }
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
+        msg.reply("Something went wrong. Please try again later.");
     });
 
     //since the catch statement above doesn't stop the function, we need to check if the completion is null
     if(!completion) {
         console.log("completion is null");
-        msg.reply("Something went wrong. Please try again later.");
         return;
     }
+
     let completionMessage = completion.choices[0].message
+
     while(completionMessage.function_call){
         let prompt_tokens = completion.usage.prompt_tokens;
         let completion_tokens = completion.usage.completion_tokens;
