@@ -620,36 +620,49 @@ async function resolveFunctionCall(completion,messages,functions=[]){
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
-    let maxTokens;
+    let token_limit;
+    let input_token_limit;
+    let output_token_limit;
     let request;
     let replyChain;
     let fullPrompt;
+    let fullPromptTokens;
 
     const MARGIN_OF_ERROR_MULTIPLIER = 0.9; //multiplier to reduce the max tokens by to account for the margin of error
 
     switch(model){
-        case "gpt-4": maxTokens = GPT4_TOKEN_LIMIT; break;
-        case "gpt-3.5-turbo-16k-0613": maxTokens = GPT_TURBO_16k_TOKEN_LIMIT; break;
-        default: maxTokens = DEFAULT_TOKEN_LIMIT; break;
+        case "gpt-4": token_limit = GPT4_TOKEN_LIMIT; break;
+        case "gpt-3.5-turbo-16k-0613": token_limit = GPT_TURBO_16k_TOKEN_LIMIT; break;
+        default: token_limit = DEFAULT_TOKEN_LIMIT; break;
     }
 
-    maxTokens *= MARGIN_OF_ERROR_MULTIPLIER;
+    token_limit *= MARGIN_OF_ERROR_MULTIPLIER;
+    
+    //TODO make this a config option
+    //TODO maybe make this a function depending on the model
+    //I landed on 0.75 because it's probably more valuable to have long inputs with shorter outputs than a truncated input with a longer output
+    //this won't limit the output length if the input is short enough
+    input_token_limit = token_limit * 0.75;
     
     //the whole reply chain before it's cut down to the token limit
     replyChain = await getReplyChain(msg, instructions, model);
 
     //the final prompt, after it's been cut down to the token limit
-    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, maxTokens/2, model);
+    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, input_token_limit, model);
 
-    console.log("maxTokens: " + maxTokens);
+    fullPromptTokens = Tokeniser.numTokensFromMessages(fullPrompt, model);
+
+    output_token_limit = token_limit - fullPromptTokens;
+
+    console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
     console.log("replyChain: " + replyChain);
     console.log("fullPrompt: " + fullPrompt);
-    console.log("fullPrompt tokens: " + Tokeniser.numTokensFromMessages(fullPrompt, model));
+    console.log("fullPrompt tokens: " + fullPromptTokens);
 
     request = {
         model: model,
         messages: fullPrompt,
-        max_tokens: maxTokens/2 //TODO make this a config option
+        max_tokens: output_token_limit
         //TODO look into adding 'stream' so you can see a response as it's being generated
     }
 
@@ -709,7 +722,6 @@ async function sendPrompt({msg, instructions, model, functions}){
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     
 }
-
 
 //TODO fix issue causing word wrapping to wrap at weird lengths
 async function sendTextFile(msg, replyMessage){
