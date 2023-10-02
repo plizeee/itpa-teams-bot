@@ -25,8 +25,8 @@ function GetFunctionsMetadata(list = []){
 }
 
 async function CallFunction(funcName, funcArgs){
-    let output = await AllFunctions[funcName].function(funcArgs);
-    return output;
+    let output = await AllFunctions?.[funcName]?.function(funcArgs);
+    return output??"INVALID FUNCTION";
     //return JSON.stringify(AllFunctions[funcName].function(funcArgs));
 }
 let AllFunctionNames = () => Object.keys(AllFunctions);
