@@ -139,36 +139,11 @@ function getFileString(msg){
 async function addFileToMsg(msg, fileContent){
     let output = msg.content;
 
-    // let token_limit;
-    // switch(model){
-    //     case "gpt-4":
-    //         token_limit = GPT4_TOKEN_LIMIT;
-    //         break;
-    //     case "gpt-3.5-turbo-16k-0613":
-    //         token_limit = GPT_TURBO_16k_TOKEN_LIMIT;
-    //         break;
-    //     default:
-    //         token_limit = DEFAULT_TOKEN_LIMIT;
-    // }
-
     if (fileContent) {
         if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
         else output = fileContent;
     }
     else console.log("no file content");
-
-    // const tokens = Tokeniser.getTokenCount(output, model);
-
-    // output = Tokeniser.trimEndToMatchTokenLimit(output, token_limit, model);
-
-    // if(tokens > token_limit) {
-    //     // output = output.substring(0, maxMessageLength);
-    //     // output += truncateWarningMessage;
-    //     const truncateWarningMessage = "\n\n**Message truncated due to token limit.**";
-    //     output = Tokeniser.trimStartToMatchTokenLimit(output + truncateWarningMessage, token_limit, model);
-    // }
-    
-    // console.log("!!!!!addFileToMsg output: " + output);
     return await output;
 }
 
@@ -305,7 +280,6 @@ function isOffChatCooldown(msg, cooldown = 300000){
     return log;
 }
 
-
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
     if(msg.reference){
@@ -316,53 +290,12 @@ async function isReferencingBot(msg){
     return false;
 }
 
-// //function that returns a thread from a chain of messages
-// async function getReplyChain(msg, sysMsg, input_character_limit = 2000){
-
-//     let message = stripCommand(msg.content); 
-//     let profile = SharedFunctions.getProfile(msg); 
-
-//     let thread = [];
-
-//     if(msg.reference){
-//         let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
-
-//         while(repliedMessageRef){ //while there is a message replied to
-//             let fileContent = await getFileString(repliedMessageRef);
-//             repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
-//             console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
-
-//             let refProfile = SharedFunctions.getProfile(repliedMessageRef);
-//             let repliedMessage = stripCommand(repliedMessageRef.content.toString());
-
-//             if(repliedMessageRef.author.bot){
-//                 thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
-//             }
-//             else{
-//                 thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage});
-//             }
-
-//             repliedMessageRef = await repliedMessageRef.fetchReference()
-//             .catch(err => console.log("No reference found"));
-//         }
-//     }
-
-//     thread.push({"role": "user", "content": profile.name + " (" + msg.author.id + "): " + message});
-//     thread.unshift({"role": "system", "content": sysMsg});
-
-
-//     return thread;
-// }
-
 async function getReplyChain(msg, sysMsg, model) {
     console.log("Entering getReplyChain function...");
 
     let message = stripCommand(msg.content); 
 
     let replyChain = [];
-
-    // Add the system message to the start of the reply chain
-    // replyChain = await appendToReplyChain(replyChain, "system", sysMsg, input_token_limit, model);
 
     replyChain.push({"role": "system", "content": sysMsg});
 
@@ -389,9 +322,6 @@ async function getReplyChain(msg, sysMsg, model) {
         // Merge the temporary array into the main replyChain
         replyChain = replyChain.concat(tempReplyArray);
     }
-
-    // Add the user's message to the end of the reply chain
-    // replyChain = await appendToReplyChain(replyChain, "user", message, input_token_limit, model);
 
     replyChain.push({"role": "user", "content": message});
 
@@ -421,18 +351,6 @@ async function getChainContent(repliedMessageRef, model) {
            ? "Terry: " + repliedMessage
            : refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage;
 }
-
-// async function appendToReplyChain(replyChain, role, content, token_limit, model) {
-//     console.log(`Appending ${role} content to reply chain...`);
-
-//     replyChain.push({"role": role, "content": content});
-
-//     console.log("Content appended to reply chain...");
-
-//     return replyChain;
-// }
-
-
 
 async function getReferenceMsg(msg){
     let firstMessage;
