@@ -354,7 +354,7 @@ async function isReferencingBot(msg){
 //     return thread;
 // }
 
-async function getReplyChain(msg, sysMsg, input_token_limit = 2000, model) {
+async function getReplyChain(msg, sysMsg, model) {
     console.log("Entering getReplyChain function...");
 
     let message = stripCommand(msg.content); 
@@ -362,7 +362,9 @@ async function getReplyChain(msg, sysMsg, input_token_limit = 2000, model) {
     let replyChain = [];
 
     // Add the system message to the start of the reply chain
-    await appendToReplyChain(replyChain, "system", sysMsg, input_token_limit, model);
+    // replyChain = await appendToReplyChain(replyChain, "system", sysMsg, input_token_limit, model);
+
+    replyChain.push({"role": "system", "content": sysMsg});
 
     console.log("System message added to reply chain...");
 
@@ -389,7 +391,9 @@ async function getReplyChain(msg, sysMsg, input_token_limit = 2000, model) {
     }
 
     // Add the user's message to the end of the reply chain
-    await appendToReplyChain(replyChain, "user", message, input_token_limit, model);
+    // replyChain = await appendToReplyChain(replyChain, "user", message, input_token_limit, model);
+
+    replyChain.push({"role": "user", "content": message});
 
     console.log("Reply chain created. Returning reply chain...");
     return replyChain;
@@ -418,15 +422,15 @@ async function getChainContent(repliedMessageRef, model) {
            : refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage;
 }
 
-async function appendToReplyChain(replyChain, role, content, token_limit, model) {
-    console.log(`Appending ${role} content to reply chain...`);
+// async function appendToReplyChain(replyChain, role, content, token_limit, model) {
+//     console.log(`Appending ${role} content to reply chain...`);
 
-    replyChain.push({"role": role, "content": content});
+//     replyChain.push({"role": role, "content": content});
 
-    console.log("Content appended to reply chain...");
+//     console.log("Content appended to reply chain...");
 
-    return replyChain;
-}
+//     return replyChain;
+// }
 
 
 
@@ -621,27 +625,31 @@ async function sendPrompt({msg, instructions, model, functions}){
     let replyChain;
     let fullPrompt;
 
+    const MARGIN_OF_ERROR_MULTIPLIER = 0.9; //multiplier to reduce the max tokens by to account for the margin of error
+
     switch(model){
-        case "gpt-4": maxTokens = 4000; break;
-        case "gpt-3.5-turbo-16k-0613": maxTokens = 8000; break;
-        default: maxTokens = 2000; break;
+        case "gpt-4": maxTokens = GPT4_TOKEN_LIMIT; break;
+        case "gpt-3.5-turbo-16k-0613": maxTokens = GPT_TURBO_16k_TOKEN_LIMIT; break;
+        default: maxTokens = DEFAULT_TOKEN_LIMIT; break;
     }
 
+    maxTokens *= MARGIN_OF_ERROR_MULTIPLIER;
     
+    //the whole reply chain before it's cut down to the token limit
+    replyChain = await getReplyChain(msg, instructions, model);
 
-    replyChain = await getReplyChain(msg, instructions, maxTokens/2, model);
-    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, maxTokens, model);
+    //the final prompt, after it's been cut down to the token limit
+    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, maxTokens/2, model);
 
     console.log("maxTokens: " + maxTokens);
     console.log("replyChain: " + replyChain);
     console.log("fullPrompt: " + fullPrompt);
-    // console.log("fullPrompt tokens: " + Tokeniser.getTokenCount(fullPrompt, model));
     console.log("fullPrompt tokens: " + Tokeniser.numTokensFromMessages(fullPrompt, model));
 
     request = {
         model: model,
         messages: fullPrompt,
-        max_tokens: maxTokens //TODO make this a config option
+        max_tokens: maxTokens/2 //TODO make this a config option
         //TODO look into adding 'stream' so you can see a response as it's being generated
     }
 
