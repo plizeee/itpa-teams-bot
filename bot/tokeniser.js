@@ -1,48 +1,5 @@
 const { encoding_for_model } = require("tiktoken");
 
-//return message sliced to the token count of token_limit
-function trimEndToMatchTokenLimit(message, token_limit, model="gpt-3.5-turbo"){
-    let tokens = getTokenCount(message, model);
-
-    if(tokens > token_limit){
-        let encoded_message = encodeMessage(message, model);
-
-        //slice the byte array to the token limit
-        let sliced_byte_array = encoded_message.slice(0, token_limit);
-
-        //decode the byte array back to a string
-        sliced_message = decodeMessage(sliced_byte_array, model);
-
-        return sliced_message;
-    }
-    else{
-        return message;
-    }
-}
-
-function trimStartToMatchTokenLimit(message, token_limit, model="gpt-3.5-turbo"){
-    let tokens = getTokenCount(message, model);
-    console.log("tokens: " + tokens);
-    console.log("token_limit: " + token_limit);
-
-    if(tokens > token_limit){
-        let encoded_message = encodeMessage(message, model);
-
-        //remove tokens from the start of the byte array to match the token limit
-        let sliced_byte_array = encoded_message.slice(tokens - token_limit);
-
-        //decode the byte array back to a string
-        sliced_message = decodeMessage(sliced_byte_array, model);
-
-        console.log("sliced_message tokens: " + getTokenCount(sliced_message, model));
-
-        return sliced_message;
-    }
-    else{
-        return message;
-    }
-}
-
 function encodeMessage(message, model="gpt-3.5-turbo"){
     const enc = encoding_for_model(model);
     const encoded_message = enc.encode(message);
@@ -124,8 +81,6 @@ function removeOldestMessagesUntilLimit(messages, token_limit, model="gpt-3.5-tu
 }
 
 module.exports = {
-    trimEndToMatchTokenLimit,
-    trimStartToMatchTokenLimit,
     getTokenCount,
     numTokensFromMessages,
     removeOldestMessagesUntilLimit
