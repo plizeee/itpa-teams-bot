@@ -22,6 +22,7 @@
     "passport-github": "^1.1.0",
     "puppeteer": "^21.2.1",
     "readability": "^0.1.0",
-    "serve-static": "^1.15.0"
+    "serve-static": "^1.15.0",
+    "tiktoken": "^1.0.10"
   }
 }

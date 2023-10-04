@@ -2,6 +2,9 @@
 const {OpenAI} = require("openai");
 const Discord = require('discord.js');
 
+// these allow us to count the number of tokens in a string for a given model
+const { get_encoding, encoding_for_model } = require("tiktoken");
+
 const fs = require('fs'); //needed to read/write json files
 const https = require('https');
 
@@ -11,6 +14,8 @@ const GPTFunctionsModule = require("./functions.js");
 const {FunctionResult} = require("./functionResultClass.js")
 
 const {TokenStatTemplate} = require("./StatClasses.js");
+
+const Tokeniser = require("./tokeniser.js");
 
 const profilePath = './bot/profiles.json';
 const configPath = './bot/config.json';
@@ -26,9 +31,10 @@ let config;
 
 let GPT4_REQUEST_LIMIT;
 let GPT4_REQUEST_COOLDOWN;
-const DEFAULT_CHARACTER_LIMIT = 4000;
-const GPT4_CHARACTER_LIMIT = 8000;
-const GPT_TURBO_16k_CHARACTER_LIMIT = 16000;
+const DEFAULT_TOKEN_LIMIT = 4000;
+const GPT4_TOKEN_LIMIT = 8000;
+const GPT_TURBO_16k_TOKEN_LIMIT = 16000;
+
 
 
 require('dotenv').config();
@@ -69,6 +75,9 @@ module.exports = {
         //since we accept txt files as input, we need to check if the message is a file
         let fileContent = await getFileString(msg);
 
+        //TODO feed in the appropriate model
+        //the issue is that we need to read the file to determine the model, but we also need the model to trim the file
+        //this shouldn't be an issue for gpt3.5/4, since they use the same encoding
         msg.content = await addFileToMsg(msg, fileContent);
         // console.log("msg.content: " + msg.content);
 
@@ -127,40 +136,15 @@ function getFileString(msg){
     });
 }
 
-async function addFileToMsg(msg, fileContent, model="gpt-3.5-turbo-16k-0613"){
+async function addFileToMsg(msg, fileContent){
     let output = msg.content;
-
-    //characterLimit = model == "gpt-4" ? GPT4_CHARACTER_LIMIT : DEFAULT_CHARACTER_LIMIT;
-
-    let characterLimit;
-    switch(model){
-        case "gpt-4":
-            characterLimit = GPT4_CHARACTER_LIMIT;
-            break;
-        case "gpt-3.5-turbo-16k-0613":
-            characterLimit = GPT_TURBO_16k_CHARACTER_LIMIT;
-            break;
-        default:
-            characterLimit = DEFAULT_CHARACTER_LIMIT;
-    }
 
     if (fileContent) {
         if(msg.content.length > 0) output += "attachment.txt:\n```" + fileContent.toString() + "```";
         else output = fileContent;
     }
     else console.log("no file content");
-    
-    let truncateWarningMessage = "\n\n**Message was too long and was truncated**```";
-    let maxMessageLength = characterLimit - truncateWarningMessage.length;
-
-    console.log("output.length: " + output.length + " maxMessageLength: " + maxMessageLength);
-
-    if(output.length > maxMessageLength) {
-        output = output.substring(0, maxMessageLength);
-        output += truncateWarningMessage;
-    }
-    
-    return output;
+    return await output;
 }
 
 async function checkReplyForChatCommand(msg){
@@ -296,7 +280,6 @@ function isOffChatCooldown(msg, cooldown = 300000){
     return log;
 }
 
-
 async function isReferencingBot(msg){
     //if the message is a reply, we want to check if the referenced message was sent by a bot
     if(msg.reference){
@@ -307,41 +290,66 @@ async function isReferencingBot(msg){
     return false;
 }
 
-//function that returns a thread from a chain of messages
-async function getReplyChain(msg, sysMsg){
+async function getReplyChain(msg, sysMsg, model) {
+    console.log("Entering getReplyChain function...");
 
     let message = stripCommand(msg.content); 
-    let profile = SharedFunctions.getProfile(msg); 
 
-    let thread = [];
+    let replyChain = [];
 
-    if(msg.reference){
-        let repliedMessageRef = await msg.fetchReference(); //get the message that was replied to
+    replyChain.push({"role": "system", "content": sysMsg});
 
-        while(repliedMessageRef){ //while there is a message replied to
-            let fileContent = await getFileString(repliedMessageRef);
-            repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent)
-            console.log("repliedMessageRef.content: " + repliedMessageRef.content.toString());
+    console.log("System message added to reply chain...");
 
-            let refProfile = SharedFunctions.getProfile(repliedMessageRef);
-            let repliedMessage = stripCommand(repliedMessageRef.content.toString());
+    // If the message has a reference (i.e., it's a reply to another message)
+    if (msg.reference) {
+        console.log("Message has a reference. Fetching replied message...");
+        let repliedMessageRef = await msg.fetchReference();
 
-            if(repliedMessageRef.author.bot){
-                thread.unshift({"role": "assistant", "content": "Terry: " + repliedMessage});
-            }
-            else{
-                thread.unshift({"role": "user", "content": refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage});
-            }
+        // Temporary array to store the interlaced messages
+        let tempReplyArray = [];
 
-            repliedMessageRef = await repliedMessageRef.fetchReference()
-            .catch(err => console.log("No reference found"));
+        // Loop through the chain of replied messages
+        while (repliedMessageRef) {
+            console.log("Processing replied message...");
+            let chainContent = await getChainContent(repliedMessageRef, model);
+            tempReplyArray.unshift({"role": (repliedMessageRef.author.bot) ? "assistant" : "user", "content": chainContent});
+
+            // Attempt to fetch the next replied message in the chain
+            repliedMessageRef = await fetchRepliedMessage(repliedMessageRef);
         }
+
+        // Merge the temporary array into the main replyChain
+        replyChain = replyChain.concat(tempReplyArray);
     }
 
-    thread.push({"role": "user", "content": profile.name + " (" + msg.author.id + "): " + message});
-    thread.unshift({"role": "system", "content": sysMsg});
+    replyChain.push({"role": "user", "content": message});
 
-    return thread;
+    console.log("Reply chain created. Returning reply chain...");
+    return replyChain;
+}
+
+async function fetchRepliedMessage(repliedMessageRef) {
+    console.log("Fetching next replied message...");
+    console.log("isReference: " + repliedMessageRef.reference)
+    return await repliedMessageRef.fetchReference().catch(err => {
+        console.log("No reference found for replied message. Error:", err.message);
+        return null;
+    });
+}
+
+async function getChainContent(repliedMessageRef, model) {
+    console.log("Getting content for replied message...");
+    
+    let fileContent = await getFileString(repliedMessageRef);
+    repliedMessageRef.content = await addFileToMsg(repliedMessageRef, fileContent);
+    let refProfile = SharedFunctions.getProfile(repliedMessageRef);
+    let repliedMessage = stripCommand(repliedMessageRef.content.toString());
+
+    console.log("Returning content for replied message...");
+    return (repliedMessageRef.author.bot)
+           ? "Terry: " + repliedMessage
+           : refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage;
 }
 
 async function getReferenceMsg(msg){
@@ -455,7 +463,7 @@ async function chatroomChatCommand(msg, maxNumOfMsgs =3, cooldowns = {solo: 15, 
     let completion_tokens = completion.usage.completion_tokens;
     let uncut_reply_length = replyMessage.length;
     InstanceData.chatroomTokenStats.storeData(prompt_tokens,completion_tokens);
-    //discord has a 4000 character limit, so we need to cut the response if it's too long
+    //discord has a 2000 character limit, so we need to cut the response if it's too long
     if(rawReply.length > 2000) replyMessage = replyMessage.slice(0, 2000);
 
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
@@ -530,37 +538,76 @@ async function resolveFunctionCall(completion,messages,functions=[]){
 //sends the prompt to the API to generate the AI response and send it to the user
 async function sendPrompt({msg, instructions, model, functions}){
     //TODO include txt file content in replies
-    let fullPrompt = await getReplyChain(msg, instructions);
-    let maxTokens;
+    let token_limit;
+    let input_token_limit;
+    let output_token_limit;
+    let request;
+    let replyChain;
+    let fullPrompt;
+    let fullPromptTokens;
+
+    const MARGIN_OF_ERROR_MULTIPLIER = 0.9; //multiplier to reduce the max tokens by to account for the margin of error
 
     switch(model){
-        case "gpt-4": maxTokens = 4000; break;
-        case "gpt-3.5-turbo-16k-0613": maxTokens = 8000; break;
-        default: maxTokens = 2000; break;
+        case "gpt-4": token_limit = GPT4_TOKEN_LIMIT; break;
+        case "gpt-3.5-turbo-16k-0613": token_limit = GPT_TURBO_16k_TOKEN_LIMIT; break;
+        default: token_limit = DEFAULT_TOKEN_LIMIT; break;
     }
-    let request = {
+
+    token_limit *= MARGIN_OF_ERROR_MULTIPLIER;
+    
+    //TODO make this a config option
+    //TODO maybe make this a function depending on the model
+    //I landed on 0.75 because it's probably more valuable to have long inputs with shorter outputs than a truncated input with a longer output
+    //this won't limit the output length if the input is short enough
+    input_token_limit = token_limit * 0.75;
+    
+    //the whole reply chain before it's cut down to the token limit
+    replyChain = await getReplyChain(msg, instructions, model);
+
+    //the final prompt, after it's been cut down to the token limit
+    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, input_token_limit, model);
+
+    fullPromptTokens = Tokeniser.numTokensFromMessages(fullPrompt, model);
+
+    output_token_limit = token_limit - fullPromptTokens;
+
+    console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
+    console.log("replyChain: " + replyChain);
+    console.log("fullPrompt: " + fullPrompt);
+    console.log("fullPrompt tokens: " + fullPromptTokens);
+
+    request = {
         model: model,
         messages: fullPrompt,
-        max_tokens: maxTokens //TODO make this a config option
+        max_tokens: output_token_limit
         //TODO look into adding 'stream' so you can see a response as it's being generated
     }
+
     if(functions.length) request.functions = functions;
     console.log(request);
+
     let completion = await openai.chat.completions.create(request)
     .catch(error => { //catch error 400 for bad request
         console.log(error);
+        if(error.code == 'context_length_exceeded'){
+            msg.reply("Your message is too long. Please try again.");
+            
+        }
     })
     .catch(error => { //catching errors, such as sending too many requests, or servers are overloaded
         console.log(error);
+        msg.reply("Something went wrong. Please try again later.");
     });
 
     //since the catch statement above doesn't stop the function, we need to check if the completion is null
     if(!completion) {
         console.log("completion is null");
-        msg.reply("Something went wrong. Please try again later.");
         return;
     }
+
     let completionMessage = completion.choices[0].message
+
     while(completionMessage.function_call){
         let prompt_tokens = completion.usage.prompt_tokens;
         let completion_tokens = completion.usage.completion_tokens;
@@ -593,7 +640,6 @@ async function sendPrompt({msg, instructions, model, functions}){
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     
 }
-
 
 //TODO fix issue causing word wrapping to wrap at weird lengths
 async function sendTextFile(msg, replyMessage){
