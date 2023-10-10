@@ -37,11 +37,21 @@ function addPlayedAnswer(player, card) {
     console.log(`${player.name} played: ${card}`);
 }
 
+function getJudge() {
+    return gameState.currentJudge;
+}
+
+function setJudge(player) {
+    gameState.currentJudge = player;
+}
+
 module.exports = {
     initializeGameState,
     getCurrentRound,
     advanceRound,
     setCurrentQuestionCard,
     getPlayedAnswers,
-    addPlayedAnswer
+    addPlayedAnswer,
+    getJudge,
+    setJudge
 };

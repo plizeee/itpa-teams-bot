@@ -3,9 +3,9 @@ const { displayCards, getUserInput } = require('./utils.js');
 let currentJudge = null;
 let currentPlayedCards = [];
 
-function setJudge(player) {
-    currentJudge = player;
-}
+// function setJudge(player) {
+//     currentJudge = player;
+// }
 
 function receiveCards(cards) {
     currentPlayedCards = cards;
@@ -31,7 +31,7 @@ function pickWinner() {
 }
 
 module.exports = {
-    setJudge,
+    // setJudge,
     receiveCards,
     pickWinner
 };

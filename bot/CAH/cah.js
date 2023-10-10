@@ -106,9 +106,10 @@ const cards = JSON.parse(fs.readFileSync('./bot/CAH/cah-all-compact.json'));
 
 const { initializeDeck, drawCard } = require('./deck.js');
 const { createPlayer, drawCard: playerDrawCard, playCard } = require('./player.js');
-const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCard, addPlayedAnswer, getPlayedAnswers } = require('./gamestate.js');
+const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCard, addPlayedAnswer, getPlayedAnswers, getJudge, setJudge } = require('./gamestate.js');
 const { displayCards, getUserInput } = require('./utils.js');
-const { setJudge, receiveCards, pickWinner } = require('./judge.js');
+const { receiveCards, pickWinner } = require('./judge.js');
+const { get } = require('http');
 
 let players = [];
 let deck;
@@ -136,8 +137,10 @@ function startGameLoop() {
         console.log(`Starting Round ${getCurrentRound(gameState)}`);
 
         // Set the judge for this round
-        const judgeIndex = getCurrentRound(gameState) % players.length;
-        setJudge(gameState, players[judgeIndex]);
+        const judgeIndex = getCurrentRound(gameState) % players.length; // Rotate the judge each round
+        // setJudge(gameState, players[judgeIndex]);
+        setJudge(players[judgeIndex]);
+        console.log(`Judge for this round: ${getJudge().name}`);
         
         // Each player draws a card
         for(let player of players) {
@@ -150,10 +153,16 @@ function startGameLoop() {
         // Set the current question card
         const questionCard = drawCard('question');
         setCurrentQuestionCard(gameState, questionCard);
-        console.log(`Question: ${questionCard.text}`);
+        
         
         // Players play their cards
         for(let player of players) {
+            
+            if(player === getJudge()) {
+                continue; // Skip the judge
+            }
+
+            console.log(`Question: ${questionCard.text}`);
             displayCards(player.hand);
             const cardIndex = parseInt(getUserInput(`${player.name}, choose a card to play (by index):`)) - 1;
             const playedCard = playCard(player, cardIndex);

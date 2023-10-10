@@ -44,17 +44,10 @@ function shuffleDeck(type) {
 }
 
 function drawCard(type) {
-    console.log("type: " + type);
     if(type === 'question') {
         return questionCards.pop();
     } else if(type === 'answer') {
-        //console log the answer we are drawing
-        // console.log("answerCards: " + answerCards);
-
-        // console.log("answerCards.pop(): " + answerCards.pop());
         return answerCards.pop();
-        //that keeps returning undefined, so we are going to try to return the first card in the array
-        // return answerCards[0];
     } else {
         throw new Error("Invalid card type for drawing");
     }

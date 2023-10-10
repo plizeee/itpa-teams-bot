@@ -19,7 +19,7 @@ function playCard(player, cardIndex) {
         throw new Error("Invalid card index");
     }
 
-    console.log(`${player.name} played: ${player.hand[cardIndex]}`)
+    // console.log(`${player.name} played: ${player.hand[cardIndex]}`)
 
      // return player.hand.splice(cardIndex, 1)[0]; // Remove the card from the player's hand and return it
     //  return player.hand[cardIndex]; // Remove the card from the player's hand and return it
