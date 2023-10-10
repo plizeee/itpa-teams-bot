@@ -2,7 +2,7 @@ const readlineSync = require('readline-sync'); // Using 'readline-sync' for sync
 
 function displayCards(cards) {
     cards.forEach((card, index) => {
-        console.log(`[${index + 1}] ${card.text}`);
+        console.log(`[${index + 1}] ${card}`);
     });
 }
 

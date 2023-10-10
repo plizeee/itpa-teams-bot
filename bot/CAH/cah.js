@@ -114,14 +114,16 @@ let players = [];
 let deck;
 let gameState;
 
+const maxCardsInHand = 10;
+
 function initializeGame() {
     // Initialize deck
     deck = initializeDeck();
     
     // Create players
-    let numPlayers = parseInt(getUserInput("How many players?"));
+    let numPlayers = parseInt(getUserInput("How many players? "));
     for(let i = 0; i < numPlayers; i++) {
-        const playerName = getUserInput(`Enter name for player ${i + 1}:`);
+        const playerName = getUserInput(`Enter name for player ${i + 1}: `);
         players.push(createPlayer(playerName));
     }
     
@@ -132,11 +134,17 @@ function initializeGame() {
 function startGameLoop() {
     while(getCurrentRound(gameState) <= 10) { // Let's assume 10 rounds for this example
         console.log(`Starting Round ${getCurrentRound(gameState)}`);
+
+        // Set the judge for this round
+        const judgeIndex = getCurrentRound(gameState) % players.length;
+        setJudge(gameState, players[judgeIndex]);
         
         // Each player draws a card
         for(let player of players) {
-            const card = drawCard('answer'); // Assuming players only draw answer cards
-            playerDrawCard(player, card);
+            for(let i = player.hand.length; i < maxCardsInHand; i++) {
+                const card = drawCard('answer');
+                playerDrawCard(player, card);
+            }
         }
         
         // Set the current question card
@@ -149,18 +157,19 @@ function startGameLoop() {
             displayCards(player.hand);
             const cardIndex = parseInt(getUserInput(`${player.name}, choose a card to play (by index):`)) - 1;
             const playedCard = playCard(player, cardIndex);
-            addPlayedAnswer(playedCard);
+            
+            addPlayedAnswer(player, playedCard);
         }
         
-        // Judge picks a winner
-        setJudge(gameState, players[getCurrentRound(gameState) % players.length]); // Rotate judges
+
         
-        console.log("getPlayedAnswers: " + getPlayedAnswers());
+        
+        // console.log("getPlayedAnswers: " + getPlayedAnswers().map(card => card));
         receiveCards(getPlayedAnswers());
         const winningCard = pickWinner();
-        // console.log(`${winningCard.owner.name} wins this round with: ${winningCard.text}`);
-        console.log(`The winning card is: ${winningCard.text}`);
 
+        // Increase the winner's score
+        // winningCard.player.increaseScore(1);
         
         // Move to the next round
         advanceRound(gameState);

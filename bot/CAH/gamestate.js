@@ -29,10 +29,12 @@ function getPlayedAnswers() {
     return gameState.playedAnswers;
 }
 
-function addPlayedAnswer(card) {
-    gameState.playedAnswers.push(card);
-    console.log(`Played answer: ${card.text}`);
-    console.log(`Played answers: ${gameState.playedAnswers.map(card => card.text)}`);
+function addPlayedAnswer(player, card) {
+    //add the player and card to the played answers array
+    gameState.playedAnswers.push([ player, card ]);
+    // console.log(`Played answers: ${gameState.playedAnswers.map(card => card)}`);
+
+    console.log(`${player.name} played: ${card}`);
 }
 
 module.exports = {
