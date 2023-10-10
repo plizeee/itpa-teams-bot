@@ -1,6 +1,6 @@
 const { displayCards, getUserInput } = require('./utils.js');
 
-let currentJudge = null;
+// let currentJudge = null;
 let currentPlayedCards = [];
 
 // function setJudge(player) {

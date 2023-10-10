@@ -105,7 +105,7 @@ const fs = require('fs');
 const cards = JSON.parse(fs.readFileSync('./bot/CAH/cah-all-compact.json'));
 
 const { initializeDeck, drawCard } = require('./deck.js');
-const { createPlayer, drawCard: playerDrawCard, playCard } = require('./player.js');
+const { createPlayer, drawCard: playerDrawCard, playCard, increaseScore } = require('./player.js');
 const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCard, addPlayedAnswer, getPlayedAnswers, getJudge, setJudge } = require('./gamestate.js');
 const { displayCards, getUserInput } = require('./utils.js');
 const { receiveCards, pickWinner } = require('./judge.js');
@@ -170,15 +170,13 @@ function startGameLoop() {
             addPlayedAnswer(player, playedCard);
         }
         
-
-        
-        
         // console.log("getPlayedAnswers: " + getPlayedAnswers().map(card => card));
         receiveCards(getPlayedAnswers());
         const winningCard = pickWinner();
 
         // Increase the winner's score
-        // winningCard.player.increaseScore(1);
+        increaseScore(winningCard[0], 1)
+        displayScore();
         
         // Move to the next round
         advanceRound(gameState);
@@ -197,6 +195,12 @@ function displayInstructions() {
     console.log("5. The game continues for 10 rounds.");
     console.log("6. The player with the most round wins at the end is the overall winner.");
     console.log("Let's start the game!");
+}
+
+function displayScore(){
+    for(let player of players) {
+        console.log(`${player.name} has ${player.score} points.`);
+    }
 }
 
 function endGame() {
