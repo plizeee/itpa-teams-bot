@@ -110,6 +110,7 @@ const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCa
 const { displayCards, getUserInput } = require('./utils.js');
 const { receiveCards, pickWinner } = require('./judge.js');
 const { get } = require('http');
+const { question } = require('readline-sync');
 
 let players = [];
 let deck;
@@ -134,45 +135,29 @@ function initializeGame() {
 
 function startGameLoop() {
     while(getCurrentRound(gameState) <= 10) { // Let's assume 10 rounds for this example
-        console.log(`Starting Round ${getCurrentRound(gameState)}`);
+        console.log(`\nStarting Round ${getCurrentRound(gameState)}`);
 
         // Set the judge for this round
         const judgeIndex = getCurrentRound(gameState) % players.length; // Rotate the judge each round
         // setJudge(gameState, players[judgeIndex]);
         setJudge(players[judgeIndex]);
-        console.log(`Judge for this round: ${getJudge().name}`);
+        console.log(`Judge for this round: ${getJudge().name}\n`);
         
-        // Each player draws a card
-        for(let player of players) {
-            for(let i = player.hand.length; i < maxCardsInHand; i++) {
-                const card = drawCard('answer');
-                playerDrawCard(player, card);
-            }
-        }
+        fillAllHands();
         
         // Set the current question card
         const questionCard = drawCard('question');
         setCurrentQuestionCard(gameState, questionCard);
         
-        
         // Players play their cards
-        for(let player of players) {
-            
-            if(player === getJudge()) {
-                continue; // Skip the judge
-            }
-
-            console.log(`Question: ${questionCard.text}`);
-            displayCards(player.hand);
-            const cardIndex = parseInt(getUserInput(`${player.name}, choose a card to play (by index):`)) - 1;
-            const playedCard = playCard(player, cardIndex);
-            
-            addPlayedAnswer(player, playedCard);
-        }
+        playerTurns(players, questionCard);
         
         // console.log("getPlayedAnswers: " + getPlayedAnswers().map(card => card));
+
+        console.log("\nJudging round...\n\nJudge: " + getJudge().name + "\n");
+        console.log(`Question: \n${questionCard.text}\n`);
         receiveCards(getPlayedAnswers());
-        const winningCard = pickWinner();
+        const winningCard = pickWinner(questionCard);
 
         // Increase the winner's score
         increaseScore(winningCard[0], 1)
@@ -183,6 +168,54 @@ function startGameLoop() {
     }
 
     endGame();
+}
+
+function playerTurns(players, questionCard) {
+    // Players play their cards
+    for(let player of players) {
+        if(player === getJudge()) {
+            continue; // Skip the judge
+        }
+
+        console.log(`Question: \n${questionCard.text}\n`);
+
+        // console.log(`${player.name}'s hand:`);
+
+        // displayCards(player.hand);
+        // const cardIndex = parseInt(getUserInput(`\nChoose a card: `)) - 1;
+        // const playedCard = playCard(player, cardIndex);
+        
+        // addPlayedAnswer(player, playedCard);
+
+        let playedCards = [];
+
+        for(let i = 0; i < questionCard.pick; i++) {
+            let playedCard;
+            console.log(`${player.name}'s hand:`);
+            displayCards(player.hand);
+
+            console.log("\nPick " + questionCard.pick + " cards.");
+            if(questionCard.pick > 1) {
+                playedCard = playCard(player, parseInt(getUserInput(`\nChoose card ${i + 1}: `)) - 1);
+            }
+            else {
+                playedCard = playCard(player, parseInt(getUserInput(`\nChoose a card: `)) - 1);
+            }
+
+            playedCards.push(playedCard);
+        }
+
+        addPlayedAnswer(player, playedCards);
+    }
+}
+
+function fillAllHands() {
+    for(let player of players) {
+        for(let i = player.hand.length; i < maxCardsInHand; i++) {
+            const card = drawCard('answer');
+            playerDrawCard(player, card);
+        }
+    }
 }
 
 function displayInstructions() {
@@ -198,6 +231,7 @@ function displayInstructions() {
 }
 
 function displayScore(){
+    console.log("\nCurrent scores:");
     for(let player of players) {
         console.log(`${player.name} has ${player.score} points.`);
     }

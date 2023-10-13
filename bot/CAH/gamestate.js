@@ -29,12 +29,11 @@ function getPlayedAnswers() {
     return gameState.playedAnswers;
 }
 
-function addPlayedAnswer(player, card) {
+function addPlayedAnswer(player, cards) {
     //add the player and card to the played answers array
-    gameState.playedAnswers.push([ player, card ]);
-    // console.log(`Played answers: ${gameState.playedAnswers.map(card => card)}`);
+    gameState.playedAnswers.push([ player, cards ]);
 
-    console.log(`${player.name} played: ${card}`);
+    console.log(`\n${player.name} played: ${cards.map(card => card)}\n`);
 }
 
 function getJudge() {
