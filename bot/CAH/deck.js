@@ -11,23 +11,10 @@ const questionCardsData = cards.black;
 const answerCardsData = cards.white;
 
 // we are making a copy of the data so that we can modify it without affecting the original
-// let questionCards = questionCardsData.map(card => ({...card}));
-// let answerCards = answerCardsData.map(card => ({...card}));
-
 let questionCards = JSON.parse(JSON.stringify(questionCardsData));
 let answerCards = JSON.parse(JSON.stringify(answerCardsData));
 
 function initializeDeck() {
-    // Create question cards
-    // for(let question of questionCardsData) {
-    //     questionCards.push(createCard('question', question.text));
-    // }
-
-    // Create answer cards
-    // for(let text of answerCardsData) {
-    //     answerCards.push(createCard('answer', text));
-    // }
-
     // Shuffle the decks
     shuffleDeck('question');
     shuffleDeck('answer');
