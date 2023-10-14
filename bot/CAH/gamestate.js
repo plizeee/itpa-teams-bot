@@ -1,15 +1,42 @@
+const GamePhaseEnum = Object.freeze({
+    SETUP: "setup",
+    ANSWERS: "answers",
+    JUDGE: "judge"
+});
+
 let gameState = {
     round: 0,
+    phase: GamePhaseEnum.SETUP,
     currentJudge: null,
     currentQuestionCard: null,
     playedAnswers: []
 };
+
+function setGamePhase(newPhase) {
+    if (Object.values(GamePhaseEnum).includes(newPhase)) {
+        gameState.phase = newPhase;
+    } else {
+        console.error("Invalid game phase provided.");
+    }
+}
+
+function getGamePhase() {
+    return gameState.phase;
+}
+
+// let gameState = {
+//     round: 0,
+//     currentJudge: null,
+//     currentQuestionCard: null,
+//     playedAnswers: []
+// };
 
 function initializeGameState(players) {
     gameState.round = 1;
     gameState.currentJudge = players[0]; // Assuming the first player is the judge for the first round
     gameState.currentQuestionCard = null;
     gameState.playedAnswers = [];
+    gameState.phase = null;
 }
 
 function getCurrentRound() {
@@ -52,5 +79,7 @@ module.exports = {
     getPlayedAnswers,
     addPlayedAnswer,
     getJudge,
-    setJudge
+    setJudge,
+    setGamePhase,
+    getGamePhase
 };

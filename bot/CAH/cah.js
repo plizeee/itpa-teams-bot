@@ -5,7 +5,7 @@ const cards = JSON.parse(fs.readFileSync('./bot/CAH/cah-all-compact.json'));
 
 const { initializeDeck, drawCard } = require('./deck.js');
 const { createPlayer, drawCard: playerDrawCard, playCard, increaseScore } = require('./player.js');
-const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCard, addPlayedAnswer, getPlayedAnswers, getJudge, setJudge } = require('./gamestate.js');
+const { initializeGameState, getCurrentRound, advanceRound, setCurrentQuestionCard, addPlayedAnswer, getPlayedAnswers, getJudge, setJudge, setGamePhase, getGamePhase } = require('./gamestate.js');
 const { displayCards, getUserInput } = require('./utils.js');
 const { receiveCards, pickWinner } = require('./judge.js');
 const { get } = require('http');
@@ -17,19 +17,73 @@ let gameState;
 
 const maxCardsInHand = 10;
 
-function initializeGame() {
+module.exports = {
+    checkCahCommand: async function(msg, isMasterBranch, client, config){
+        if(msg.content.toUpperCase().startsWith("!START")){
+            initializeGame(msg);
+        }
+        else{
+            switch(gameState.getGamePhase()){
+                case "SETUP": setupPhase(msg);
+                break;
+            }
+        }
+    }
+}
+
+
+async function initializeGame(msg) {
     // Initialize deck
     deck = initializeDeck();
+
+    // gameState.setGamePhase("SETUP");
+
+    let reply = await msg.reply("Starting new game...\n\nPlease react:\n👍 to participate in the game\n❌ to cancel the game\n✅ to start the game");
+
+    // apply the reactions to the message we sent above
+    reply.react('👍').then(() => reply.react('❌')).then(() => reply.react('✅'));
     
-    // Create players
-    let numPlayers = parseInt(getUserInput("How many players? "));
-    for(let i = 0; i < numPlayers; i++) {
-        const playerName = getUserInput(`Enter name for player ${i + 1}: `);
-        players.push(createPlayer(playerName));
-    }
+    // check for the reactions and activate the appropriate function
+    let filter = (m) => m.author.id === msg.author.id && !m.author.bot;
+
+    const collector = reply.createReactionCollector(filter, { time: 15000 });
+
+    collector.on('collect', (reaction, user) => {
+        if (reaction.emoji.name === '👍' && !user.bot) {
+            console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+            // add the user to the game
+            msg.reply(`Adding ${user} to the game...`);
+            players.push(createPlayer(user.tag));
+            //DEBUG
+            players.push(createPlayer("Player 1"));
+        }
+        else if (reaction.emoji.name === '❌' && !user.bot) {
+            console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+            // cancel the game
+            msg.reply("Cancelling game...");
+            return;
+        }
+        else if (reaction.emoji.name === '✅' && !user.bot) {
+            console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+            // start the game
+            // startGameLoop();
+            msg.reply("Starting game...");
+        }
+    });
+
+    collector.on('end', collected => {
+        console.log(`Collected ${collected.size} items`);
+    });
+
+    // for(let i = 0; i < numPlayers; i++) {
+    //     const playerName = getUserInput(`Enter name for player ${i + 1}: `);
+    //     players.push(createPlayer(playerName));
+    // }
+    // players.push(createPlayer("Player 1"));
+    // players.push(createPlayer("Player 2"));
     
     // Initialize game state
-    gameState = initializeGameState(players);
+    // gameState = initializeGameState(players);
 }
 
 function startGameLoop() {
@@ -50,8 +104,6 @@ function startGameLoop() {
         
         // Players play their cards
         playerTurns(players, questionCard);
-        
-        // console.log("getPlayedAnswers: " + getPlayedAnswers().map(card => card));
 
         console.log("\nJudging round...\n\nJudge: " + getJudge().name + "\n");
         console.log(`Question: \n${questionCard.text}\n`);
@@ -134,6 +186,6 @@ function endGame() {
 }
 
 // Main execution starts here
-displayInstructions();
-initializeGame();
-startGameLoop();
+// displayInstructions();
+// initializeGame();
+// startGameLoop();

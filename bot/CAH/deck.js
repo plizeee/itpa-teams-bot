@@ -1,5 +1,5 @@
 const { randomizeArray } = require('./utils.js');
-const { createCard } = require('./card.js');
+// const { createCard } = require('./card.js');
 
 //import the cards from the json file
 const fs = require('fs');

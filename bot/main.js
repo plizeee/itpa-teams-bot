@@ -73,6 +73,7 @@ const teamsCommands = require('./teams.js');
 const chatCommands = require('./chat.js');
 const adminCommands = require('./admin.js');
 const secretCommands = require('./gptSecrets.js');
+const cahCommands = require('./CAH/cah.js');
 const SharedFunctions = require("./util.js");
 const UserCommands = require("./UserCommands.js");
 const { handle } = require('express/lib/application.js');
@@ -203,24 +204,31 @@ client.on("messageCreate", async msg => {
     }
 
     if (profile.instance_id == instance_id) {
-        
-        if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
-            console.log("teams command found");
-            return;
+        //check for certain channels
+        if(msg.channel.id == '1162382880803135648'){
+            if(await cahCommands.checkCahCommand(msg, isMaster, client, config)){
+                console.log("cah command found");
+                return;
+            }
         }
-        else if(await secretCommands.checkSecretCommand(msg, isMaster)) {
-            console.log("secret command found");
-            return;
+        else{
+            if (teamsCommands.checkTeamsCommand(msg, isMaster)) {
+                console.log("teams command found");
+                return;
+            }
+            else if(await secretCommands.checkSecretCommand(msg, isMaster)) {
+                console.log("secret command found");
+                return;
+            }
+            else if (await chatCommands.checkChatCommand(msg, isMaster,client, config)) {
+                console.log("chat command found");
+                return;
+            }
+            else if (await UserCommands.checkUserCommand(msg)){
+                console.log("user command found");
+                return;
+            }
         }
-        else if (await chatCommands.checkChatCommand(msg, isMaster,client, config)) {
-            console.log("chat command found");
-            return;
-        }
-        else if (await UserCommands.checkUserCommand(msg)){
-            console.log("user command found");
-            return;
-        }
-        
     }
 });
 
