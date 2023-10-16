@@ -1,7 +1,8 @@
 const GamePhaseEnum = Object.freeze({
-    SETUP: "setup",
-    ANSWERS: "answers",
-    JUDGE: "judge"
+    SETUP: "SETUP",
+    ANSWERS: "ANSWER",
+    JUDGE: "JUDGE",
+    QUESTION: "QUESTION"
 });
 
 let gameState = {
@@ -9,8 +10,17 @@ let gameState = {
     phase: GamePhaseEnum.SETUP,
     currentJudge: null,
     currentQuestionCard: null,
-    playedAnswers: []
+    playedAnswers: [],
+    channel: null
 };
+
+function setChannel(channel) {
+    gameState.channel = channel;
+}
+
+function getChannel() {
+    return gameState.channel;
+}
 
 function setGamePhase(newPhase) {
     if (Object.values(GamePhaseEnum).includes(newPhase)) {
@@ -37,6 +47,7 @@ function initializeGameState(players) {
     gameState.currentQuestionCard = null;
     gameState.playedAnswers = [];
     gameState.phase = null;
+    gameState.channel = null;
 }
 
 function getCurrentRound() {
@@ -81,5 +92,7 @@ module.exports = {
     getJudge,
     setJudge,
     setGamePhase,
-    getGamePhase
+    getGamePhase,
+    setChannel,
+    getChannel
 };

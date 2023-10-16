@@ -1,5 +1,6 @@
-function createPlayer(name) {
+function createPlayer(name, id = null) {
     return {
+        id: id,
         name: name,
         hand: [],
         score: 0

@@ -4,6 +4,7 @@ const { randomizeArray } = require('./utils.js');
 //import the cards from the json file
 const fs = require('fs');
 const { question } = require('readline-sync');
+const { setCurrentQuestionCard } = require('./gamestate.js');
 const cards = JSON.parse(fs.readFileSync('./bot/CAH/cah-all-compact.json'));
 
 // Sample card data; ideally, you would import this from cah_all_compact.json
@@ -32,9 +33,12 @@ function shuffleDeck(type) {
 
 function drawCard(type) {
     if(type === 'question') {
-        return questionCards.pop();
+        let card = questionCards.pop();
+        setCurrentQuestionCard(card);
+        return card;
     } else if(type === 'answer') {
-        return answerCards.pop();
+        let card = answerCards.pop();
+        return card;
     } else {
         throw new Error("Invalid card type for drawing");
     }
