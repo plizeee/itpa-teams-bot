@@ -72,15 +72,17 @@ module.exports = {
         GPT4_REQUEST_LIMIT = config.gpt4ReqLimit;
         GPT4_REQUEST_COOLDOWN = config.gpt4ReqCooldown * 60000; //convert minutes to milliseconds
 
-        //TODO user message should be above the file content, but if we reach the token limit, we should prioritize cutting out the bottom of the file content
-        //since we accept txt files as input, we need to check if the message is a file
-        let fileContent = await getFileString(msg);
+            //TODO user message should be above the file content, but if we reach the token limit, we should prioritize cutting out the bottom of the file content
+            //since we accept txt files as input, we need to check if the message is a file
+            let fileContent = await getFileString(msg);
 
-        //TODO feed in the appropriate model
-        //the issue is that we need to read the file to determine the model, but we also need the model to trim the file
-        //this shouldn't be an issue for gpt3.5/4, since they use the same encoding
-        msg.content = await addFileToMsg(msg, fileContent);
-        // console.log("msg.content: " + msg.content);
+            //TODO feed in the appropriate model
+            //the issue is that we need to read the file to determine the model, but we also need the model to trim the file
+            //this shouldn't be an issue for gpt3.5/4, since they use the same encoding
+            msg.content = await addFileToMsg(msg, fileContent);
+            // console.log("msg.content: " + msg.content);
+       
+        
 
         profileCreation(msg);
         let chatType = await getChatType(msg,client,config.chatrooms)
@@ -108,66 +110,34 @@ module.exports = {
     }
 };
 
-// function getFileString(msg){
-//     return new Promise((resolve, reject) => {
-//         if (msg.attachments.size > 0) {
-//             let attachment = msg.attachments.first();
-
-//             // check if the attachment is a .txt file
-//             if (attachment.name.endsWith('.txt') || attachment.name.endsWith('.log')) {
-//                 https.get(attachment.url, (res) => {
-//                     let data = '';
-
-//                     // A chunk of data has been received.
-//                     res.on('data', (chunk) => {
-//                         data += chunk;
-//                     });
-
-//                     // The whole response has been received.
-//                     res.on('end', () => {
-//                         resolve(data);
-//                     });
-//                 }).on('error', (err) => {
-//                     reject("Error: " + err.message);
-//                 });
-//             }
-//         } else {
-//             resolve(null);
-//         }
-//     });
-// }
-
-function getFileString(msg){
+function getFileString(msg) {
     return new Promise((resolve, reject) => {
         if (msg.attachments.size > 0) {
             let attachment = msg.attachments.first();
 
-            const validExtensions = ['.txt', '.log', '.js', '.py', '.sh', '.bat', '.json', '.csv', '.html', '.css', '.xml', '.yaml', '.yml', '.md', '.markdown', '.rst']; // I did not test most of these
-            const isScript = validExtensions.some(ext => attachment.name.endsWith(ext));
-            
-            if (isScript) {
+            const validTextExtensions = ['.txt', '.log', '.js', '.py', '.sh', '.bat', '.json', '.csv', '.html', '.css', '.xml', '.yaml', '.yml', '.md', '.markdown', '.rst'];
+            const isTextFile = validTextExtensions.some(ext => attachment.name.toLowerCase().endsWith(ext));
+
+            if (isTextFile) {
                 https.get(attachment.url, (res) => {
                     let data = '';
-
-                    // A chunk of data has been received.
-                    res.on('data', (chunk) => {
-                        data += chunk;
-                    });
-
-                    // The whole response has been received.
-                    res.on('end', () => {
-                        resolve(data);
-                    });
-                }).on('error', (err) => {
-                    reject("Error: " + err.message);
-                });
+                    res.on('data', (chunk) => { data += chunk; });
+                    res.on('end', () => { resolve(data); });
+                }).on('error', (err) => { reject("Error: " + err.message); });
             } else {
-                reject("Unsupported file type.");
+                // If it's an image or any other unsupported file type, resolve to null
+                resolve(null);
             }
         } else {
+            // No attachments
             resolve(null);
         }
     });
+}
+
+
+function isImageFile(filename) {
+    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].some(ext => filename.toLowerCase().endsWith(ext));
 }
 
 
@@ -329,41 +299,72 @@ async function isReferencingBot(msg){
 async function getReplyChain(msg, sysMsg, model) {
     console.log("Entering getReplyChain function...");
 
-    let message = stripCommand(msg.content); 
+    let messageContent = stripCommand(msg.content); // Assuming this is text
 
-    let replyChain = [];
+    let replyChain = [{"role": "system", "content": sysMsg}];
 
-    replyChain.push({"role": "system", "content": sysMsg});
-
-    console.log("System message added to reply chain...");
-
-    // If the message has a reference (i.e., it's a reply to another message)
     if (msg.reference) {
-        console.log("Message has a reference. Fetching replied message...");
         let repliedMessageRef = await msg.fetchReference();
-
-        // Temporary array to store the interlaced messages
         let tempReplyArray = [];
-
-        // Loop through the chain of replied messages
+        
         while (repliedMessageRef) {
-            console.log("Processing replied message...");
             let chainContent = await getChainContent(repliedMessageRef, model);
-            tempReplyArray.unshift({"role": (repliedMessageRef.author.bot) ? "assistant" : "user", "content": chainContent});
+            let chainMessageObject = {"role": (repliedMessageRef.author.bot) ? "assistant" : "user", "content": []};
 
-            // Attempt to fetch the next replied message in the chain
-            repliedMessageRef = await fetchRepliedMessage(repliedMessageRef);
+            // Check if the model is the vision model and if the replied message contains an image
+            if (model === "gpt-4-vision-preview" && repliedMessageRef.attachments.size > 0) {
+                let imageURL = repliedMessageRef.attachments.first().url;
+                chainMessageObject.content.push({ 
+                    "type": "image_url", 
+                    "image_url": {
+                        "url": imageURL,
+                        "detail": "low"
+                    }
+                });
+            }
+            // Always add text content
+            chainMessageObject.content.push({ 
+                "type": "text", 
+                "text": chainContent 
+            });
+
+            tempReplyArray.unshift(chainMessageObject);
+            repliedMessageRef = repliedMessageRef.reference ? await repliedMessageRef.fetchReference() : null;
         }
 
-        // Merge the temporary array into the main replyChain
         replyChain = replyChain.concat(tempReplyArray);
     }
 
-    replyChain.push({"role": "user", "content": message});
+    let messageContentObject = {"role": "user", "content": []};
+
+    // Add text content
+    messageContentObject.content.push({ 
+        "type": "text", 
+        "text": messageContent 
+    });
+
+    // Check for image in the original message if the model is the vision model
+    if (model === "gpt-4-vision-preview" && msg.attachments.size > 0) {
+        let imageURL = msg.attachments.first().url;
+        messageContentObject.content.push({ 
+            "type": "image_url", 
+            "image_url": {
+                "url": imageURL,
+                "detail": "low"
+            }
+        });
+
+    }
+
+    replyChain.push(messageContentObject);
 
     console.log("Reply chain created. Returning reply chain...");
+    console.log(JSON.stringify(replyChain, null, 2));
     return replyChain;
 }
+
+
+
 
 async function fetchRepliedMessage(repliedMessageRef) {
     console.log("Fetching next replied message...");
@@ -615,19 +616,25 @@ async function sendPrompt({msg, instructions, model, functions}){
     console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
     console.log("replyChain: " + replyChain);
 
-    if(model === "gpt-4-vision-preview") {
-        let visionMessages = convertToVisionFormat(fullPrompt);
-        request = {
-            model: model,
-            messages: visionMessages, // Pass the messages array directly
-            max_tokens: output_token_limit
-        }
-    } else {
-        request = {
-            model: model,
-            messages: fullPrompt, // This assumes fullPrompt is an array
-            max_tokens: output_token_limit
-        }
+    // if(model === "gpt-4-vision-preview") {
+    //     let visionMessages = convertToVisionFormat(fullPrompt);
+    //     request = {
+    //         model: model,
+    //         messages: visionMessages, // Pass the messages array directly
+    //         max_tokens: output_token_limit
+    //     }
+    // } else {
+    //     request = {
+    //         model: model,
+    //         messages: fullPrompt, // This assumes fullPrompt is an array
+    //         max_tokens: output_token_limit
+    //     }
+    // }
+
+    request = {
+        model: model,
+        messages: fullPrompt, // This assumes fullPrompt is an array
+        max_tokens: output_token_limit
     }
 
     //we check if there are any functions to be called
