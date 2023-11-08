@@ -34,6 +34,7 @@ let GPT4_REQUEST_COOLDOWN;
 const DEFAULT_TOKEN_LIMIT = 4000;
 const GPT4_TOKEN_LIMIT = 8000;
 const GPT_TURBO_16k_TOKEN_LIMIT = 16000;
+const GPT_4_TURBO_TOKEN_LIMIT = 24000; //the official token limit is 128k, but I'd rather not spend $3 for a single request
 
 
 
@@ -199,6 +200,7 @@ function isAuthorized(msg, referenceMessage = null) {
 
     let isAuthorized = userPermission >= promptPermission;
 
+    //TODO make the rate limit apply to the new gpt-4 model and code interpreter
     // Rate limit non-admins if they are using gpt-4 and have permission
     if (model == "gpt-4" && isAuthorized && userPermission == 0) {
         isAuthorized = checkRateLimit(profile, msg);
@@ -549,6 +551,7 @@ async function sendPrompt({msg, instructions, model, functions}){
     const MARGIN_OF_ERROR_MULTIPLIER = 0.9; //multiplier to reduce the max tokens by to account for the margin of error
 
     switch(model){
+        case "gpt-4-1106-preview": token_limit = GPT_4_TURBO_TOKEN_LIMIT; break;
         case "gpt-4": token_limit = GPT4_TOKEN_LIMIT; break;
         case "gpt-3.5-turbo-16k-0613": token_limit = GPT_TURBO_16k_TOKEN_LIMIT; break;
         default: token_limit = DEFAULT_TOKEN_LIMIT; break;
@@ -566,10 +569,11 @@ async function sendPrompt({msg, instructions, model, functions}){
     replyChain = await getReplyChain(msg, instructions, model);
 
     //the final prompt, after it's been cut down to the token limit
-    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, input_token_limit, model);
+    fullPrompt = Tokeniser.removeOldestMessagesUntilLimit(replyChain, input_token_limit, /*model*/);
 
-    fullPromptTokens = Tokeniser.numTokensFromMessages(fullPrompt, model);
+    fullPromptTokens = Tokeniser.numTokensFromMessages(fullPrompt/*, model*/); //TODO this seems to not be compatible with gpt-4-1106-preview
 
+    model == "gpt-4-1106-preview" ? output_token_limit = 4000 :
     output_token_limit = token_limit - fullPromptTokens;
 
     console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
@@ -618,7 +622,13 @@ async function sendPrompt({msg, instructions, model, functions}){
     //might be a good idea to turn reply into seperate method
     const rawReply = completionMessage.content;   //storing the unmodified output of the ai generated response
 
-    let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified 
+    let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified
+
+    //this is causing an error, so let's fix it 
+    //replyMessage.replace(/(?<!<)(https?://[^\s]+)(?!>)/g, '<$1>');
+
+    replyMessage = replyMessage.replace(/\((https?:\/\/\S+)\)/g, '(<$1>)');
+    console.log("replyMessage UPDATED WITH REGEX: " + replyMessage);
 
     console.log("rawReply: " + rawReply);
 
