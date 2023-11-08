@@ -16,3 +16,5 @@ instanceData.json
 gptSecrets.json
 .vs/
 .DS_Store
+cah-all-compact.json
+cah-all-full.json
