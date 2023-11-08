@@ -586,6 +586,12 @@ async function sendPrompt({msg, instructions, model, functions}){
 
     const MARGIN_OF_ERROR_MULTIPLIER = 0.9; //multiplier to reduce the max tokens by to account for the margin of error
 
+    //if the message includes an image, we need to use the vision model
+    //if we're concerned about cost, this should probably not be the default behavior
+    if(msg.attachments.size > 0 && isImageFile(msg.attachments.first().name)){
+        model = "gpt-4-vision-preview";
+    }
+
     switch(model){
         case "gpt-4-1106-preview": token_limit = GPT_4_TURBO_TOKEN_LIMIT; break;
         case "gpt-4-vision-preview": token_limit = GPT_4_VISION_TOKEN_LIMIT; break;
@@ -616,21 +622,6 @@ async function sendPrompt({msg, instructions, model, functions}){
 
     console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
     console.log("replyChain: " + replyChain);
-
-    // if(model === "gpt-4-vision-preview") {
-    //     let visionMessages = convertToVisionFormat(fullPrompt);
-    //     request = {
-    //         model: model,
-    //         messages: visionMessages, // Pass the messages array directly
-    //         max_tokens: output_token_limit
-    //     }
-    // } else {
-    //     request = {
-    //         model: model,
-    //         messages: fullPrompt, // This assumes fullPrompt is an array
-    //         max_tokens: output_token_limit
-    //     }
-    // }
 
     request = {
         model: model,
