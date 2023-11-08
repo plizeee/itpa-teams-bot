@@ -258,7 +258,7 @@ async function getChatType(msg,client,chatrooms){
 
     chatType = {Trigger:trigger}; //creating a chatType object with the intial property of Trigger
     
-    //ternary operator block to asign chatType type property 
+    //ternary operator block to asign chatType type property
     chatType.Type = trigger? 1: //if it's a prompt command
     (msg.channel.type === 1 && !msg.author.bot && !message.startsWith("!"))? 2: //if it's a dm without a command
     await isReferencingBot(msg) ? 3: //if it's a reply to the bot
@@ -580,18 +580,42 @@ async function sendPrompt({msg, instructions, model, functions}){
 
     console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
     console.log("replyChain: " + replyChain);
-    console.log("fullPrompt: " + fullPrompt);
-    console.log("fullPrompt tokens: " + fullPromptTokens);
 
-    request = {
-        model: model,
-        messages: fullPrompt,
-        max_tokens: output_token_limit
-        //TODO look into adding 'stream' so you can see a response as it's being generated
+    if(model === "gpt-4-vision-preview") {
+        let visionMessages = convertToVisionFormat(fullPrompt);
+        request = {
+            model: model,
+            messages: visionMessages, // Pass the messages array directly
+            max_tokens: output_token_limit
+        }
+    } else {
+        request = {
+            model: model,
+            messages: fullPrompt, // This assumes fullPrompt is an array
+            max_tokens: output_token_limit
+        }
     }
+    
+    //stringify the prompt so it can be printed to the console
+    // console.log("fullPrompt: " + JSON.stringify(fullPrompt));
+    // console.log("fullPrompt tokens: " + fullPromptTokens);
 
-    if(functions.length) request.functions = functions;
-    console.log(request);
+    // request = {
+    //     model: model,
+    //     messages: fullPrompt,
+    //     max_tokens: output_token_limit
+    //     //TODO look into adding 'stream' so you can see a response as it's being generated
+    // }
+
+    //we check if there are any functions to be called
+    // if(functions.length) request.functions = functions;
+    // console.log(request);
+
+    //TODO add a check to see if the model supports the 'functions' field
+    if(model !== "gpt-4-vision-preview" && functions.length) {
+        // If the 'functions' field is supported by the API and properly formatted, include it
+        request.functions = functions;
+    }
 
     let completion = await openai.chat.completions.create(request)
     .catch(error => { //catch error 400 for bad request
@@ -652,6 +676,49 @@ async function sendPrompt({msg, instructions, model, functions}){
     console.log("Length: " + replyMessage.length + "/" + uncut_reply_length + " | prompt: " + prompt_tokens + " | completion: " + completion_tokens + " | total: " + (prompt_tokens + completion_tokens));
     
 }
+
+
+function convertToVisionFormat(standardMessages) {
+    // The new vision format message container
+    let visionMessages = [];
+  
+    // Iterate over standard messages to convert them to the new format
+    for (const message of standardMessages) {
+      // Convert each message to the vision format
+      if (message.role === "user") {
+        let content = [];
+  
+        // Check if the message content is a string (for text) or an object (for images)
+        if (typeof message.content === "string") {
+          // Add a text type message
+          content.push({ "type": "text", "text": message.content });
+        } else if (typeof message.content === "object" && message.content.hasOwnProperty('image_url')) {
+          // Add an image_url type message
+          content.push({ "type": "image_url", "image_url": message.content.image_url });
+        } else {
+          // If the content is neither a string nor an image_url object, log an error or handle accordingly
+          console.error("Unsupported message content type.");
+          continue;
+        }
+  
+        // Add the converted content to the vision format message container
+        visionMessages.push({
+          "role": "user",
+          "content": content
+        });
+      }
+    }
+  
+    // Return the formatted message for the vision API
+    // return {
+    //   model: "gpt-4-vision-preview",
+    //   messages: visionMessages,
+    //   max_tokens: 300 // Assuming max_tokens is consistent
+    // };
+
+    return visionMessages;
+  }
+  
 
 //TODO fix issue causing word wrapping to wrap at weird lengths
 async function sendTextFile(msg, replyMessage){
