@@ -115,7 +115,8 @@ function getFileString(msg) {
         if (msg.attachments.size > 0) {
             let attachment = msg.attachments.first();
 
-            const validTextExtensions = ['.txt', '.log', '.js', '.py', '.sh', '.bat', '.json', '.csv', '.html', '.css', '.xml', '.yaml', '.yml', '.md', '.markdown', '.rst', '.java', '.php'];
+            //file extensions that are considered text files
+            const validTextExtensions = ['.txt', '.log', '.js', '.py', '.sh', '.bat', '.json', '.csv', '.html', '.css', '.xml', '.yaml', '.yml', '.md', '.markdown', '.rst', '.java', '.php', '.cs', '.ts'];
             const isTextFile = validTextExtensions.some(ext => attachment.name.toLowerCase().endsWith(ext));
 
             if (isTextFile) {
