@@ -64,7 +64,11 @@ async function initializeGame(msg, client) {
         else if (reaction.emoji.name === '❌' && !user.bot) {
             console.log(`Collected ${reaction.emoji.name} from ${user.username}`);
             // cancel the game
-            msg.reply("Cancelling game...");
+            //msg.reply("Cancelling game...");
+
+            //ephemeral reply
+            msg.reply({content: "Cancelling game...", ephemeral: true});
+
             return;
         }
         else if (reaction.emoji.name === '✅' && !user.bot) {
@@ -150,7 +154,8 @@ function answerPhase(msg, client) {
             client.users.send(player.id, "Question: \n" + questionCard.text + message);
         }
         else{
-            channel.send(message);
+            // channel.send(message);
+            console.log(message);
         }
     });
 }
