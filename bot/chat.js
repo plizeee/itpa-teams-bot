@@ -35,7 +35,7 @@ const DEFAULT_TOKEN_LIMIT = 4000;
 const GPT4_TOKEN_LIMIT = 8000;
 const GPT_TURBO_16k_TOKEN_LIMIT = 16000;
 const GPT_4_TURBO_TOKEN_LIMIT = 24000; //the official token limit is 128k, but I'd rather not spend $3 for a single request
-
+const GPT_4_VISION_TOKEN_LIMIT = GPT_4_TURBO_TOKEN_LIMIT; //it's effectively the same model, so it should have the same token limit
 
 
 require('dotenv').config();
@@ -552,6 +552,7 @@ async function sendPrompt({msg, instructions, model, functions}){
 
     switch(model){
         case "gpt-4-1106-preview": token_limit = GPT_4_TURBO_TOKEN_LIMIT; break;
+        case "gpt-4-vision-preview": token_limit = GPT_4_VISION_TOKEN_LIMIT; break;
         case "gpt-4": token_limit = GPT4_TOKEN_LIMIT; break;
         case "gpt-3.5-turbo-16k-0613": token_limit = GPT_TURBO_16k_TOKEN_LIMIT; break;
         default: token_limit = DEFAULT_TOKEN_LIMIT; break;
@@ -573,7 +574,8 @@ async function sendPrompt({msg, instructions, model, functions}){
 
     fullPromptTokens = Tokeniser.numTokensFromMessages(fullPrompt/*, model*/); //TODO this seems to not be compatible with gpt-4-1106-preview
 
-    model == "gpt-4-1106-preview" ? output_token_limit = 4000 :
+    //TODO these are the only models that have different input/output token limits, but we should make this more dynamic
+    model === "gpt-4-1106-preview" || model === "gpt-4-vision-preview" ? output_token_limit = 4000 :
     output_token_limit = token_limit - fullPromptTokens;
 
     console.log("maxTokens: " + token_limit, "inputTokenLimit: " + input_token_limit, "outputTokenLimit: " + output_token_limit);
