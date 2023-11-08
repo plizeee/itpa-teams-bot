@@ -108,13 +108,44 @@ module.exports = {
     }
 };
 
+// function getFileString(msg){
+//     return new Promise((resolve, reject) => {
+//         if (msg.attachments.size > 0) {
+//             let attachment = msg.attachments.first();
+
+//             // check if the attachment is a .txt file
+//             if (attachment.name.endsWith('.txt') || attachment.name.endsWith('.log')) {
+//                 https.get(attachment.url, (res) => {
+//                     let data = '';
+
+//                     // A chunk of data has been received.
+//                     res.on('data', (chunk) => {
+//                         data += chunk;
+//                     });
+
+//                     // The whole response has been received.
+//                     res.on('end', () => {
+//                         resolve(data);
+//                     });
+//                 }).on('error', (err) => {
+//                     reject("Error: " + err.message);
+//                 });
+//             }
+//         } else {
+//             resolve(null);
+//         }
+//     });
+// }
+
 function getFileString(msg){
     return new Promise((resolve, reject) => {
         if (msg.attachments.size > 0) {
             let attachment = msg.attachments.first();
 
-            // check if the attachment is a .txt file
-            if (attachment.name.endsWith('.txt') || attachment.name.endsWith('.log')) {
+            const validExtensions = ['.txt', '.log', '.js', '.py', '.sh', '.bat', '.json', '.csv', '.html', '.css', '.xml', '.yaml', '.yml', '.md', '.markdown', '.rst']; // I did not test most of these
+            const isScript = validExtensions.some(ext => attachment.name.endsWith(ext));
+            
+            if (isScript) {
                 https.get(attachment.url, (res) => {
                     let data = '';
 
@@ -130,12 +161,15 @@ function getFileString(msg){
                 }).on('error', (err) => {
                     reject("Error: " + err.message);
                 });
+            } else {
+                reject("Unsupported file type.");
             }
         } else {
             resolve(null);
         }
     });
 }
+
 
 async function addFileToMsg(msg, fileContent){
     let output = msg.content;
@@ -595,17 +629,6 @@ async function sendPrompt({msg, instructions, model, functions}){
             max_tokens: output_token_limit
         }
     }
-    
-    //stringify the prompt so it can be printed to the console
-    // console.log("fullPrompt: " + JSON.stringify(fullPrompt));
-    // console.log("fullPrompt tokens: " + fullPromptTokens);
-
-    // request = {
-    //     model: model,
-    //     messages: fullPrompt,
-    //     max_tokens: output_token_limit
-    //     //TODO look into adding 'stream' so you can see a response as it's being generated
-    // }
 
     //we check if there are any functions to be called
     // if(functions.length) request.functions = functions;
@@ -708,13 +731,6 @@ function convertToVisionFormat(standardMessages) {
         });
       }
     }
-  
-    // Return the formatted message for the vision API
-    // return {
-    //   model: "gpt-4-vision-preview",
-    //   messages: visionMessages,
-    //   max_tokens: 300 // Assuming max_tokens is consistent
-    // };
 
     return visionMessages;
   }
