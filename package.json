@@ -20,7 +20,7 @@
     "openai": "^4.6.0",
     "passport": "^0.6.0",
     "passport-github": "^1.1.0",
-    "puppeteer": "^21.2.1",
+    "puppeteer": "^21.5.1",
     "readability": "^0.1.0",
     "serve-static": "^1.15.0",
     "tiktoken": "^1.0.10"

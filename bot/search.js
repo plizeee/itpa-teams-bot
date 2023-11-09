@@ -1,3 +1,6 @@
+//if you're having trouble with puppeteer, try this solution:
+//https://pptr.dev/guides/configuration#configuration-files
+
 //TODO figure out whehter node-readability is necessary
 //or if it's possible to get the same quality of results with just puppeteer
 
@@ -101,6 +104,7 @@ async function getHtmlFromUrl(url) {
   }
 }
 
+//NOTE: puppeteer only works on certain versions of chromium, which is not bundled properly on the raspberry pi
 //this function exists because puppeteer's default chromium path doesn't work on linux (should work on mac and windows)
 //so we can specify a chromium path in config.json
 async function launchPuppeteer() {
