@@ -71,6 +71,7 @@ client.events = new Collection();
 //importing the files used for the commands
 const teamsCommands = require('./teams.js');
 const chatCommands = require('./chat.js');
+const dalleCommands = require('./dalle.js');
 const adminCommands = require('./admin.js');
 const secretCommands = require('./gptSecrets.js');
 const SharedFunctions = require("./util.js");
@@ -212,8 +213,12 @@ client.on("messageCreate", async msg => {
             console.log("secret command found");
             return;
         }
-        else if (await chatCommands.checkChatCommand(msg, isMaster,client, config)) {
+        else if (await chatCommands.checkChatCommand(msg, isMaster, client, config)) {
             console.log("chat command found");
+            return;
+        }
+        else if(await dalleCommands.checkDalleCommand(msg, isMaster, client, config)) {
+            console.log("dalle command found");
             return;
         }
         else if (await UserCommands.checkUserCommand(msg)){
