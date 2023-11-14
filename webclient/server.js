@@ -1,4 +1,5 @@
 const fs = require('fs');
+const https = require('https');
 const url = require('url');
 const path = require('path');
 const express = require('express');
@@ -36,7 +37,7 @@ function getLocalIPs() {
 
 console.log('local addresses:' + LOCAL_IP_ADDRESSES);
 
-const port = 6969;
+const port = 443;
 
 // GitHub OAuth configuration
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
@@ -327,6 +328,31 @@ app.delete('/kill-instance', (req, res) => {
   res.status(200).send('Instance killed successfully');
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening at http://0.0.0.0:${port}`);
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+const SSL_CA_BUNDLE_PATH = process.env.SSL_CA_BUNDLE_PATH;
+
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, SSL_KEY_PATH)), // Path to your key
+  cert: fs.readFileSync(path.join(__dirname, SSL_CERT_PATH)), // Path to your cert
+  ca: fs.readFileSync(path.join(__dirname, SSL_CA_BUNDLE_PATH)), // Path to your ca
+};
+
+// const sslOptions = {
+//   key: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.key')),
+//   cert: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.crt')),
+//   ca: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.ca-bundle'))
+// };
+
+const httpsServer = https.createServer(sslOptions, app);
+
+httpsServer.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening at https://0.0.0.0:${port}`);
+}).on('error', (err) => {
+  console.error('HTTPS server error:', err);
 });
+
+
+// app.listen(port, '0.0.0.0', () => {
+//   console.log(`Server listening at http://0.0.0.0:${port}`);
+// });
