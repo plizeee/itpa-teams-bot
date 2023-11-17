@@ -1,4 +1,5 @@
 const fs = require('fs');
+const https = require('https');
 const url = require('url');
 const path = require('path');
 const express = require('express');
@@ -36,13 +37,15 @@ function getLocalIPs() {
 
 console.log('local addresses:' + LOCAL_IP_ADDRESSES);
 
-const port = 6969;
+const port = 3001;
 
 // GitHub OAuth configuration
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const WEBCLIENT_URL = process.env.WEBCLIENT_URL;
-const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + '/auth/github/callback';
+// const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + 'admin/auth/github/callback';
+const GITHUB_CALLBACK_URL = WEBCLIENT_URL + '/admin/auth/github/callback';
+
 
 // Allowed GitHub users
 console.log(process.env.AUTHORIZED_USERS);
@@ -120,19 +123,31 @@ app.get('/auth/github/callback', (req, res, next) => {
         console.error('Error:', err);
         return res.redirect('/unauthorized');
       }
-      return res.redirect('/');
+      // return res.redirect('/');
+      return res.redirect('/admin');
     });
   })(req, res, next);
 });
 
 
+// function ensureAuthenticated(req, res, next) {
+//   if (req.isAuthenticated()) {
+//     console.log('User is authenticated');
+//     return next();
+//   }
+//   console.log('User not authenticated, redirecting to /auth/github');
+//   res.redirect('/auth/github');
+// }
+
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    // User is authenticated, so we continue
+    console.log('User is authenticated');
     return next();
   }
-  res.redirect('/auth/github');
+  console.log('User not authenticated, redirecting to /admin/auth/github');
+  res.redirect(`${WEBCLIENT_URL}/admin/auth/github`); // Use absolute URL
 }
+
 
 function allowLocal(req, res, next) {
   const URL_ADDRESS = req.headers.host + req.url;

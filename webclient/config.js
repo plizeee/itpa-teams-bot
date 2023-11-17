@@ -29,11 +29,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const searchUser = document.getElementById('searchUser');
   const searchResults = document.getElementById('searchResults');
 
-  await fetch('/config.json').then(res => res.json())
+  await fetch('config.json').then(res => res.json())
   .then((data) => {
     config = data;
   });
-  await fetch('/profiles.json').then(res => res.json())
+  await fetch('profiles.json').then(res => res.json())
   .then((data) => {
     profiles = data;
   });

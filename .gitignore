@@ -18,3 +18,4 @@ gptSecrets.json
 .DS_Store
 cah-all-compact.json
 cah-all-full.json
+sslcert/

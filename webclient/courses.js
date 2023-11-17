@@ -30,7 +30,7 @@ let coursesData = {
   
   
   document.addEventListener('DOMContentLoaded', () => {
-    fetch('/courses.json')
+    fetch('courses.json')
     .then(response => response.json())
     .then(data => {
       console.log(data);

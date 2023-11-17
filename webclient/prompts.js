@@ -48,7 +48,7 @@ async function savePrompts() {
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    fetch('/promptCommands.json')
+    fetch('promptCommands.json')
     .then(response => response.json())
     .then(data => {
       console.log(data);
