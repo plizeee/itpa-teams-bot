@@ -34,7 +34,7 @@ function renderInstanceList() {
 }
 
 async function fetchData() {
-    fetch(`/instanceData.json?_=${new Date().getTime()}`)
+    fetch(`instanceData.json?_=${new Date().getTime()}`)
     .then(response => response.json())
     .then(data => {
         console.log(data);
