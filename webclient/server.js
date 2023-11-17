@@ -37,13 +37,15 @@ function getLocalIPs() {
 
 console.log('local addresses:' + LOCAL_IP_ADDRESSES);
 
-const port = 443;
+const port = 3001;
 
 // GitHub OAuth configuration
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const WEBCLIENT_URL = process.env.WEBCLIENT_URL;
-const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + '/auth/github/callback';
+// const GITHUB_CALLBACK_URL = WEBCLIENT_URL + ':' + port + 'admin/auth/github/callback';
+const GITHUB_CALLBACK_URL = WEBCLIENT_URL + '/admin/auth/github/callback';
+
 
 // Allowed GitHub users
 console.log(process.env.AUTHORIZED_USERS);
@@ -121,19 +123,31 @@ app.get('/auth/github/callback', (req, res, next) => {
         console.error('Error:', err);
         return res.redirect('/unauthorized');
       }
-      return res.redirect('/');
+      // return res.redirect('/');
+      return res.redirect('/admin');
     });
   })(req, res, next);
 });
 
 
+// function ensureAuthenticated(req, res, next) {
+//   if (req.isAuthenticated()) {
+//     console.log('User is authenticated');
+//     return next();
+//   }
+//   console.log('User not authenticated, redirecting to /auth/github');
+//   res.redirect('/auth/github');
+// }
+
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    // User is authenticated, so we continue
+    console.log('User is authenticated');
     return next();
   }
-  res.redirect('/auth/github');
+  console.log('User not authenticated, redirecting to /admin/auth/github');
+  res.redirect(`${WEBCLIENT_URL}/admin/auth/github`); // Use absolute URL
 }
+
 
 function allowLocal(req, res, next) {
   const URL_ADDRESS = req.headers.host + req.url;
@@ -328,31 +342,6 @@ app.delete('/kill-instance', (req, res) => {
   res.status(200).send('Instance killed successfully');
 });
 
-const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
-const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
-const SSL_CA_BUNDLE_PATH = process.env.SSL_CA_BUNDLE_PATH;
-
-const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, SSL_KEY_PATH)), // Path to your key
-  cert: fs.readFileSync(path.join(__dirname, SSL_CERT_PATH)), // Path to your cert
-  ca: fs.readFileSync(path.join(__dirname, SSL_CA_BUNDLE_PATH)), // Path to your ca
-};
-
-// const sslOptions = {
-//   key: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.key')),
-//   cert: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.crt')),
-//   ca: fs.readFileSync(path.join(__dirname, '../sslcert/pliz_tech.ca-bundle'))
-// };
-
-const httpsServer = https.createServer(sslOptions, app);
-
-httpsServer.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening at https://0.0.0.0:${port}`);
-}).on('error', (err) => {
-  console.error('HTTPS server error:', err);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening at http://0.0.0.0:${port}`);
 });
-
-
-// app.listen(port, '0.0.0.0', () => {
-//   console.log(`Server listening at http://0.0.0.0:${port}`);
-// });
