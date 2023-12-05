@@ -5,7 +5,7 @@ let profiles = {};
 
 async function saveConfigData() {
   try {
-    const response = await fetch('/save-config', {
+    const response = await fetch('save-config', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

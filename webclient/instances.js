@@ -68,7 +68,7 @@ function timeSince(dateString) {
 
 async function killInstance(instance_id, pid) {
     try {
-        const response = await fetch(`/kill-instance`, {
+        const response = await fetch(`kill-instance`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

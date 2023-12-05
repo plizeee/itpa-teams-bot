@@ -29,7 +29,7 @@ $(document).ready(function() {
 
 async function savePrompts() {
     try {
-      const response = await fetch('/save-prompts', {
+      const response = await fetch('save-prompts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -10,7 +10,7 @@ let coursesData = {
   
   async function saveCoursesData() {
     try {
-      const response = await fetch('/save-courses', {
+      const response = await fetch('save-courses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
