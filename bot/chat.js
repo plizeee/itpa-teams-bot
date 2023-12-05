@@ -338,10 +338,11 @@ async function getReplyChain(msg, sysMsg, model) {
 
     let messageContentObject = {"role": "user", "content": []};
 
+    let profile = SharedFunctions.getProfile(msg);
     // Add text content
     messageContentObject.content.push({ 
         "type": "text", 
-        "text": messageContent 
+        "text": profile.name + "(" + msg.author.id + "): " + messageContent 
     });
 
     // Check for image in the original message if the model is the vision model
