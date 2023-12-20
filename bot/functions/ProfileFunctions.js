@@ -1,5 +1,5 @@
 const SharedMethods = require("../util.js");
-const {FunctionResult} = require("../functionResultClass.js");
+const {FunctionResult} = require("../functionClasses.js");
 
 const functions =  {
     "getProfiles":{
@@ -35,8 +35,11 @@ const functions =  {
                 }
             }
         },
-        function: ({names=[], ids=[], maxrep=null, minrep=null}) => {
-            let full = SharedMethods.filterProfiles(names, ids, maxrep, minrep);
+        contexts:["participants"],
+        function: ({names=[], ids=[], maxrep=null, minrep=null},contexts={participants:[]}) => {
+            const particpatingIds = ids.filter(id => contexts.participants.includes(id));
+            if(contexts.participants.length<=0 || !particpatingIds?.length) return "No participants in reply chain";
+            let full = SharedMethods.filterProfiles(names, particpatingIds, maxrep, minrep);
             let comboFunctions = []
             let editable = false;
             let mapped = full.map(profile =>{
@@ -77,8 +80,11 @@ const functions =  {
                 "required": ["ids","mode","value"]
             }
         },
-        function: ({ids=[], mode="additive",value=0}) => {
-            let full = SharedMethods.filterProfiles(undefined, ids);
+        contexts:["participants"],
+        function: ({ids=[], mode="additive",value=0},contexts={participants:[]}) => {
+            const particpatingIds = ids.filter(id => contexts.participants.includes(id));
+            if(contexts.participants.length<=0 || !particpatingIds?.length) return "No participants in reply chain";
+            let full = SharedMethods.filterProfiles(undefined, particpatingIds);
             if(mode == "additive") full.forEach(profile => profile.rep += value);
             else if(mode == "override") full.forEach(profile => profile.rep = value);
             SharedMethods.syncProfilesToFile(true);
@@ -90,7 +96,7 @@ const functions =  {
     "editNote":{
         metadata:{
             "name": "editNote",
-            "description": "edits the user's profile note, keep the note to under 500 characters total, override to make edits or when the length is too long",
+            "description": "edits the user's profile note, keep the note to under 500 characters total, override to make edits or when the length is too long, don't let people edit other's notes",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -112,10 +118,12 @@ const functions =  {
                 }
             }
         },
-        function: ({ids=[],value="",override=false}) => {
-            let full = SharedMethods.filterProfiles(undefined, ids);
+        contexts:["participants"],
+        function: ({ids=[],value="",override=false},contexts={participants:[]}) => {
+            const particpatingIds = ids.filter(id => contexts.participants.includes(id));
+            if(contexts.participants.length<=0 || !particpatingIds?.length) return "No participants in reply chain";
+            let full = SharedMethods.filterProfiles(undefined, particpatingIds);
             let returnMessage = "";
-            
             let numTooLong = 0;
             let numEdited = 0;
             let numNonEditable = 0;
@@ -126,6 +134,7 @@ const functions =  {
                 else if((profile.note?.length + value.length) > 500) numTooLong++;
                 else {profile.note += value; numEdited++;}  
             });
+            returnMessage += `${ids.length - particpatingIds.length} person(s) are not present in the conversation.`
             if (numTooLong) returnMessage += `Addition(value) to long for ${numTooLong} profiles `;
             if(numNonEditable) returnMessage += `${numNonEditable} profiles do not support editing notes.`
             returnMessage += numEdited&&SharedMethods.syncProfilesToFile()? `Edited ${numEdited} Notes Succesfully`: "Failed to save changes";

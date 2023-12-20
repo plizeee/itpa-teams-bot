@@ -104,16 +104,16 @@ function openModal() {
         deleteCommandBtn.setAttribute('data-index', activeCommandIndex);
         let funcselect = $("#function-select");
         funcselect.val(null).trigger('change');
+        
         promptCommands.commands[activeCommandIndex].functions?.forEach(func =>{
-            if (funcselect.find("option[value='" + func + "']").length) {
-                funcselect.val(func).trigger('change');
-            } else { 
+            if (!funcselect.find("option[value='" + func + "']").length) {
                 // Create a DOM Option and pre-select by default
                 var newOption = new Option(func, func, true, true);
                 // Append it to the select
                 funcselect.append(newOption).trigger('change');
             }
         })
+        funcselect.val(promptCommands.commands[activeCommandIndex].functions).trigger('change');
     } else {
         deleteCommandBtn.classList.add('hidden');
     }

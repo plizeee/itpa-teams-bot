@@ -11,7 +11,7 @@ const https = require('https');
 const { profile, time } = require("console");
 const SharedFunctions = require("./util.js");
 const GPTFunctionsModule = require("./functions.js");
-const {FunctionResult} = require("./functionResultClass.js")
+const {FunctionResult} = require("./functionClasses.js")
 
 const {TokenStatTemplate} = require("./StatClasses.js");
 
@@ -311,7 +311,7 @@ async function getReplyChain(msg, sysMsg, model) {
         while (repliedMessageRef) {
             let chainContent = await getChainContent(repliedMessageRef, model);
             let chainMessageObject = {"role": (repliedMessageRef.author.bot) ? "assistant" : "user", "content": []};
-
+            chainMessageObject.name = repliedMessageRef.author.id;
             // Check if the model is the vision model and if the replied message contains an image
             if (model === "gpt-4-vision-preview" && repliedMessageRef.attachments.size > 0) {
                 let imageURL = repliedMessageRef.attachments.first().url;
@@ -336,13 +336,13 @@ async function getReplyChain(msg, sysMsg, model) {
         replyChain = replyChain.concat(tempReplyArray);
     }
 
-    let messageContentObject = {"role": "user", "content": []};
+    let messageContentObject = {"role": "user", "content": [],"name":msg.author.id};
 
     let profile = SharedFunctions.getProfile(msg);
     // Add text content
     messageContentObject.content.push({ 
         "type": "text", 
-        "text": profile.name + "(" + msg.author.id + "): " + messageContent 
+        "text": profile.name + ": " + messageContent 
     });
 
     // Check for image in the original message if the model is the vision model
@@ -388,7 +388,7 @@ async function getChainContent(repliedMessageRef, model) {
     console.log("Returning content for replied message...");
     return (repliedMessageRef.author.bot)
            ? "Terry: " + repliedMessage
-           : refProfile.name + "(" + repliedMessageRef.author.id + "): " + repliedMessage;
+           : refProfile.name + ": " + repliedMessage;
 }
 
 async function getReferenceMsg(msg){
@@ -541,35 +541,64 @@ function stripNameFromResponse(response){
     }
     return response;
 }
-async function resolveFunctionCall(completion,messages,functions=[]){
+
+async function resolveFunctionCall(completion,messages,functions=[],msg, request = null){
     let completionMessage = completion.choices[0].message
-    const functionName = completionMessage.function_call.name
-    let functionArgs = completionMessage.function_call.arguments;
-    console.log(`function called: ${functionName} (${functionArgs})`);
-    try{functionArgs = JSON.parse(functionArgs);} catch{functionArgs = ""}
-    let functionResponse = await GPTFunctionsModule.CallFunction(functionName,functionArgs);
-    if(functionResponse instanceof FunctionResult) {
-        console.log("function is complex return");
-        if(functionResponse.overide) functions = functionResponse.comboFunctions;
-        else{
-            functions = functions.filter(func=>!functionResponse.disableFunctions.includes(func.name));
-            functions.push(...GPTFunctionsModule.GetFunctionsMetadata(functionResponse.comboFunctions));
+    messages.push(completionMessage);  // extend conversation with assistant's reply - idk what this does now after the functions changed to tools.
+    console.log("functions/tools called: "+ completionMessage.tool_calls)
+    for (const tool_call of completionMessage.tool_calls) {
+        const functionName = tool_call.function.name
+        let functionArgs = tool_call.function.arguments;
+        console.log(`resolving function call: ${functionName} (${functionArgs})`);
+        try{functionArgs = JSON.parse(functionArgs);} catch{functionArgs = ""}
+        
+        //getting required contexts of function and then getting the required data for it
+        const funcContexts = GPTFunctionsModule.GetFunctionContexts(functionName);
+        let context = {};
+        //should come up with a better solution for this as we think of more contexts.
+        if(funcContexts?.length) {
+            for (const contextname of funcContexts) {
+                switch(contextname){
+                    case "participants":
+                        context.participants = [...new Set(messages.filter(msg => msg.role === 'user').map(msg => Number(msg.name)).concat(Number(msg.author.id)))];
+                    case "author":
+                        context.author = msg.author;
+                        break;
+                    case "message":
+                        context.message = msg;
+                        context.author = msg.author;
+                        break;
+                }
+            }
         }
-        functionResponse = JSON.stringify(functionResponse.returnValue);
+        //calling function
+        let functionResponse = await GPTFunctionsModule.CallFunction(functionName,functionArgs,context);
+        if(functionResponse instanceof FunctionResult) {
+            console.log("function is complex return");
+            if(functionResponse.overide) functions = functionResponse.comboFunctions;
+            else{
+                functions = functions.filter(func=>!functionResponse.disableFunctions.includes(func.name));
+                functions.push(...GPTFunctionsModule.GetFunctionsMetadata(functionResponse.comboFunctions));
+            }
+            functionResponse = JSON.stringify(functionResponse.returnValue);
+        }
+        else {functionResponse = JSON.stringify(functionResponse);}
+        console.log(`func response: ${functionResponse}`);
+        messages.push({
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": functionResponse,
+        });
     }
-    else {functionResponse = JSON.stringify(functionResponse);}
-    console.log(`func response: ${functionResponse}`);
-    messages.push(completionMessage);  // extend conversation with assistant's reply
-    messages.push({
-        "role": "function",
-        "name": functionName,
-        "content": functionResponse,
-    });
-    let request = {
-        model: completion.model,
-        messages: messages
+    //if no request was provided make a basic one.
+    if(!request){
+        request = {
+            model: completion.model,
+            messages: messages
+        };
     }
-    if(functions.length) request.functions = functions;
+    else request.messages = messages;
+    if(functions.length) request.tools = functions.map((func)=>{return {type:"function","function":func}}); //if there are any functions add them to the request
     const secondResponse = await openai.chat.completions.create(request);  // get a new response from GPT where it can see the function response
     return secondResponse;
 }
@@ -627,7 +656,8 @@ async function sendPrompt({msg, instructions, model, functions}){
     request = {
         model: model,
         messages: fullPrompt, // This assumes fullPrompt is an array
-        max_tokens: output_token_limit
+        max_tokens: output_token_limit,
+        user: msg.author.id // will let use know if someone is trying to abuse the api access
     }
 
     //we check if there are any functions to be called
@@ -637,7 +667,7 @@ async function sendPrompt({msg, instructions, model, functions}){
     //TODO add a check to see if the model supports the 'functions' field
     if(model !== "gpt-4-vision-preview" && functions.length) {
         // If the 'functions' field is supported by the API and properly formatted, include it
-        request.functions = functions;
+        request.tools = functions.map(func=>({type:"function",function:func}));
     }
 
     let completion = await openai.chat.completions.create(request)
@@ -660,17 +690,15 @@ async function sendPrompt({msg, instructions, model, functions}){
     }
 
     let completionMessage = completion.choices[0].message
-
-    while(completionMessage.function_call){
+    while(completionMessage.tool_calls?.length){
         let prompt_tokens = completion.usage.prompt_tokens;
         let completion_tokens = completion.usage.completion_tokens;
         InstanceData.functionTokenStats.storeData(prompt_tokens,completion_tokens);
-        completion = await resolveFunctionCall(completion, fullPrompt, functions);
+        completion = await resolveFunctionCall(completion, fullPrompt, functions, msg);
         completionMessage = completion.choices[0].message;
     }
     //might be a good idea to turn reply into seperate method
     const rawReply = completionMessage.content;   //storing the unmodified output of the ai generated response
-
     let replyMessage = stripNameFromResponse(rawReply);                        //copy of the response that will be modified
 
     //this is causing an error, so let's fix it 

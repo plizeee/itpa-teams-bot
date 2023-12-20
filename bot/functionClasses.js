@@ -1,3 +1,5 @@
+const Discord = require('discord.js');
+
 // a class to allow for more complex GPTfunction returns
 class FunctionResult {
      /**
@@ -14,5 +16,21 @@ class FunctionResult {
         this.disableFunctions = disableFunctions;
     } 
 }
+// // a class to give functions information which they might not normally have access to.
+// class FunctionInput{
+//     /**
+//      * 
+//      * @param {*} args the args the function would normally take
+//      * @param {Discord.Message} triggerMessage the discord message that triggered this function call 
+//      * @param {Discord.Message} originalMessage the intial discord message to trigger terry
+//      * @param {Discord.Message} messages a list of messages to be provided to the function.
+//      */
+//     constructor({args=null,triggerMessage=null,originalMessage=null,messages=null}){
+//         this.args = args;
+//         this.triggerMessage = triggerMessage
+//         this.originalMessage = originalMessage;
+//         this.messages = messages;
+//     } 
+// }
 
 module.exports = {FunctionResult};

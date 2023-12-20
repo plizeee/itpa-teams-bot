@@ -24,8 +24,12 @@ function GetFunctionsMetadata(list = []){
     return funcmeta
 }
 
-async function CallFunction(funcName, funcArgs){
-    let output = await AllFunctions?.[funcName]?.function(funcArgs);
+function GetFunctionContexts(funcName){
+    return AllFunctions?.[funcName]?.contexts;
+}
+
+async function CallFunction(funcName, funcArgs,funcContexts=null){
+    let output = await AllFunctions?.[funcName]?.function(funcArgs,contexts=funcContexts);
     return output??"INVALID FUNCTION";
     //return JSON.stringify(AllFunctions[funcName].function(funcArgs));
 }
@@ -51,5 +55,6 @@ module.exports = {
     CallFunction, 
     AllFunctionNames, 
     GroupedFunctionNames,
-    GetFunctionsMetadata
+    GetFunctionsMetadata,
+    GetFunctionContexts
 }
